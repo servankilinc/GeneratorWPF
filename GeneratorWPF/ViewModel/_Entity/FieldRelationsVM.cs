@@ -1,0 +1,75 @@
+﻿using GeneratorWPF.Utils;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using GeneratorWPF.Models;
+using GeneratorWPF.Repository;
+using System.Windows;
+using Microsoft.EntityFrameworkCore;
+using GeneratorWPF.Dtos._Relation;
+using GeneratorWPF.Services;
+
+namespace GeneratorWPF.ViewModel._Entity;
+
+public class FieldRelationsVM : BaseViewModel
+{
+    private INavigationService _navigation;
+    private readonly EntityRepository _entityRepository;
+    private readonly RelationRepository _relationRepository;
+    public ICommand SaveCommand { get; set; }
+    public ICommand CancelCommand { get; set; }
+    public Action? CloseDialogAction { get; set; } // Dialog'u kapatmak için callback
+
+    public RelationCreateDto RelationCreateModel { get; set; } = new RelationCreateDto();
+    public ObservableCollection<Entity> EntityList { get; set; } = new ObservableCollection<Entity>();
+    public ObservableCollection<RelationType> RelationTypeList { get; set; } = new ObservableCollection<RelationType>(); 
+
+
+    private Entity _primaryEntity;
+    public Entity PrimaryEntity { get => _primaryEntity; set { _primaryEntity = value; OnPropertyChanged(nameof(PrimaryEntity)); } }
+
+    private Entity _foreignEntity;
+    public Entity ForeignEntity { get => _foreignEntity; set { _foreignEntity = value; OnPropertyChanged(nameof(ForeignEntity)); } }
+
+
+    public FieldRelationsVM(INavigationService navigationService)
+    {
+        _navigation = navigationService;
+        _entityRepository = new EntityRepository();
+        _relationRepository = new RelationRepository();
+
+
+        EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll(include: i => i.Include(x => x.Fields)));
+        RelationTypeList = new ObservableCollection<RelationType>(_relationRepository.GetRelationTypes());
+
+        ForeignEntity = EntityList.First(f => f.Id == StateStatics.EntityDetailId);
+
+        SaveCommand = new RellayCommand(obj =>
+        {
+            try
+            {
+                if (RelationCreateModel.PrimaryFieldId == default || RelationCreateModel.ForeignFieldId == default || RelationCreateModel.RelationTypeId == default)
+                {
+                    MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                _relationRepository.AddRelation(RelationCreateModel);
+
+                MessageBox.Show("Relation Created Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                CloseDialogAction?.Invoke(); // Dialog'u kapat
+                _navigation.NavigateTo<EntityDetailVM>();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
+
+        CancelCommand = new RellayCommand(obj =>
+        {
+            CloseDialogAction?.Invoke(); // Dialog'u kapat
+            _navigation.NavigateTo<EntityDetailVM>();
+        });
+    }
+}

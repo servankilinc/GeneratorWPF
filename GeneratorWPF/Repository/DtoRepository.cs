@@ -1,0 +1,123 @@
+﻿using GeneratorWPF.Context;
+using GeneratorWPF.Dtos._Dto;
+using GeneratorWPF.Models;
+using GeneratorWPF.Models.Enums;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+
+namespace GeneratorWPF.Repository
+{
+    public class DtoRepository : EFRepositoryBase<Dto>
+    {
+        public DtoField GetDtoFieldByValidations(Expression<Func<DtoField, bool>> expresion)
+        {
+            using var context = new LocalContext();
+            return context.DtoFields
+                    .Where(expresion)
+                    .Include(i => i.Validations)
+                        .ThenInclude(i => i.ValidatorType)
+                            .ThenInclude(i=> i.ValidatorTypeParams)
+                    .Include(i => i.Validations)
+                        .ThenInclude(i => i.ValidationParams)
+                            .ThenInclude(i => i.ValidatorTypeParam)
+                    .FirstOrDefault();
+        }
+
+
+        public List<Dto> GetListByValidations(Expression<Func<Dto, bool>> expresion)
+        {
+            using var context = new LocalContext();
+            return context.Dtos
+                    .Where(expresion)
+                    .Include(i => i.RelatedEntity)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.Validations)
+                            .ThenInclude(v => v.ValidatorType)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.Validations)
+                            .ThenInclude(v => v.ValidationParams)
+                                .ThenInclude(vp => vp.ValidatorTypeParam)
+                    .ToList();
+        }
+
+
+        public List<Dto> GetList(Expression<Func<Dto, bool>> expresion)
+        {
+            using var context = new LocalContext();
+            return context.Dtos
+                    .Where(expresion)
+                    .Include(i => i.RelatedEntity)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.SourceField)
+                            .ThenInclude(sf => sf.FieldType)
+                    .ToList();
+        }
+
+        public void CreateByFields(DtoCreateDto createDto)
+        {
+            using var _context = new LocalContext();
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                // Insert Dto
+                var insertedDto = _context.Dtos.Add(new Dto()
+                {
+                    Name = createDto.Name,
+                    RelatedEntityId = createDto.RelatedEntityId,
+                }).Entity;
+                _context.SaveChanges();
+
+                // Insert Dto as FiledType
+                _context.Set<FieldType>().Add(new FieldType
+                {
+                    Name = insertedDto.Name,
+                    SourceTypeId = (int)FieldTypeSourceEnums.Dto,
+                });
+                _context.SaveChanges();
+
+                // Insert DtoFields
+                foreach (var sourceField in createDto.DtoFields)
+                {
+                    _context.DtoFields.Add(new DtoField
+                    {
+                        DtoId = insertedDto.Id,
+                        SourceFieldId = sourceField.SourceFieldId,
+                        Name = sourceField.Name,
+                    });
+                }
+                _context.SaveChanges();
+
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public void Update(DtoUpdateDto updateModel)
+        {
+            using var context = new LocalContext();
+            var existData = context.Dtos.FirstOrDefault(f => f.Id == updateModel.Id);
+            if(existData == null) throw new Exception("Data to update not found!");
+            
+            existData.Name = updateModel.Name;
+            existData.RelatedEntityId = updateModel.RelatedEntityId;
+            
+            context.Update(existData);
+            context.SaveChanges();
+        }
+
+        public void Delete(int id)
+        {
+            using var context = new LocalContext();
+            var existData = context.Dtos.FirstOrDefault(f => f.Id == id);
+
+            if (existData == null) throw new Exception("Data not found!");
+
+            context.Remove(existData);
+            context.SaveChanges();
+        }
+    }
+}

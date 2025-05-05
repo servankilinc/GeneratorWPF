@@ -12,6 +12,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
 {
     public class DtoCreateVM : BaseViewModel
     {
+        private EntityRepository _entityRepository{ get; set; }
         private DtoRepository _dtoRepository { get; set; }
         private FieldRepository _fieldRepository { get; set; }
         private readonly INavigationService _navigation;
@@ -30,11 +31,11 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
         public DtoCreateVM(INavigationService navigation)
         {
             _navigation = navigation;
+            _entityRepository = new EntityRepository();
             _fieldRepository = new FieldRepository();
             _dtoRepository = new DtoRepository();
-            var entityRepository = new EntityRepository();
 
-            EntityList = new ObservableCollection<Entity>(entityRepository.GetAll());
+            EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
 
 
             SaveCommand = new RellayCommand(obj => 

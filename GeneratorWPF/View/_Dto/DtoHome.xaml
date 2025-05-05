@@ -42,7 +42,17 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-
+                    <DataGridTemplateColumn Header="Update" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Update"
+                               Command="{Binding DataContext.ShowUpdateCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                               CommandParameter="{Binding Id}" 
+                               Style="{StaticResource PrimaryBtnStyle}"
+                               HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Remove" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

@@ -16,6 +16,7 @@ namespace GeneratorWPF.ViewModel._Dto
         private INavigationService _navigation { get; set; }
         public ICommand ShowCreateCommand { get; set; }
         public ICommand ShowDetailCommand { get; set; }
+        public ICommand ShowUpdateCommand { get; set; }
         public ICommand RemoveCommand { get; set; }
         public List<Entity> EntityList { get; set; }
 
@@ -59,6 +60,20 @@ namespace GeneratorWPF.ViewModel._Dto
             {
                 StateStatics.DtoDetailId = (int)dtoId;
                 _navigation.NavigateTo<DtoDetailVM>();
+            });
+
+            ShowUpdateCommand = new RellayCommand(dtoId =>
+            {
+                StateStatics.DtoUpdateId = (int)dtoId;
+                var dialog = new DtoUpdateDialog(_navigation);
+                if (dialog.ShowDialog() == false)
+                {
+                    return;
+                }
+                else
+                {
+                    dialog.Show();
+                }
             });
 
             RemoveCommand = new RellayCommand(dtoId =>

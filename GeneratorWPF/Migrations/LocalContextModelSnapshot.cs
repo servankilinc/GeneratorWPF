@@ -33,6 +33,19 @@ namespace GeneratorWPF.Migrations
                     b.Property<bool>("Control")
                         .HasColumnType("bit");
 
+                    b.Property<string>("DBConnectionString")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsThereIdentiy")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsThereRole")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsThereUser")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -41,11 +54,25 @@ namespace GeneratorWPF.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("RoleEntityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SolutionName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("UserEntityId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleEntityId")
+                        .IsUnique()
+                        .HasFilter("[RoleEntityId] IS NOT NULL");
+
+                    b.HasIndex("UserEntityId")
+                        .IsUnique()
+                        .HasFilter("[UserEntityId] IS NOT NULL");
 
                     b.ToTable("AppSettings");
 
@@ -54,9 +81,80 @@ namespace GeneratorWPF.Migrations
                         {
                             Id = 1,
                             Control = false,
+                            DBConnectionString = "",
+                            IsThereIdentiy = false,
+                            IsThereRole = false,
+                            IsThereUser = false,
                             Path = "C:\\Generator",
                             ProjectName = "MyProject",
                             SolutionName = "MyProject"
+                        });
+                });
+
+            modelBuilder.Entity("GeneratorWPF.Models.DeleteBehaviorType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Control")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DeleteBehaviorTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Control = false,
+                            Name = "Cascade"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Control = false,
+                            Name = "ClientCascade"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Control = false,
+                            Name = "Restrict"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Control = false,
+                            Name = "ClientSetNull"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Control = false,
+                            Name = "ClientNoAction"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Control = false,
+                            Name = "SetNull"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Control = false,
+                            Name = "NoAction"
                         });
                 });
 
@@ -99,6 +197,12 @@ namespace GeneratorWPF.Migrations
                     b.Property<int>("DtoId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsList")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -123,18 +227,50 @@ namespace GeneratorWPF.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Archivable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Auditable")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("BasicResponseDtoId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("Control")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("CreateDtoId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DetailResponseDtoId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Loggable")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("SoftDeletable")
+                        .HasColumnType("bit");
+
                     b.Property<string>("TableName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("UpdateDtoId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("BasicResponseDtoId");
+
+                    b.HasIndex("CreateDtoId");
+
+                    b.HasIndex("DetailResponseDtoId");
+
+                    b.HasIndex("UpdateDtoId");
 
                     b.ToTable("Entities");
                 });
@@ -434,6 +570,9 @@ namespace GeneratorWPF.Migrations
                     b.Property<bool>("Control")
                         .HasColumnType("bit");
 
+                    b.Property<int>("DeleteBehaviorTypeId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ForeignFieldId")
                         .HasColumnType("int");
 
@@ -444,6 +583,8 @@ namespace GeneratorWPF.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeleteBehaviorTypeId");
 
                     b.HasIndex("ForeignFieldId");
 
@@ -839,6 +980,21 @@ namespace GeneratorWPF.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GeneratorWPF.Models.AppSetting", b =>
+                {
+                    b.HasOne("GeneratorWPF.Models.Entity", "RoleEntity")
+                        .WithOne("AsRoleAppSetting")
+                        .HasForeignKey("GeneratorWPF.Models.AppSetting", "RoleEntityId");
+
+                    b.HasOne("GeneratorWPF.Models.Entity", "UserEntity")
+                        .WithOne("AsUserAppSetting")
+                        .HasForeignKey("GeneratorWPF.Models.AppSetting", "UserEntityId");
+
+                    b.Navigation("RoleEntity");
+
+                    b.Navigation("UserEntity");
+                });
+
             modelBuilder.Entity("GeneratorWPF.Models.Dto", b =>
                 {
                     b.HasOne("GeneratorWPF.Models.Entity", "RelatedEntity")
@@ -867,6 +1023,37 @@ namespace GeneratorWPF.Migrations
                     b.Navigation("Dto");
 
                     b.Navigation("SourceField");
+                });
+
+            modelBuilder.Entity("GeneratorWPF.Models.Entity", b =>
+                {
+                    b.HasOne("GeneratorWPF.Models.Dto", "BasicResponseDto")
+                        .WithMany("BasicResponseEntities")
+                        .HasForeignKey("BasicResponseDtoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GeneratorWPF.Models.Dto", "CreateDto")
+                        .WithMany("CreateEntities")
+                        .HasForeignKey("CreateDtoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GeneratorWPF.Models.Dto", "DetailResponseDto")
+                        .WithMany("DetailResponseEntities")
+                        .HasForeignKey("DetailResponseDtoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GeneratorWPF.Models.Dto", "UpdateDto")
+                        .WithMany("UpdateEntities")
+                        .HasForeignKey("UpdateDtoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BasicResponseDto");
+
+                    b.Navigation("CreateDto");
+
+                    b.Navigation("DetailResponseDto");
+
+                    b.Navigation("UpdateDto");
                 });
 
             modelBuilder.Entity("GeneratorWPF.Models.Field", b =>
@@ -950,6 +1137,12 @@ namespace GeneratorWPF.Migrations
 
             modelBuilder.Entity("GeneratorWPF.Models.Relation", b =>
                 {
+                    b.HasOne("GeneratorWPF.Models.DeleteBehaviorType", "DeleteBehaviorType")
+                        .WithMany("Relations")
+                        .HasForeignKey("DeleteBehaviorTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("GeneratorWPF.Models.Field", "ForeignField")
                         .WithMany("RelationsForeign")
                         .HasForeignKey("ForeignFieldId")
@@ -967,6 +1160,8 @@ namespace GeneratorWPF.Migrations
                         .HasForeignKey("RelationTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DeleteBehaviorType");
 
                     b.Navigation("ForeignField");
 
@@ -1043,9 +1238,22 @@ namespace GeneratorWPF.Migrations
                     b.Navigation("ValidatorType");
                 });
 
+            modelBuilder.Entity("GeneratorWPF.Models.DeleteBehaviorType", b =>
+                {
+                    b.Navigation("Relations");
+                });
+
             modelBuilder.Entity("GeneratorWPF.Models.Dto", b =>
                 {
+                    b.Navigation("BasicResponseEntities");
+
+                    b.Navigation("CreateEntities");
+
+                    b.Navigation("DetailResponseEntities");
+
                     b.Navigation("DtoFields");
+
+                    b.Navigation("UpdateEntities");
                 });
 
             modelBuilder.Entity("GeneratorWPF.Models.DtoField", b =>
@@ -1055,6 +1263,10 @@ namespace GeneratorWPF.Migrations
 
             modelBuilder.Entity("GeneratorWPF.Models.Entity", b =>
                 {
+                    b.Navigation("AsRoleAppSetting");
+
+                    b.Navigation("AsUserAppSetting");
+
                     b.Navigation("Dtos");
 
                     b.Navigation("Fields");

@@ -14,7 +14,8 @@ namespace GeneratorWPF.Repository
             {
                 PrimaryFieldId = createDto.PrimaryFieldId,
                 ForeignFieldId = createDto.ForeignFieldId,
-                RelationTypeId = createDto.RelationTypeId
+                RelationTypeId = createDto.RelationTypeId,
+                DeleteBehaviorTypeId = createDto.DeleteBehaviorTypeId
             });
             _context.SaveChanges();
         }

@@ -91,6 +91,7 @@ public class DtoDetailVM : BaseViewModel
 
         ShowAddDtoFieldCommand = new RellayCommand(obj =>
         {
+            StateStatics.DtoDetailAddDtoFieldDtoId = StateStatics.DtoDetailId;
             var dialog = new DtoFieldAddDialog(_navigation);
             if (dialog.ShowDialog() == false)
             {

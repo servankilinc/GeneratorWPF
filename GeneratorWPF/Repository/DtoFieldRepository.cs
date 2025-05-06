@@ -63,8 +63,11 @@ namespace GeneratorWPF.Repository
             using var context = new LocalContext();
             var data = new DtoField
             {
+                DtoId = createDto.DtoId,
                 Name = createDto.Name,
                 SourceFieldId = createDto.SourceFieldId,
+                IsRequired = createDto.IsRequired,
+                IsList = createDto.IsList
             };
             
             context.Add(data);
@@ -79,6 +82,8 @@ namespace GeneratorWPF.Repository
 
             existData.Name = updateDto.Name;
             existData.SourceFieldId = updateDto.SourceFieldId;
+            existData.IsRequired = updateDto.IsRequired;
+            existData.IsList = updateDto.IsList;
 
             context.Update(existData);
             context.SaveChanges();

@@ -10,7 +10,7 @@ namespace GeneratorWPF.Context
         //}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=SERVAN; Initial Catalog=CodeGeneratorV2; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Data Source=SERVAN; Initial Catalog=CodeGeneratorV1; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
             //optionsBuilder.UseLazyLoadingProxies();
         }
 
@@ -22,6 +22,7 @@ namespace GeneratorWPF.Context
         public DbSet<FieldType> FieldTypes { get; set; }
         public DbSet<FieldTypeSource> FieldTypeSources { get; set; }
         
+        public DbSet<DeleteBehaviorType> DeleteBehaviorTypes { get; set; }
         public DbSet<Relation> Relations { get; set; }
         public DbSet<RelationType> RelationTypes { get; set; }
         
@@ -51,7 +52,24 @@ namespace GeneratorWPF.Context
             {
                 ap.HasKey(ap => ap.Id);
 
-                ap.HasData(new AppSetting() { Id = 1, Path = "C:\\Generator", ProjectName = "MyProject", SolutionName="MyProject", Control = false });
+                ap.HasData(new AppSetting() { 
+                    Id = 1, 
+                    Path = "C:\\Generator", 
+                    ProjectName = "MyProject", 
+                    SolutionName="MyProject", 
+                    Control = false, 
+                    DBConnectionString = "" 
+                });
+
+                modelBuilder.Entity<AppSetting>()
+                    .HasOne(a => a.UserEntity)
+                    .WithOne(e => e.AsUserAppSetting)
+                    .HasForeignKey<AppSetting>(a => a.UserEntityId);
+
+                modelBuilder.Entity<AppSetting>()
+                    .HasOne(a => a.RoleEntity)
+                    .WithOne(e => e.AsRoleAppSetting)
+                    .HasForeignKey<AppSetting>(a => a.RoleEntityId);
             });
             #endregion
 
@@ -59,6 +77,26 @@ namespace GeneratorWPF.Context
             modelBuilder.Entity<Entity>(e =>
             { 
                 e.HasKey(e => e.Id);
+
+                e.HasOne(e => e.CreateDto)
+                    .WithMany(cd => cd.CreateEntities)
+                    .HasForeignKey(e => e.CreateDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(e => e.UpdateDto)
+                    .WithMany(cd => cd.UpdateEntities)
+                    .HasForeignKey(e => e.UpdateDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(e => e.BasicResponseDto)
+                    .WithMany(cd => cd.BasicResponseEntities)
+                    .HasForeignKey(e => e.BasicResponseDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(e => e.DetailResponseDto)
+                    .WithMany(cd => cd.DetailResponseEntities)
+                    .HasForeignKey(e => e.DetailResponseDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 e.HasMany(e => e.Fields)
                     .WithOne(f => f.Entity)
@@ -157,7 +195,28 @@ namespace GeneratorWPF.Context
             });
             #endregion
 
-            #region Relation, 
+            #region DeleteBehaviorType
+            modelBuilder.Entity<DeleteBehaviorType>(dbt =>
+            {
+                dbt.HasKey(dbt => dbt.Id);
+
+                dbt.HasMany(dbt => dbt.Relations)
+                    .WithOne(r => r.DeleteBehaviorType)
+                    .HasForeignKey(r => r.DeleteBehaviorTypeId);
+
+                dbt.HasData(
+                    new DeleteBehaviorType { Id = 1, Name = "Cascade" },
+                    new DeleteBehaviorType { Id = 2, Name = "ClientCascade" },
+                    new DeleteBehaviorType { Id = 3, Name = "Restrict" },
+                    new DeleteBehaviorType { Id = 4, Name = "ClientSetNull" },
+                    new DeleteBehaviorType { Id = 5, Name = "ClientNoAction" },
+                    new DeleteBehaviorType { Id = 6, Name = "SetNull" },
+                    new DeleteBehaviorType { Id = 7, Name = "NoAction" }
+                );
+            });
+            #endregion
+
+            #region Relation
             modelBuilder.Entity<Relation>(r =>
             {
                 r.HasKey(r => r.Id);
@@ -177,7 +236,11 @@ namespace GeneratorWPF.Context
                 r.HasOne(r => r.RelationType)
                     .WithMany(rt => rt.Relations)
                     .HasForeignKey(r => r.RelationTypeId);
-                    //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
+                //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
+
+                r.HasOne(r => r.DeleteBehaviorType)
+                    .WithMany(dbt => dbt.Relations)
+                    .HasForeignKey(r => r.DeleteBehaviorTypeId);
             });
             #endregion
 
@@ -201,6 +264,22 @@ namespace GeneratorWPF.Context
             modelBuilder.Entity<Dto>(d=>
             {
                 d.HasKey(d => d.Id);
+
+                d.HasMany(e => e.CreateEntities)
+                    .WithOne(cd => cd.CreateDto)
+                    .HasForeignKey(e => e.CreateDtoId);
+
+                d.HasMany(e => e.UpdateEntities)
+                    .WithOne(cd => cd.UpdateDto)
+                    .HasForeignKey(e => e.UpdateDtoId);
+
+                d.HasMany(e => e.BasicResponseEntities)
+                    .WithOne(cd => cd.BasicResponseDto)
+                    .HasForeignKey(e => e.BasicResponseDtoId);
+
+                d.HasMany(e => e.DetailResponseEntities)
+                    .WithOne(cd => cd.DetailResponseDto)
+                    .HasForeignKey(e => e.DetailResponseDtoId);
 
                 d.HasOne(d => d.RelatedEntity)
                     .WithMany(r => r.Dtos)

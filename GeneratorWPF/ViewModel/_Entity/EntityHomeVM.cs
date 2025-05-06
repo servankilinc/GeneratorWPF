@@ -30,7 +30,7 @@ public class EntityHomeVM : BaseViewModel
 
         ShowCreateDialogCommand = new RellayCommand(obj =>
         {
-            var dialog = new EntityCreateDialog();
+            var dialog = new EntityCreateDialog(navigation);
             if (dialog.ShowDialog() == true)
             {
                 dialog.Show();

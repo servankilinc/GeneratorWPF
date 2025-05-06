@@ -15,13 +15,15 @@ public class FieldRelationsVM : BaseViewModel
     private INavigationService _navigation;
     private readonly EntityRepository _entityRepository;
     private readonly RelationRepository _relationRepository;
+    private readonly DeleteBehaviorTypeRepository _deleteBehaviorTypeRepository;
     public ICommand SaveCommand { get; set; }
     public ICommand CancelCommand { get; set; }
     public Action? CloseDialogAction { get; set; } // Dialog'u kapatmak için callback
 
     public RelationCreateDto RelationCreateModel { get; set; } = new RelationCreateDto();
     public ObservableCollection<Entity> EntityList { get; set; } = new ObservableCollection<Entity>();
-    public ObservableCollection<RelationType> RelationTypeList { get; set; } = new ObservableCollection<RelationType>(); 
+    public ObservableCollection<RelationType> RelationTypeList { get; set; } = new ObservableCollection<RelationType>();
+    public ObservableCollection<DeleteBehaviorType> DeleteBehaviorTypeList { get; set; } = new ObservableCollection<DeleteBehaviorType>();
 
 
     private Entity _primaryEntity;
@@ -36,10 +38,11 @@ public class FieldRelationsVM : BaseViewModel
         _navigation = navigationService;
         _entityRepository = new EntityRepository();
         _relationRepository = new RelationRepository();
-
+        _deleteBehaviorTypeRepository = new DeleteBehaviorTypeRepository();
 
         EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll(include: i => i.Include(x => x.Fields)));
         RelationTypeList = new ObservableCollection<RelationType>(_relationRepository.GetRelationTypes());
+        DeleteBehaviorTypeList = new ObservableCollection<DeleteBehaviorType>(_deleteBehaviorTypeRepository.GetAll());
 
         ForeignEntity = EntityList.First(f => f.Id == StateStatics.EntityDetailId);
 
@@ -47,7 +50,7 @@ public class FieldRelationsVM : BaseViewModel
         {
             try
             {
-                if (RelationCreateModel.PrimaryFieldId == default || RelationCreateModel.ForeignFieldId == default || RelationCreateModel.RelationTypeId == default)
+                if (RelationCreateModel.PrimaryFieldId == default || RelationCreateModel.ForeignFieldId == default || RelationCreateModel.RelationTypeId == default || RelationCreateModel.DeleteBehaviorTypeId == default)
                 {
                     MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;

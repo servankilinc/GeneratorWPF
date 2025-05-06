@@ -1,21 +1,6 @@
-﻿using GeneratorWPF.Dtos._Entity;
-using GeneratorWPF.Dtos._Field;
-using GeneratorWPF.ViewModel;
+﻿using GeneratorWPF.Services;
 using GeneratorWPF.ViewModel._Entity;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace GeneratorWPF.View._Entity.Partials
 {
@@ -24,11 +9,11 @@ namespace GeneratorWPF.View._Entity.Partials
     /// </summary>
     public partial class EntityCreateDialog : Window
     {
-        public EntityCreateDialog()
+        public EntityCreateDialog(INavigationService navigationService)
         {
             InitializeComponent();
 
-            var viewModel = new EntityCreateVM();
+            var viewModel = new EntityCreateVM(navigationService);
             viewModel.CloseDialogAction = () => this.Close(); // Dialog'u kapatma işlemi
             this.DataContext = viewModel;
         }

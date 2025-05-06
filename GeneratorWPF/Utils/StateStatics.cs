@@ -10,5 +10,6 @@
         public static int DtoDetailRelatedEntityId { get; set; }
         public static int DtoDetailUpdateDtoFieldId { get; set; }
         public static int DtoDetailValidationId { get; set; }
+        public static int DtoDetailAddDtoFieldDtoId { get; set; }
     }
 }

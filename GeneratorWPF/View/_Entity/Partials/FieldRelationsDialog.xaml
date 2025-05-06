@@ -6,13 +6,14 @@
         xmlns:local="clr-namespace:GeneratorWPF.View._Entity.Partials"
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Entity"
         mc:Ignorable="d"
-        Title="FieldRelationsDialog" Height="350" Width="800">
+        Title="FieldRelationsDialog" Height="400" Width="800">
     <!--<Window.DataContext>
         <vm:FieldRelationsVM/>
     </Window.DataContext>-->
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto" /> 
             <RowDefinition Height="*" /> 
             <RowDefinition Height="75" />
         </Grid.RowDefinitions>
@@ -24,14 +25,14 @@
         <StackPanel Grid.Row="0" Grid.Column="0" >
             <Label Content="Primary Key" FontSize="14" FontWeight="Bold" Margin="10" BorderThickness="0,0,0,1" BorderBrush="#ddd"  />
 
-            <Label Content="Select Entity" Margin="10, 0, 10, 0" />
+            <Label Content="Entity" Margin="10, 0, 10, 0" />
             <ComboBox 
                 ItemsSource="{Binding EntityList}" 
                 SelectedValue="{Binding PrimaryEntity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 DisplayMemberPath="Name"
                 Width="Auto" 
                 Margin="10, 0, 10, 0" />
-            <Label Content="Select Field" Margin="10, 10, 10, 0" />
+            <Label Content="Field" Margin="10, 0, 10, 0" />
             <ComboBox
                 ItemsSource="{Binding PrimaryEntity.Fields}" 
                 SelectedValue="{Binding RelationCreateModel.PrimaryFieldId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -39,21 +40,12 @@
                 SelectedValuePath="Id"
                 Width="Auto"
                 Margin="10, 0, 10, 10"/>
-
-            <Label Content="Select Relation Type" Margin="10, 0, 10, 0" />
-            <ComboBox 
-                ItemsSource="{Binding RelationTypeList}" 
-                SelectedValue="{Binding RelationCreateModel.RelationTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                DisplayMemberPath="Name"
-                SelectedValuePath="Id"
-                Width="Auto" 
-                Margin="10, 0, 10, 10" />
         </StackPanel>
 
-        <StackPanel Grid.Row="0" Grid.Column="1">
+        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,6">
             <Label Content="Foregin Key" FontSize="14" FontWeight="Bold" Margin="10" BorderThickness="0,0,0,1" BorderBrush="#ddd"  />
 
-            <Label Content="Select Entity" Margin="10, 0, 10, 0" />
+            <Label Content="Entity" Margin="10, 0, 10, 0" />
             <ComboBox 
                ItemsSource="{Binding EntityList}" 
                 SelectedValue="{Binding ForeignEntity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -62,17 +54,38 @@
                 Margin="10, 0, 10, 0" 
                 IsEnabled="False"/>
 
-            <Label Content="Select Field" Margin="10, 10, 10, 0" />
+            <Label Content="Field" Margin="10, 0, 10, 0" />
             <ComboBox 
                 ItemsSource="{Binding ForeignEntity.Fields}" 
                 SelectedValue="{Binding RelationCreateModel.ForeignFieldId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 DisplayMemberPath="Name"
                 SelectedValuePath="Id"
                 Width="Auto" 
-                Margin="10, 0, 10, 0"/>
+                Margin="10, 0, 10, 10"/>
+        </StackPanel>
 
-        </StackPanel> 
-        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="10" >
+        <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="#FFB2B2B2" BorderThickness="0,1,0,0"/>
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="1" Margin="0,15,0,0">
+            <Label Content="Relation Type" Margin="10, 0, 10, 0" />
+            <ComboBox 
+                ItemsSource="{Binding RelationTypeList}" 
+                SelectedValue="{Binding RelationCreateModel.RelationTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                DisplayMemberPath="Name"
+                SelectedValuePath="Id"
+                Width="Auto" 
+                Margin="10, 0, 10, 10" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,15,0,0">
+            <Label Content="Delete Behavior Type" Margin="10, 0, 10, 0" />
+            <ComboBox 
+                ItemsSource="{Binding DeleteBehaviorTypeList}" 
+                SelectedValue="{Binding RelationCreateModel.DeleteBehaviorTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                DisplayMemberPath="Name"
+                SelectedValuePath="Id"
+                Width="Auto" 
+                Margin="10, 0, 10, 10" />
+        </StackPanel>
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="10" >
             <Border DockPanel.Dock="Top" BorderBrush="#ddd" BorderThickness="0,1,0,0" Margin="0,0,0,10"> 
             </Border>
             <DockPanel HorizontalAlignment="Right">

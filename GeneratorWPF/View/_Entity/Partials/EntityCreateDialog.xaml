@@ -6,12 +6,13 @@
         xmlns:local="clr-namespace:GeneratorWPF.View._Entity.Partials"
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Entity"
         mc:Ignorable="d"
-        Title="Create Entity" Height="700" Width="700" Background="#eee">
-    <Window.DataContext>
+        Title="Create Entity" Height="700" Width="800" Background="#eee">
+    <!--<Window.DataContext>
         <vm:EntityCreateVM/>
-    </Window.DataContext>
+    </Window.DataContext>-->
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -20,14 +21,32 @@
         </Grid.RowDefinitions>
 
         <!-- Form Inputları -->
-        <StackPanel Margin="15">
+        <StackPanel Grid.Row="0" Margin="15">
             <Label FontSize="14" FontWeight="Bold" Content="Entity Name:" Margin="-5,0,0,0"/>
             <TextBox x:Name="txtName" Text="{Binding EntityToCreate.Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
             <Label FontSize="14" FontWeight="Bold" Margin="-5,0,0,0">Table Name:</Label>
             <TextBox x:Name="txtTableName" Text="{Binding EntityToCreate.TableName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
+        <DockPanel Grid.Row="1" Margin="10">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Soft Deletable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.SoftDeletable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Auditable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Auditable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Loggable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Loggable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Archivable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Archivable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
 
-        <ScrollViewer Grid.Row="1" Margin="15">
+        <ScrollViewer Grid.Row="2" Margin="15">
             <StackPanel>
                 <Label FontSize="14" FontWeight="Bold" Margin="-5,0,0,0">Fields Of Entity:</Label>
                 <DataGrid ItemsSource="{Binding FieldsToEntity, Mode=TwoWay}" Style="{StaticResource DataGridStyle}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False">
@@ -72,11 +91,11 @@
             </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15">
             <Button Content="Add Field" Command="{Binding AddFieldCommand}" Style="{StaticResource PrimaryBtnStyle}"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="3" Margin="15">
+        <ScrollViewer Grid.Row="4" Margin="15">
             <StackPanel>
                 <Label FontSize="14" FontWeight="Bold" Margin="-5,0,0,0">Preview Entity:</Label>
                 <DataGrid Width="Auto" ItemsSource="{Binding FieldsToEntity}" Style="{StaticResource DataGridStyle}" IsReadOnly="True" AutoGenerateColumns="False"  CanUserAddRows="False" CanUserDeleteRows="False">
@@ -92,7 +111,7 @@
         </ScrollViewer>
 
         <!-- Save/Cancel Butonları -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15">
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource SuccessBtnStyle}"/>
         </StackPanel>

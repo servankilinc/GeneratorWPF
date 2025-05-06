@@ -68,11 +68,20 @@ namespace GeneratorWPF.Repository
                 _context.SaveChanges();
 
                 // Insert Dto as FiledType
-                _context.Set<FieldType>().Add(new FieldType
+                var insertedFieldType = _context.FieldTypes.Add(new FieldType
                 {
                     Name = insertedDto.Name,
                     SourceTypeId = (int)FieldTypeSourceEnums.Dto,
-                });
+                }).Entity;
+                _context.SaveChanges();
+
+                // Insert Field
+                var insertedField = _context.Fields.Add(new Field()
+                {
+                    EntityId = createDto.RelatedEntityId,
+                    FieldTypeId = insertedFieldType.Id,
+                    Name = createDto.Name,
+                }).Entity;
                 _context.SaveChanges();
 
                 // Insert DtoFields

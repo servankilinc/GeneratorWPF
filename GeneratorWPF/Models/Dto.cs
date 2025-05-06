@@ -8,7 +8,11 @@ namespace GeneratorWPF.Models
         public int RelatedEntityId { get; set; }
         public string Name { get; set; } = null!;
         
-        public Entity RelatedEntity { get; set; } = null!;
-        public List<DtoField> DtoFields { get; set; } = null!;
+        public virtual Entity RelatedEntity { get; set; } = null!;
+        public virtual ICollection<DtoField> DtoFields { get; set; } = null!;
+        public virtual ICollection<Entity> CreateEntities { get; set; } = null!;
+        public virtual ICollection<Entity> UpdateEntities { get; set; } = null!;
+        public virtual ICollection<Entity> BasicResponseEntities { get; set; } = null!;
+        public virtual ICollection<Entity> DetailResponseEntities { get; set; } = null!;
     }
 }

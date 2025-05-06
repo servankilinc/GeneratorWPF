@@ -8,6 +8,7 @@ using GeneratorWPF.Dtos._Field;
 using System.Windows;
 using GeneratorWPF.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using GeneratorWPF.Services;
 
 namespace GeneratorWPF.ViewModel._Entity;
 
@@ -25,7 +26,7 @@ public class EntityCreateVM : BaseViewModel
     public ObservableCollection<FieldCreateDto> FieldsToEntity { get => _FieldsToEntity; set { _FieldsToEntity = value; OnPropertyChanged(nameof(FieldsToEntity)); }}
     public Action? CloseDialogAction { get; set; }
 
-    public EntityCreateVM()
+    public EntityCreateVM(INavigationService navigation)
     {
         _entityRepository = new EntityRepository();
         _fieldTypeRepository = new FieldTypeRepository();
@@ -38,7 +39,7 @@ public class EntityCreateVM : BaseViewModel
             FieldsToEntity.Add(new FieldCreateDto
             {
                 Name = "New Field",
-                FieldTypeId = 0,
+                FieldTypeId = 1,
                 IsRequired = true,
                 IsUnique = false,
                 IsList = false
@@ -67,6 +68,8 @@ public class EntityCreateVM : BaseViewModel
                 _entityRepository.Create(EntityToCreate);
 
                 MessageBox.Show("Entity Created Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                navigation.NavigateTo<EntityHomeVM>();
 
                 CloseDialogAction?.Invoke();
             }

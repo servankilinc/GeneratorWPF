@@ -5,5 +5,6 @@
         public int PrimaryFieldId { get; set; }
         public int ForeignFieldId { get; set; }
         public int RelationTypeId { get; set; }
+        public int DeleteBehaviorTypeId { get; set; }
     }
 }

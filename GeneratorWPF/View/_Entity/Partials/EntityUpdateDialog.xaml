@@ -3,11 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Entity"
         xmlns:local="clr-namespace:GeneratorWPF.View._Entity.Partials"
         mc:Ignorable="d"
         Title="EntityUpdateDialog" Height="350" Width="800">
+    <!--<Window.DataContext
+        <vm:EntityUpdateVM/>
+    </Window.DataContext>-->
+
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -15,16 +21,61 @@
         </Grid.RowDefinitions>
 
         <!-- Form Inputları -->
-        <StackPanel Grid.Row="1" Margin="15">
+        <StackPanel Grid.Row="0" Margin="15">
             <Label FontSize="14" FontWeight="Bold" Content="Entity Name:" Margin="-5,0,0,0"/>
             <TextBox Text="{Binding EntityUpdateModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
-        </StackPanel>
 
-        <StackPanel Grid.Row="2" Margin="15">
             <Label FontSize="14" FontWeight="Bold" Content="Table Name:" Margin="-5,0,0,0"/>
             <TextBox Text="{Binding EntityUpdateModel.TableName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
+            
+            <Label>Create Dto:</Label>
+            <ComboBox 
+                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                SelectedValue="{Binding EntityUpdateModel.CreateDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"/>
+
+            <Label>Update Dto:</Label>
+            <ComboBox 
+                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                SelectedValue="{Binding EntityUpdateModel.UpdateDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"/>
+            
+            <Label>Basic Response Dto:</Label>
+            <ComboBox 
+                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                SelectedValue="{Binding EntityUpdateModel.BasicResponseDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"/>
+
+            <Label>Detail Response Dto:</Label>
+            <ComboBox 
+                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                SelectedValue="{Binding EntityUpdateModel.DetailResponseDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"/>
         </StackPanel>
 
+        <DockPanel Grid.Row="2" Margin="10">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Soft Deletable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.SoftDeletable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Auditable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Auditable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Loggable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Loggable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Archivable:</Label>
+                <CheckBox IsChecked="{Binding EntityToCreate.Archivable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
+        
         <!-- Save/Cancel Butonları -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15">
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>

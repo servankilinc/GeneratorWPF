@@ -77,6 +77,8 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
                 {
                     Name = "New Field",
                     SourceFieldId = DtoToCreate.RelatedEntityId,
+                    IsRequired = true,
+                    IsList = false
                 });
             });
 

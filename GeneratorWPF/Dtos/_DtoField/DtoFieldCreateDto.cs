@@ -1,6 +1,4 @@
-﻿using GeneratorWPF.Dtos._ValidationParam;
-using GeneratorWPF.Models;
-using GeneratorWPF.Models.Enums;
+﻿using GeneratorWPF.Models;
 using GeneratorWPF.Repository;
 using GeneratorWPF.Utils;
 using System.Collections.ObjectModel;
@@ -15,6 +13,10 @@ public class DtoFieldCreateDto : ObversableObject
     {
         this._fieldRepository = fieldRepository;
     }
+
+    public int DtoId { get; set; }
+    public bool IsRequired { get; set; }
+    public bool IsList { get; set; }
 
     private int _sourceFieldId;
     public int SourceFieldId

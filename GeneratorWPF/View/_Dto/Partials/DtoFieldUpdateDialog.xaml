@@ -6,12 +6,14 @@
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Dto"
         xmlns:local="clr-namespace:GeneratorWPF.View._Dto.Partials"
         mc:Ignorable="d"
-        Title="DtoFieldUpdateDialog" Height="250" Width="800">
+        Title="DtoFieldUpdateDialog" Height="400" Width="800">
     <!--<Window.DataContext>
      <vm:DtoFieldUpdateVM/>
  </Window.DataContext>-->
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -27,7 +29,18 @@
             <TextBox Text="{Binding DtoFieldUpdateDto.Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+        <DockPanel Grid.Row="1" Margin="10">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Is Required:</Label>
+                <CheckBox IsChecked="{Binding DtoFieldUpdateDto.IsRequired, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Is List:</Label>
+                <CheckBox IsChecked="{Binding DtoFieldUpdateDto.IsList, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10" >
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource SuccessBtnStyle}"/>
         </StackPanel>

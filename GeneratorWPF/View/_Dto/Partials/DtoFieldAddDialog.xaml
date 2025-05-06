@@ -29,14 +29,11 @@
                 DisplayMemberPath="Name"
                 Tag="{Binding}"
             />
-        </StackPanel>
-        
-        <StackPanel Grid.Row="1" Margin="10">
+
             <Label>Entity Field:</Label>
-           
             <ComboBox
                ItemsSource="{Binding DtoFieldCreateDto.FieldList, Mode=OneWay}"
-               SelectedValue="{Binding SourceFieldId, UpdateSourceTrigger=PropertyChanged}"
+               SelectedValue="{Binding DtoFieldCreateDto.SourceFieldId, UpdateSourceTrigger=PropertyChanged}"
                SelectedValuePath="Id"
                DisplayMemberPath="Name"
                Tag="{Binding}"
@@ -45,6 +42,17 @@
             <Label Margin="0,10,0,0">Dto Field Name:</Label>
             <TextBox Text="{Binding DtoFieldCreateDto.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
+
+        <DockPanel Grid.Row="1" Margin="10">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Is Required:</Label>
+                <CheckBox IsChecked="{Binding DtoFieldCreateDto.IsRequired, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
+            </StackPanel>
+             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Label>Is List:</Label>
+                <CheckBox IsChecked="{Binding DtoFieldCreateDto.IsList, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>

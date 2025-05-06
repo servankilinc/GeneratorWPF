@@ -36,6 +36,8 @@ public class DtoFieldUpdateVM : BaseViewModel
             Id = dtoField.Id,
             Name = dtoField.Name,
             SourceFieldId = dtoField.SourceFieldId,
+            IsRequired = dtoField.IsRequired,
+            IsList = dtoField.IsList
         };
 
         SaveCommand = new RellayCommand(obj =>

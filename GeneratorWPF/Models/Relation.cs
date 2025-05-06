@@ -8,9 +8,11 @@ namespace GeneratorWPF.Models
         public int PrimaryFieldId { get; set; }
         public int ForeignFieldId { get; set; }
         public int RelationTypeId { get; set; }
+        public int DeleteBehaviorTypeId { get; set; }
 
-        public Field PrimaryField { get; set; } = null!;
-        public Field ForeignField { get; set; } = null!;
-        public RelationType RelationType { get; set; } = null!;
+        public virtual Field PrimaryField { get; set; } = null!;
+        public virtual Field ForeignField { get; set; } = null!;
+        public virtual RelationType RelationType { get; set; } = null!;
+        public virtual DeleteBehaviorType DeleteBehaviorType { get; set; } = null!;
     }
 }

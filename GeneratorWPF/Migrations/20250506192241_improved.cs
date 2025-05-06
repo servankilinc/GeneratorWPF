@@ -7,40 +7,24 @@
 namespace GeneratorWPF.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class improved : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "AppSettings",
+                name: "DeleteBehaviorTypes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SolutionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Path = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AppSettings", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Entities",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TableName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Control = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Entities", x => x.Id);
+                    table.PrimaryKey("PK_DeleteBehaviorTypes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -101,27 +85,6 @@ namespace GeneratorWPF.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Dtos",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RelatedEntityId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Dtos", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Dtos_Entities_RelatedEntityId",
-                        column: x => x.RelatedEntityId,
-                        principalTable: "Entities",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FieldTypes",
                 columns: table => new
                 {
@@ -138,6 +101,214 @@ namespace GeneratorWPF.Migrations
                         name: "FK_FieldTypes_FieldTypeSources_SourceTypeId",
                         column: x => x.SourceTypeId,
                         principalTable: "FieldTypeSources",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ValidatorTypeParams",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
+                    Key = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ValidatorTypeParams", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ValidatorTypeParams_ValidatorTypes_ValidatorTypeId",
+                        column: x => x.ValidatorTypeId,
+                        principalTable: "ValidatorTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppSettings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SolutionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Path = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DBConnectionString = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsThereUser = table.Column<bool>(type: "bit", nullable: false),
+                    UserEntityId = table.Column<int>(type: "int", nullable: true),
+                    IsThereRole = table.Column<bool>(type: "bit", nullable: false),
+                    RoleEntityId = table.Column<int>(type: "int", nullable: true),
+                    IsThereIdentiy = table.Column<bool>(type: "bit", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppSettings", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DtoFields",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DtoId = table.Column<int>(type: "int", nullable: false),
+                    SourceFieldId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    IsList = table.Column<bool>(type: "bit", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DtoFields", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Validations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DtoFieldId = table.Column<int>(type: "int", nullable: false),
+                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Validations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Validations_DtoFields_DtoFieldId",
+                        column: x => x.DtoFieldId,
+                        principalTable: "DtoFields",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Validations_ValidatorTypes_ValidatorTypeId",
+                        column: x => x.ValidatorTypeId,
+                        principalTable: "ValidatorTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ValidationParams",
+                columns: table => new
+                {
+                    ValidationId = table.Column<int>(type: "int", nullable: false),
+                    ValidatorTypeParamId = table.Column<int>(type: "int", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ValidationParams", x => new { x.ValidationId, x.ValidatorTypeParamId });
+                    table.ForeignKey(
+                        name: "FK_ValidationParams_Validations_ValidationId",
+                        column: x => x.ValidationId,
+                        principalTable: "Validations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ValidationParams_ValidatorTypeParams_ValidatorTypeParamId",
+                        column: x => x.ValidatorTypeParamId,
+                        principalTable: "ValidatorTypeParams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Dtos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RelatedEntityId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Dtos", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Entities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TableName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateDtoId = table.Column<int>(type: "int", nullable: true),
+                    UpdateDtoId = table.Column<int>(type: "int", nullable: true),
+                    BasicResponseDtoId = table.Column<int>(type: "int", nullable: true),
+                    DetailResponseDtoId = table.Column<int>(type: "int", nullable: true),
+                    SoftDeletable = table.Column<bool>(type: "bit", nullable: false),
+                    Auditable = table.Column<bool>(type: "bit", nullable: false),
+                    Loggable = table.Column<bool>(type: "bit", nullable: false),
+                    Archivable = table.Column<bool>(type: "bit", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Entities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Entities_Dtos_BasicResponseDtoId",
+                        column: x => x.BasicResponseDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Entities_Dtos_CreateDtoId",
+                        column: x => x.CreateDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Entities_Dtos_DetailResponseDtoId",
+                        column: x => x.DetailResponseDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Entities_Dtos_UpdateDtoId",
+                        column: x => x.UpdateDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Fields",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EntityId = table.Column<int>(type: "int", nullable: false),
+                    FieldTypeId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsUnique = table.Column<bool>(type: "bit", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    IsList = table.Column<bool>(type: "bit", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Fields", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Fields_Entities_EntityId",
+                        column: x => x.EntityId,
+                        principalTable: "Entities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Fields_FieldTypes_FieldTypeId",
+                        column: x => x.FieldTypeId,
+                        principalTable: "FieldTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -170,53 +341,42 @@ namespace GeneratorWPF.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ValidatorTypeParams",
+                name: "Relations",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
-                    Key = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PrimaryFieldId = table.Column<int>(type: "int", nullable: false),
+                    ForeignFieldId = table.Column<int>(type: "int", nullable: false),
+                    RelationTypeId = table.Column<int>(type: "int", nullable: false),
+                    DeleteBehaviorTypeId = table.Column<int>(type: "int", nullable: false),
                     Control = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ValidatorTypeParams", x => x.Id);
+                    table.PrimaryKey("PK_Relations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ValidatorTypeParams_ValidatorTypes_ValidatorTypeId",
-                        column: x => x.ValidatorTypeId,
-                        principalTable: "ValidatorTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Fields",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EntityId = table.Column<int>(type: "int", nullable: false),
-                    FieldTypeId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
-                    IsUnique = table.Column<bool>(type: "bit", nullable: false),
-                    IsList = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Fields", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Fields_Entities_EntityId",
-                        column: x => x.EntityId,
-                        principalTable: "Entities",
+                        name: "FK_Relations_DeleteBehaviorTypes_DeleteBehaviorTypeId",
+                        column: x => x.DeleteBehaviorTypeId,
+                        principalTable: "DeleteBehaviorTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Fields_FieldTypes_FieldTypeId",
-                        column: x => x.FieldTypeId,
-                        principalTable: "FieldTypes",
+                        name: "FK_Relations_Fields_ForeignFieldId",
+                        column: x => x.ForeignFieldId,
+                        principalTable: "Fields",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Relations_Fields_PrimaryFieldId",
+                        column: x => x.PrimaryFieldId,
+                        principalTable: "Fields",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Relations_RelationTypes_RelationTypeId",
+                        column: x => x.RelationTypeId,
+                        principalTable: "RelationTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -242,68 +402,6 @@ namespace GeneratorWPF.Migrations
                         name: "FK_Methods_Services_ServiceId",
                         column: x => x.ServiceId,
                         principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DtoFields",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DtoId = table.Column<int>(type: "int", nullable: false),
-                    SourceFieldId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DtoFields", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_DtoFields_Dtos_DtoId",
-                        column: x => x.DtoId,
-                        principalTable: "Dtos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_DtoFields_Fields_SourceFieldId",
-                        column: x => x.SourceFieldId,
-                        principalTable: "Fields",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Relations",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PrimaryFieldId = table.Column<int>(type: "int", nullable: false),
-                    ForeignFieldId = table.Column<int>(type: "int", nullable: false),
-                    RelationTypeId = table.Column<int>(type: "int", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Relations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Relations_Fields_ForeignFieldId",
-                        column: x => x.ForeignFieldId,
-                        principalTable: "Fields",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Relations_Fields_PrimaryFieldId",
-                        column: x => x.PrimaryFieldId,
-                        principalTable: "Fields",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Relations_RelationTypes_RelationTypeId",
-                        column: x => x.RelationTypeId,
-                        principalTable: "RelationTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -365,64 +463,24 @@ namespace GeneratorWPF.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Validations",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DtoFieldId = table.Column<int>(type: "int", nullable: false),
-                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Validations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Validations_DtoFields_DtoFieldId",
-                        column: x => x.DtoFieldId,
-                        principalTable: "DtoFields",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Validations_ValidatorTypes_ValidatorTypeId",
-                        column: x => x.ValidatorTypeId,
-                        principalTable: "ValidatorTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ValidationParams",
-                columns: table => new
-                {
-                    ValidationId = table.Column<int>(type: "int", nullable: false),
-                    ValidatorTypeParamId = table.Column<int>(type: "int", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ValidationParams", x => new { x.ValidationId, x.ValidatorTypeParamId });
-                    table.ForeignKey(
-                        name: "FK_ValidationParams_Validations_ValidationId",
-                        column: x => x.ValidationId,
-                        principalTable: "Validations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ValidationParams_ValidatorTypeParams_ValidatorTypeParamId",
-                        column: x => x.ValidatorTypeParamId,
-                        principalTable: "ValidatorTypeParams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.InsertData(
                 table: "AppSettings",
-                columns: new[] { "Id", "Control", "Path", "ProjectName", "SolutionName" },
-                values: new object[] { 1, false, "C:\\Generator", "MyProject", "MyProject" });
+                columns: new[] { "Id", "Control", "DBConnectionString", "IsThereIdentiy", "IsThereRole", "IsThereUser", "Path", "ProjectName", "RoleEntityId", "SolutionName", "UserEntityId" },
+                values: new object[] { 1, false, "", false, false, false, "C:\\Generator", "MyProject", null, "MyProject", null });
+
+            migrationBuilder.InsertData(
+                table: "DeleteBehaviorTypes",
+                columns: new[] { "Id", "Control", "Description", "Name" },
+                values: new object[,]
+                {
+                    { 1, false, null, "Cascade" },
+                    { 2, false, null, "ClientCascade" },
+                    { 3, false, null, "Restrict" },
+                    { 4, false, null, "ClientSetNull" },
+                    { 5, false, null, "ClientNoAction" },
+                    { 6, false, null, "SetNull" },
+                    { 7, false, null, "NoAction" }
+                });
 
             migrationBuilder.InsertData(
                 table: "FieldTypeSources",
@@ -512,6 +570,20 @@ namespace GeneratorWPF.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AppSettings_RoleEntityId",
+                table: "AppSettings",
+                column: "RoleEntityId",
+                unique: true,
+                filter: "[RoleEntityId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppSettings_UserEntityId",
+                table: "AppSettings",
+                column: "UserEntityId",
+                unique: true,
+                filter: "[UserEntityId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DtoFields_DtoId",
                 table: "DtoFields",
                 column: "DtoId");
@@ -525,6 +597,26 @@ namespace GeneratorWPF.Migrations
                 name: "IX_Dtos_RelatedEntityId",
                 table: "Dtos",
                 column: "RelatedEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_BasicResponseDtoId",
+                table: "Entities",
+                column: "BasicResponseDtoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_CreateDtoId",
+                table: "Entities",
+                column: "CreateDtoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_DetailResponseDtoId",
+                table: "Entities",
+                column: "DetailResponseDtoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_UpdateDtoId",
+                table: "Entities",
+                column: "UpdateDtoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Fields_EntityId",
@@ -567,6 +659,11 @@ namespace GeneratorWPF.Migrations
                 name: "IX_Methods_ServiceId",
                 table: "Methods",
                 column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Relations_DeleteBehaviorTypeId",
+                table: "Relations",
+                column: "DeleteBehaviorTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Relations_ForeignFieldId",
@@ -614,11 +711,53 @@ namespace GeneratorWPF.Migrations
                 name: "IX_ValidatorTypeParams_ValidatorTypeId",
                 table: "ValidatorTypeParams",
                 column: "ValidatorTypeId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AppSettings_Entities_RoleEntityId",
+                table: "AppSettings",
+                column: "RoleEntityId",
+                principalTable: "Entities",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AppSettings_Entities_UserEntityId",
+                table: "AppSettings",
+                column: "UserEntityId",
+                principalTable: "Entities",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_DtoFields_Dtos_DtoId",
+                table: "DtoFields",
+                column: "DtoId",
+                principalTable: "Dtos",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_DtoFields_Fields_SourceFieldId",
+                table: "DtoFields",
+                column: "SourceFieldId",
+                principalTable: "Fields",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Dtos_Entities_RelatedEntityId",
+                table: "Dtos",
+                column: "RelatedEntityId",
+                principalTable: "Entities",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Dtos_Entities_RelatedEntityId",
+                table: "Dtos");
+
             migrationBuilder.DropTable(
                 name: "AppSettings");
 
@@ -636,6 +775,9 @@ namespace GeneratorWPF.Migrations
 
             migrationBuilder.DropTable(
                 name: "Methods");
+
+            migrationBuilder.DropTable(
+                name: "DeleteBehaviorTypes");
 
             migrationBuilder.DropTable(
                 name: "RelationTypes");
@@ -659,19 +801,19 @@ namespace GeneratorWPF.Migrations
                 name: "ServiceLayers");
 
             migrationBuilder.DropTable(
-                name: "Dtos");
-
-            migrationBuilder.DropTable(
                 name: "Fields");
-
-            migrationBuilder.DropTable(
-                name: "Entities");
 
             migrationBuilder.DropTable(
                 name: "FieldTypes");
 
             migrationBuilder.DropTable(
                 name: "FieldTypeSources");
+
+            migrationBuilder.DropTable(
+                name: "Entities");
+
+            migrationBuilder.DropTable(
+                name: "Dtos");
         }
     }
 }

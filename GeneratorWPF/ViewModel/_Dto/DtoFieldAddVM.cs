@@ -35,7 +35,10 @@ public class DtoFieldAddVM : BaseViewModel
 
         DtoFieldCreateDto = new DtoFieldCreateDto(_fieldRepository) 
         { 
+            DtoId = StateStatics.DtoDetailAddDtoFieldDtoId,
             SourceEntityId = StateStatics.DtoDetailRelatedEntityId,
+            IsRequired = true,
+            IsList = false
         };
 
         SaveCommand = new RellayCommand(obj =>
@@ -47,7 +50,7 @@ public class DtoFieldAddVM : BaseViewModel
                     MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-
+                
                 _dtoFieldRepository.Add(DtoFieldCreateDto);
 
                 MessageBox.Show("Field Added Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);

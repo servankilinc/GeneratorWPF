@@ -4,6 +4,8 @@ using GeneratorWPF.Repository;
 using System.Windows;
 using GeneratorWPF.Dtos._Entity;
 using GeneratorWPF.Services;
+using System.Collections.ObjectModel;
+using GeneratorWPF.Models;
 
 namespace GeneratorWPF.ViewModel._Entity;
 
@@ -11,8 +13,11 @@ public class EntityUpdateVM : BaseViewModel
 {
     private INavigationService _navigation;
     private EntityRepository _entityRepository { get; set; } 
+    private DtoRepository _dtoRepository { get; set; } 
     public ICommand SaveCommand { get; set; }  
-    public ICommand CancelCommand { get; set; } 
+    public ICommand CancelCommand { get; set; }
+     
+    public ObservableCollection<Dto> DtoList { get; set; } = new ObservableCollection<Dto>();
 
     private EntityUpdateDto _entityUpdateModel;
     public EntityUpdateDto EntityUpdateModel { get => _entityUpdateModel; set { _entityUpdateModel = value; OnPropertyChanged(nameof(EntityUpdateModel)); } }
@@ -22,7 +27,9 @@ public class EntityUpdateVM : BaseViewModel
     {
         _navigation = navigation;
         _entityRepository = new EntityRepository();
+        _dtoRepository = new DtoRepository();
 
+        DtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll());
 
         var entity = _entityRepository.Get(f => f.Id == StateStatics.EntityUpdateId);
         EntityUpdateModel = new EntityUpdateDto
@@ -30,6 +37,14 @@ public class EntityUpdateVM : BaseViewModel
             Id = entity.Id,
             Name = entity.Name,
             TableName = entity.TableName,
+            SoftDeletable = entity.SoftDeletable,
+            Auditable = entity.Auditable,
+            Loggable = entity.Loggable,
+            Archivable = entity.Archivable,
+            CreateDtoId = entity.CreateDtoId,
+            UpdateDtoId = entity.UpdateDtoId,
+            BasicResponseDtoId = entity.BasicResponseDtoId,
+            DetailResponseDtoId = entity.DetailResponseDtoId
         };
 
         SaveCommand = new RellayCommand(obj =>

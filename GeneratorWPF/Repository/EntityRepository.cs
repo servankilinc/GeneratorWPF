@@ -1,6 +1,5 @@
 ﻿using GeneratorWPF.Context;
 using GeneratorWPF.Dtos._Entity;
-using GeneratorWPF.Dtos._Field;
 using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +18,11 @@ namespace GeneratorWPF.Repository
                 var entityToInsert = new Entity
                 {
                     Name = createDto.Name,
-                    TableName = createDto.TableName
+                    TableName = createDto.TableName,
+                    SoftDeletable = createDto.SoftDeletable,
+                    Auditable = createDto.Auditable,
+                    Loggable = createDto.Loggable,
+                    Archivable = createDto.Archivable
                 };
                 var insertedEntity = _context.Set<Entity>().Add(entityToInsert).Entity;
                 _context.SaveChanges();
@@ -96,6 +99,16 @@ namespace GeneratorWPF.Repository
  
             existData.Name = updateDto.Name;
             existData.TableName = updateDto.TableName;
+
+            existData.CreateDtoId = updateDto.CreateDtoId;
+            existData.UpdateDtoId = updateDto.UpdateDtoId;
+            existData.BasicResponseDtoId = updateDto.BasicResponseDtoId;
+            existData.DetailResponseDtoId = updateDto.DetailResponseDtoId;
+            
+            existData.SoftDeletable = updateDto.SoftDeletable;
+            existData.Auditable  = updateDto.Auditable;
+            existData.Loggable  = updateDto.Loggable;
+            existData.Archivable  = updateDto.Archivable;
 
             context.Entities.Update(existData);
             context.SaveChanges();

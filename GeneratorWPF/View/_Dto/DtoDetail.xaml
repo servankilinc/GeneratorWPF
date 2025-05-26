@@ -38,6 +38,8 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                     <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceField.Name}" Width="*" />
+                    <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" />
+                    <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" />
                     <!--<DataGridTextColumn Header="Source Field Entity" Binding="{Binding SourceField.Entity.Name}" Width="*" />-->
                     <DataGridTemplateColumn Header="Update" Width="90">
                         <DataGridTemplateColumn.CellTemplate>

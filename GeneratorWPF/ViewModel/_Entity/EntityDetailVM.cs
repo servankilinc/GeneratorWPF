@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using GeneratorWPF.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Windows;
+using GeneratorWPF.Models.Enums;
 
 namespace GeneratorWPF.ViewModel._Entity;
 
@@ -36,12 +37,12 @@ public class EntityDetailVM : BaseViewModel
         _relationRepository = new RelationRepository();
         _fieldRepository = new FieldRepository();
 
-        Entity = _entityRepository.Get(filter: f => f.Id == StateStatics.EntityDetailId, include: i => i.Include(e => e.Fields).ThenInclude(f => f.FieldType));
+        Entity = _entityRepository.Get(filter: f => f.Id == StateStatics.EntityDetailId, include: i => i.Include(e => e.Fields.Where(f => f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)).ThenInclude(f => f.FieldType));
         Fields = new ObservableCollection<Field>(Entity.Fields);
 
         var resultRelationList = _relationRepository.GetAll(
             filter: f => f.PrimaryField.EntityId == Entity.Id || f.ForeignField.EntityId == Entity.Id,
-            include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity).Include(x => x.ForeignField).ThenInclude(x => x.Entity).Include(x => x.RelationType));
+            include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity).Include(x => x.ForeignField).ThenInclude(x => x.Entity).Include(x => x.RelationType).Include(x => x.DeleteBehaviorType));
 
 
         RelationList = new ObservableCollection<RelationUIModel>(resultRelationList.Select(x => new RelationUIModel
@@ -49,7 +50,8 @@ public class EntityDetailVM : BaseViewModel
             Id = x.Id,
             PrimaryRelationName = $"{x.PrimaryField.Entity.Name} => {x.PrimaryField.Name}",
             ForeignRelationName = $"{x.ForeignField.Entity.Name} => {x.ForeignField.Name}",
-            RelationTypeName = x.RelationType.Name
+            RelationTypeName = x.RelationType.Name,
+            DeleteBehaviorTypeName = x.DeleteBehaviorType.Name
         }));
 
         ShowRelationsDialogCommand = new RellayCommand(obj =>
@@ -118,5 +120,6 @@ public class EntityDetailVM : BaseViewModel
         public string PrimaryRelationName { get; set; }
         public string ForeignRelationName { get; set; }
         public string RelationTypeName { get; set; }
+        public string DeleteBehaviorTypeName { get; set; }
     }
 }

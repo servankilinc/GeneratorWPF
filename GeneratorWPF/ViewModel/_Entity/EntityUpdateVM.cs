@@ -19,7 +19,7 @@ public class EntityUpdateVM : BaseViewModel
      
     public ObservableCollection<Dto> DtoList { get; set; } = new ObservableCollection<Dto>();
 
-    private EntityUpdateDto _entityUpdateModel;
+    private EntityUpdateDto _entityUpdateModel = new EntityUpdateDto();
     public EntityUpdateDto EntityUpdateModel { get => _entityUpdateModel; set { _entityUpdateModel = value; OnPropertyChanged(nameof(EntityUpdateModel)); } }
     public Action? CloseDialogAction { get; set; } // Dialog'u kapatmak için callback
 
@@ -29,7 +29,7 @@ public class EntityUpdateVM : BaseViewModel
         _entityRepository = new EntityRepository();
         _dtoRepository = new DtoRepository();
 
-        DtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll());
+        DtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId));
 
         var entity = _entityRepository.Get(f => f.Id == StateStatics.EntityUpdateId);
         EntityUpdateModel = new EntityUpdateDto

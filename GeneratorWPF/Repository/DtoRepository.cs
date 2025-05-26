@@ -110,10 +110,29 @@ namespace GeneratorWPF.Repository
             using var context = new LocalContext();
             var existData = context.Dtos.FirstOrDefault(f => f.Id == updateModel.Id);
             if(existData == null) throw new Exception("Data to update not found!");
-            
-            existData.Name = updateModel.Name;
-            existData.RelatedEntityId = updateModel.RelatedEntityId;
-            
+
+            bool nameChanged = existData.Name != updateModel.Name;
+            bool entityIdChanged = existData.RelatedEntityId != updateModel.RelatedEntityId;
+
+            var existFieldType = context.FieldTypes.FirstOrDefault(f => f.Name == existData.Name && f.SourceTypeId == (int)FieldTypeSourceEnums.Dto);
+            var existField = context.Fields.FirstOrDefault(f => f.Name == existData.Name && f.EntityId == existData.RelatedEntityId);
+            if (nameChanged)
+            {
+                if (existFieldType != null) existFieldType.Name = updateModel.Name;
+                if (existField != null) existField.Name = updateModel.Name;
+
+                existData.Name = updateModel.Name;
+            }
+            if (entityIdChanged)
+            {
+                if (existField != null) existField.EntityId = updateModel.RelatedEntityId;
+                
+                existData.RelatedEntityId = updateModel.RelatedEntityId;
+            }
+
+            if (existField != null) context.Update(existField);
+            if (existFieldType != null) context.Update(existFieldType);
+
             context.Update(existData);
             context.SaveChanges();
         }

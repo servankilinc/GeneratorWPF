@@ -89,6 +89,7 @@
                     <DataGridTextColumn Header="Primary Field" Binding="{Binding PrimaryRelationName}" Width="*" />
                     <DataGridTextColumn Header="Foreign Field" Binding="{Binding ForeignRelationName}" Width="*" />
                     <DataGridTextColumn Header="Type Name" Binding="{Binding RelationTypeName}" Width="*" />
+                    <DataGridTextColumn Header="Delete Behavior" Binding="{Binding DeleteBehaviorTypeName}" Width="*" />
                     <DataGridTemplateColumn Header="Remove" Width="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

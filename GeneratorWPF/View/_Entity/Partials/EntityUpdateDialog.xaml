@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Entity"
         xmlns:local="clr-namespace:GeneratorWPF.View._Entity.Partials"
         mc:Ignorable="d"
-        Title="EntityUpdateDialog" Height="350" Width="800">
+        Title="EntityUpdateDialog" Height="550" Width="800">
     <!--<Window.DataContext
         <vm:EntityUpdateVM/>
     </Window.DataContext>-->
@@ -60,19 +60,19 @@
         <DockPanel Grid.Row="2" Margin="10">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Label>Soft Deletable:</Label>
-                <CheckBox IsChecked="{Binding EntityToCreate.SoftDeletable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
+                <CheckBox IsChecked="{Binding EntityUpdateModel.SoftDeletable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Label>Auditable:</Label>
-                <CheckBox IsChecked="{Binding EntityToCreate.Auditable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+                <CheckBox IsChecked="{Binding EntityUpdateModel.Auditable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Label>Loggable:</Label>
-                <CheckBox IsChecked="{Binding EntityToCreate.Loggable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+                <CheckBox IsChecked="{Binding EntityUpdateModel.Loggable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Label>Archivable:</Label>
-                <CheckBox IsChecked="{Binding EntityToCreate.Archivable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+                <CheckBox IsChecked="{Binding EntityUpdateModel.Archivable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
             </StackPanel>
         </DockPanel>
         

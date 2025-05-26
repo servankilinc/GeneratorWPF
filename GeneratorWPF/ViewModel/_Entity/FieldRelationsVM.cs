@@ -7,6 +7,7 @@ using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using GeneratorWPF.Dtos._Relation;
 using GeneratorWPF.Services;
+using GeneratorWPF.Models.Enums;
 
 namespace GeneratorWPF.ViewModel._Entity;
 
@@ -40,7 +41,7 @@ public class FieldRelationsVM : BaseViewModel
         _relationRepository = new RelationRepository();
         _deleteBehaviorTypeRepository = new DeleteBehaviorTypeRepository();
 
-        EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll(include: i => i.Include(x => x.Fields)));
+        EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll(include: i => i.Include(x => x.Fields.Where(f => f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)).ThenInclude(ti => ti.FieldType)));
         RelationTypeList = new ObservableCollection<RelationType>(_relationRepository.GetRelationTypes());
         DeleteBehaviorTypeList = new ObservableCollection<DeleteBehaviorType>(_deleteBehaviorTypeRepository.GetAll());
 

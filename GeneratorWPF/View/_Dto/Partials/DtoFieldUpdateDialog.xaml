@@ -13,14 +13,22 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="10">
+            <Label>Source Entity:</Label>
+            <ComboBox 
+                ItemsSource="{Binding EntityList, Mode=TwoWay}"
+                SelectedValue="{Binding DtoFieldUpdateDto.SourceEntityId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"
+                Tag="{Binding}"
+            />
+            
             <Label>Entity Field:</Label>
             <ComboBox 
-              ItemsSource="{Binding Fields, UpdateSourceTrigger=PropertyChanged}"
+              ItemsSource="{Binding DtoFieldUpdateDto.FieldList, UpdateSourceTrigger=PropertyChanged}"
               SelectedValue="{Binding DtoFieldUpdateDto.SourceFieldId, UpdateSourceTrigger=PropertyChanged}"
               SelectedValuePath="Id"
               DisplayMemberPath="Name"

@@ -18,6 +18,7 @@ public class DtoFieldCreateDto : ObversableObject
     public bool IsRequired { get; set; }
     public bool IsList { get; set; }
 
+
     private int _sourceFieldId;
     public int SourceFieldId
     {

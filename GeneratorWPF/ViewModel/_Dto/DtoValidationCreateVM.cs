@@ -19,8 +19,7 @@ public class DtoValidationCreateVM : BaseViewModel
     private DtoFieldRepository _dtoFieldRepository { get; set; }
     public ICommand AddNewValidationCommand { get; set; }
     public ICommand SaveCommand { get; set; }
-    public ICommand RemoveValidationCommand { get; set; }
-    public ICommand ReturnDetailCommand { get; set; }
+    public ICommand RemoveValidationCommand { get; set; } 
     public ICommand CancelCommand { get; set; }
     public ObservableCollection<ValidatorType> ValidatorTypeList { get; set; }
     public ObservableCollection<DtoField> DtoFields { get; set; }
@@ -84,13 +83,7 @@ public class DtoValidationCreateVM : BaseViewModel
             {
                 MessageBox.Show("Validation Could not be Removed", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        });
-
-
-        ReturnDetailCommand = new RellayCommand(obj =>
-        {
-            _navigation.NavigateTo<DtoDetailVM>();
-        });
+        }); 
 
 
         CancelCommand = new RellayCommand(obj =>

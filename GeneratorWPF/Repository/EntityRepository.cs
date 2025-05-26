@@ -84,7 +84,11 @@ namespace GeneratorWPF.Repository
             using var _context = new LocalContext();
 
             var result = _context.Entities
-                .Include(e => e.Fields)
+                .Include(e => e.CreateDto)
+                .Include(e => e.UpdateDto)
+                .Include(e => e.BasicResponseDto)
+                .Include(e => e.DetailResponseDto)
+                .Include(e => e.Fields.Where(f => f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
                     .ThenInclude(f => f.FieldType);
 
             return result.ToList();

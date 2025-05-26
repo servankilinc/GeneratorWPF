@@ -5,6 +5,8 @@ using System.Windows;
 using GeneratorWPF.Services;
 using GeneratorWPF.Dtos._DtoField;
 using GeneratorWPF.Models;
+using System.Collections.ObjectModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeneratorWPF.ViewModel._Dto;
 
@@ -13,11 +15,11 @@ public class DtoFieldUpdateVM : BaseViewModel
     private INavigationService _navigation;
     private FieldRepository _fieldRepository { get; set; }
     private DtoFieldRepository _dtoFieldRepository { get; set; }
+    private EntityRepository _entityRepository { get; set; }
     public ICommand SaveCommand { get; set; }
     public ICommand CancelCommand { get; set; }
 
-    private List<Field> _fields = new List<Field>();
-    public List<Field> Fields { get => _fields; set { _fields = value; OnPropertyChanged(nameof(Fields)); } }
+    public ObservableCollection<Entity> EntityList { get; set; }
 
     private DtoFieldUpdateDto _dtoFieldUpdateDto;
     public DtoFieldUpdateDto DtoFieldUpdateDto { get => _dtoFieldUpdateDto; set { _dtoFieldUpdateDto = value; OnPropertyChanged(nameof(DtoFieldUpdateDto)); } }
@@ -28,16 +30,20 @@ public class DtoFieldUpdateVM : BaseViewModel
         _navigation = navigation;
         _fieldRepository = new FieldRepository();
         _dtoFieldRepository = new DtoFieldRepository();
-        Fields = _fieldRepository.GetAll(filter: f => f.EntityId == StateStatics.DtoDetailRelatedEntityId, enableTracking: false);
+        _entityRepository = new EntityRepository();
 
-        var dtoField = _dtoFieldRepository.Get(f => f.Id == StateStatics.DtoDetailUpdateDtoFieldId);
-        DtoFieldUpdateDto = new DtoFieldUpdateDto
+        EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
+
+        var dtoField = _dtoFieldRepository.Get(f => f.Id == StateStatics.DtoDetailUpdateDtoFieldId, include: i => i.Include(x => x.SourceField));
+         
+        DtoFieldUpdateDto = new DtoFieldUpdateDto(_fieldRepository)
         {
             Id = dtoField.Id,
+            SourceEntityId = dtoField.SourceField.EntityId,
             Name = dtoField.Name,
             SourceFieldId = dtoField.SourceFieldId,
             IsRequired = dtoField.IsRequired,
-            IsList = dtoField.IsList
+            IsList = dtoField.IsList,
         };
 
         SaveCommand = new RellayCommand(obj =>

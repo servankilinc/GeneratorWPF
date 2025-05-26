@@ -74,6 +74,8 @@
                                 <DataGridTextColumn Header="Field Name" Binding="{Binding Name}" />
                                 <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceField.Name}" />
                                 <DataGridTextColumn Header="Source Field Type" Binding="{Binding SourceField.FieldType.Name}" />
+                                <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" />
+                                <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </DataTemplate>

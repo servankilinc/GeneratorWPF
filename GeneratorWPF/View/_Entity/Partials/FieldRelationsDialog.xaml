@@ -52,7 +52,7 @@
                 DisplayMemberPath="Name"
                 Width="Auto" 
                 Margin="10, 0, 10, 0" 
-                IsEnabled="False"/>
+            />
 
             <Label Content="Field" Margin="10, 0, 10, 0" />
             <ComboBox 

@@ -30,28 +30,35 @@
             
             <Label>Create Dto:</Label>
             <ComboBox 
-                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                ItemsSource="{Binding CreateDtoList, Mode=TwoWay}"
                 SelectedValue="{Binding EntityUpdateModel.CreateDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 SelectedValuePath="Id"
                 DisplayMemberPath="Name"/>
 
             <Label>Update Dto:</Label>
             <ComboBox 
-                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                ItemsSource="{Binding UpdateDtoList, Mode=TwoWay}"
                 SelectedValue="{Binding EntityUpdateModel.UpdateDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 SelectedValuePath="Id"
                 DisplayMemberPath="Name"/>
             
+            <Label>Delete Dto:</Label>
+            <ComboBox 
+             ItemsSource="{Binding DeleteDtoList, Mode=TwoWay}"
+             SelectedValue="{Binding EntityUpdateModel.DeleteDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+             SelectedValuePath="Id"
+             DisplayMemberPath="Name"/>
+
             <Label>Basic Response Dto:</Label>
             <ComboBox 
-                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                ItemsSource="{Binding ReadDtoList, Mode=TwoWay}"
                 SelectedValue="{Binding EntityUpdateModel.BasicResponseDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 SelectedValuePath="Id"
                 DisplayMemberPath="Name"/>
 
             <Label>Detail Response Dto:</Label>
             <ComboBox 
-                ItemsSource="{Binding DtoList, Mode=TwoWay}"
+                ItemsSource="{Binding ReadDtoList, Mode=TwoWay}"
                 SelectedValue="{Binding EntityUpdateModel.DetailResponseDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 SelectedValuePath="Id"
                 DisplayMemberPath="Name"/>

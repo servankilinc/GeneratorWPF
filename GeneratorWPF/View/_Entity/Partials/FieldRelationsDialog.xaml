@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GeneratorWPF.View._Entity.Partials"
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Entity"
         mc:Ignorable="d"
-        Title="FieldRelationsDialog" Height="400" Width="800">
+        Title="FieldRelationsDialog" Height="500" Width="800">
     <!--<Window.DataContext>
         <vm:FieldRelationsVM/>
     </Window.DataContext>-->
@@ -40,6 +40,9 @@
                 SelectedValuePath="Id"
                 Width="Auto"
                 Margin="10, 0, 10, 10"/>
+
+            <Label FontSize="14" FontWeight="Bold" Content="Virtual Field Name:"  Margin="10, 0, 10, 0"/>
+            <TextBox x:Name="txtName" Text="{Binding RelationCreateModel.PrimaryEntityVirPropName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
 
         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,6">
@@ -57,11 +60,14 @@
             <Label Content="Field" Margin="10, 0, 10, 0" />
             <ComboBox 
                 ItemsSource="{Binding ForeignEntity.Fields}" 
-                SelectedValue="{Binding RelationCreateModel.ForeignFieldId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                SelectedValue="{Binding ForeignFieldId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 DisplayMemberPath="Name"
                 SelectedValuePath="Id"
                 Width="Auto" 
                 Margin="10, 0, 10, 10"/>
+
+            <Label FontSize="14" FontWeight="Bold" Content="Virtual Property Name:"  Margin="10, 0, 10, 0"/>
+            <TextBox Text="{Binding RelationCreateModel.ForeignEntityVirPropName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
 
         <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="#FFB2B2B2" BorderThickness="0,1,0,0"/>

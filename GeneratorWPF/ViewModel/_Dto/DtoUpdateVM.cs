@@ -14,11 +14,18 @@ public class DtoUpdateVM : BaseViewModel
     private readonly INavigationService _navigation;
     private EntityRepository _entityRepository { get; set; }
     private DtoRepository _dtoRepository { get; set; }
+    private CrudTypeRepository _crudTypeRepository { get; set; }
+
     public ICommand SaveCommand { get; set; }
     public ICommand CancelCommand { get; set; }
     public Action? CloseDialogAction { get; set; }
+    
     private ObservableCollection<Entity> _entityList;
     public ObservableCollection<Entity> EntityList { get => _entityList; set { _entityList = value; OnPropertyChanged(nameof(EntityList)); } }
+
+    private ObservableCollection<CrudType> _crudTypes;
+    public ObservableCollection<CrudType> CrudTypes { get => _crudTypes; set { _crudTypes = value; OnPropertyChanged(nameof(CrudTypes)); } }
+
     public DtoUpdateDto DtoUpdateModel { get; set; } = new DtoUpdateDto();
 
     public DtoUpdateVM(INavigationService navigationService)
@@ -26,22 +33,26 @@ public class DtoUpdateVM : BaseViewModel
         _navigation = navigationService;
         _entityRepository = new EntityRepository();
         _dtoRepository = new DtoRepository();
+        _crudTypeRepository = new CrudTypeRepository();
 
         EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
+        CrudTypes = new ObservableCollection<CrudType>(_crudTypeRepository.GetAll());
+
         var dto = _dtoRepository.Get(f => f.Id == StateStatics.DtoUpdateId);
 
         DtoUpdateModel = new DtoUpdateDto
         {
             Id = dto.Id,
             Name = dto.Name,
-            RelatedEntityId = dto.RelatedEntityId
+            RelatedEntityId = dto.RelatedEntityId,
+            CrudTypeId = dto.CrudTypeId,
         };
 
         SaveCommand = new RellayCommand(obj =>
         {
             try
             {
-                if (string.IsNullOrEmpty(DtoUpdateModel.Name) || DtoUpdateModel.RelatedEntityId == default || DtoUpdateModel.Id == default)
+                if (string.IsNullOrEmpty(DtoUpdateModel.Name) || DtoUpdateModel.RelatedEntityId == default || DtoUpdateModel.CrudTypeId == default || DtoUpdateModel.Id == default)
                 {
                     MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;

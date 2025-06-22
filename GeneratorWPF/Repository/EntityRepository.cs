@@ -86,6 +86,7 @@ namespace GeneratorWPF.Repository
             var result = _context.Entities
                 .Include(e => e.CreateDto)
                 .Include(e => e.UpdateDto)
+                .Include(e => e.DeleteDto)
                 .Include(e => e.BasicResponseDto)
                 .Include(e => e.DetailResponseDto)
                 .Include(e => e.Fields.Where(f => f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
@@ -106,6 +107,7 @@ namespace GeneratorWPF.Repository
 
             existData.CreateDtoId = updateDto.CreateDtoId;
             existData.UpdateDtoId = updateDto.UpdateDtoId;
+            existData.DeleteDtoId = updateDto.DeleteDtoId;
             existData.BasicResponseDtoId = updateDto.BasicResponseDtoId;
             existData.DetailResponseDtoId = updateDto.DetailResponseDtoId;
             

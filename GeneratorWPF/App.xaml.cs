@@ -1,11 +1,9 @@
 ﻿using GeneratorWPF.Services;
-using GeneratorWPF.Utils;
-using GeneratorWPF.View._Entity;
 using GeneratorWPF.ViewModel;
 using GeneratorWPF.ViewModel._Dto;
-using GeneratorWPF.ViewModel._Entity; 
-using Microsoft.Extensions.DependencyInjection;  
-using System.Windows; 
+using GeneratorWPF.ViewModel._Entity;
+using Microsoft.Extensions.DependencyInjection;
+using System.Windows;
 
 namespace GeneratorWPF;
 

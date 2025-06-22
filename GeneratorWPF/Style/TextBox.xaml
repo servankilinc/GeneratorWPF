@@ -2,12 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style x:Key="textBoxStyle" TargetType="TextBox">
         <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Padding" Value="3"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush" Value="#cfcfcf"/>
         <Setter Property="Background" Value="White"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinHeight" Value="25"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="20"/>
 
         <Setter Property="Template">
             <Setter.Value>

@@ -4,8 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GeneratorWPF.View._Dto"
+             xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Dto"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+
+    <!--<UserControl.DataContext>
+        <vm:DtoHomeVM/>
+    </UserControl.DataContext>-->
+
     <Grid>
 
         <Grid.RowDefinitions>
@@ -30,6 +36,7 @@
             <DataGrid ItemsSource="{Binding DtoList}" Style="{StaticResource DataGridStyle}" ColumnHeaderStyle="{StaticResource StyleDataGridHeader}" AutoGenerateColumns="False" Margin="10" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Dto Name" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="Crud Type" Binding="{Binding CrudType.Name}" Width="*" />
                     <DataGridTextColumn Header="Related Entity" Binding="{Binding RelatedEntity.Name}" Width="*" />
                     <DataGridTemplateColumn Header="Detail" Width="*">
                         <DataGridTemplateColumn.CellTemplate>
@@ -72,6 +79,7 @@
                         <DataGrid ItemsSource="{Binding DtoFields}" Style="{StaticResource DataGridStyle}" ColumnHeaderStyle="{StaticResource StyleDataGridHeader}" AutoGenerateColumns="False" Margin="10" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Field Name" Binding="{Binding Name}" />
+                                <DataGridTextColumn Header="Source Entity Name" Binding="{Binding SourceField.Entity.Name}" />
                                 <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceField.Name}" />
                                 <DataGridTextColumn Header="Source Field Type" Binding="{Binding SourceField.FieldType.Name}" />
                                 <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" />

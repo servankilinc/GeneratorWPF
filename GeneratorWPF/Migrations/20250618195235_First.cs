@@ -7,11 +7,25 @@
 namespace GeneratorWPF.Migrations
 {
     /// <inheritdoc />
-    public partial class improved : Migration
+    public partial class First : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "CrudTypes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Control = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CrudTypes", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "DeleteBehaviorTypes",
                 columns: table => new
@@ -132,15 +146,15 @@ namespace GeneratorWPF.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SolutionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Path = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DBConnectionString = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SolutionName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Path = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DBConnectionString = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsThereIdentiy = table.Column<bool>(type: "bit", nullable: false),
                     IsThereUser = table.Column<bool>(type: "bit", nullable: false),
                     UserEntityId = table.Column<int>(type: "int", nullable: true),
                     IsThereRole = table.Column<bool>(type: "bit", nullable: false),
                     RoleEntityId = table.Column<int>(type: "int", nullable: true),
-                    IsThereIdentiy = table.Column<bool>(type: "bit", nullable: false),
                     Control = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -227,12 +241,19 @@ namespace GeneratorWPF.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RelatedEntityId = table.Column<int>(type: "int", nullable: false),
+                    CrudTypeId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Control = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Dtos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Dtos_CrudTypes_CrudTypeId",
+                        column: x => x.CrudTypeId,
+                        principalTable: "CrudTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -245,6 +266,7 @@ namespace GeneratorWPF.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreateDtoId = table.Column<int>(type: "int", nullable: true),
                     UpdateDtoId = table.Column<int>(type: "int", nullable: true),
+                    DeleteDtoId = table.Column<int>(type: "int", nullable: true),
                     BasicResponseDtoId = table.Column<int>(type: "int", nullable: true),
                     DetailResponseDtoId = table.Column<int>(type: "int", nullable: true),
                     SoftDeletable = table.Column<bool>(type: "bit", nullable: false),
@@ -265,6 +287,12 @@ namespace GeneratorWPF.Migrations
                     table.ForeignKey(
                         name: "FK_Entities_Dtos_CreateDtoId",
                         column: x => x.CreateDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Entities_Dtos_DeleteDtoId",
+                        column: x => x.DeleteDtoId,
                         principalTable: "Dtos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -350,6 +378,8 @@ namespace GeneratorWPF.Migrations
                     ForeignFieldId = table.Column<int>(type: "int", nullable: false),
                     RelationTypeId = table.Column<int>(type: "int", nullable: false),
                     DeleteBehaviorTypeId = table.Column<int>(type: "int", nullable: false),
+                    PrimaryEntityVirPropName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ForeignEntityVirPropName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Control = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -466,7 +496,18 @@ namespace GeneratorWPF.Migrations
             migrationBuilder.InsertData(
                 table: "AppSettings",
                 columns: new[] { "Id", "Control", "DBConnectionString", "IsThereIdentiy", "IsThereRole", "IsThereUser", "Path", "ProjectName", "RoleEntityId", "SolutionName", "UserEntityId" },
-                values: new object[] { 1, false, "", false, false, false, "C:\\Generator", "MyProject", null, "MyProject", null });
+                values: new object[] { 1, false, "Data Source=.; Initial Catalog=MyGeneratedDatabase; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;", true, false, false, "C:\\Generator", "MyProject", null, "MyProject", null });
+
+            migrationBuilder.InsertData(
+                table: "CrudTypes",
+                columns: new[] { "Id", "Control", "Name" },
+                values: new object[,]
+                {
+                    { 1, false, "Read" },
+                    { 2, false, "Create" },
+                    { 3, false, "Update" },
+                    { 4, false, "Delete" }
+                });
 
             migrationBuilder.InsertData(
                 table: "DeleteBehaviorTypes",
@@ -594,6 +635,11 @@ namespace GeneratorWPF.Migrations
                 column: "SourceFieldId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Dtos_CrudTypeId",
+                table: "Dtos",
+                column: "CrudTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Dtos_RelatedEntityId",
                 table: "Dtos",
                 column: "RelatedEntityId");
@@ -607,6 +653,11 @@ namespace GeneratorWPF.Migrations
                 name: "IX_Entities_CreateDtoId",
                 table: "Entities",
                 column: "CreateDtoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_DeleteDtoId",
+                table: "Entities",
+                column: "DeleteDtoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Entities_DetailResponseDtoId",
@@ -814,6 +865,9 @@ namespace GeneratorWPF.Migrations
 
             migrationBuilder.DropTable(
                 name: "Dtos");
+
+            migrationBuilder.DropTable(
+                name: "CrudTypes");
         }
     }
 }

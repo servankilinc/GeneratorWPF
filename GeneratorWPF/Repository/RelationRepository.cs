@@ -1,12 +1,57 @@
 ﻿using GeneratorWPF.Context;
 using GeneratorWPF.Dtos._Relation;
 using GeneratorWPF.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeneratorWPF.Repository
 {
 
     public class RelationRepository : EFRepositoryBase<Relation>
     {
+
+        public List<Relation> GetRelationsOfEntity(int entityId)
+        {
+            using var _context = new LocalContext();
+            var fieldsOfEntities = _context.Fields.Where(f => f.EntityId == entityId).AsNoTracking().Select(d => d.Id).ToList();
+            return _context.Relations
+                    .Where(f => 
+                        fieldsOfEntities.Contains(f.PrimaryFieldId) || fieldsOfEntities.Contains(f.ForeignFieldId))
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking()
+                    .ToList();
+        }
+
+        public List<Relation> GetRelationsOnPrimary(int entityId)
+        {
+            using var _context = new LocalContext();
+            var fieldsOfEntities = _context.Fields.Where(f => f.EntityId == entityId).AsNoTracking().Select(d => d.Id).ToList();
+            return _context.Relations
+                    .Where(f => fieldsOfEntities.Contains(f.PrimaryFieldId))
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking()
+                    .ToList();
+        }
+
+        public List<Relation> GetRelationsOnForeign(int entityId)
+        {
+            using var _context = new LocalContext();
+            var fieldsOfEntities = _context.Fields.Where(f => f.EntityId == entityId).AsNoTracking().Select(d => d.Id).ToList();
+            return _context.Relations
+                    .Where(f => fieldsOfEntities.Contains(f.ForeignFieldId))
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking()
+                    .ToList();
+        }
+
         public void AddRelation(RelationCreateDto createDto)
         {
             using var _context = new LocalContext();
@@ -15,8 +60,27 @@ namespace GeneratorWPF.Repository
                 PrimaryFieldId = createDto.PrimaryFieldId,
                 ForeignFieldId = createDto.ForeignFieldId,
                 RelationTypeId = createDto.RelationTypeId,
-                DeleteBehaviorTypeId = createDto.DeleteBehaviorTypeId
+                DeleteBehaviorTypeId = createDto.DeleteBehaviorTypeId,
+                PrimaryEntityVirPropName = createDto.PrimaryEntityVirPropName!,
+                ForeignEntityVirPropName = createDto.ForeignEntityVirPropName!
             });
+            _context.SaveChanges();
+        }
+
+        public void UpdateRelation(RelationUpdateDto updateDto)
+        {
+            using var _context = new LocalContext();
+            var relation = _context.Relations.FirstOrDefault(f => f.Id == updateDto.Id);
+            if (relation == null) throw new Exception("Relation not found to update.");
+
+            relation.PrimaryFieldId = updateDto.PrimaryFieldId;
+            relation.ForeignFieldId = updateDto.ForeignFieldId;
+            relation.RelationTypeId = updateDto.RelationTypeId;
+            relation.DeleteBehaviorTypeId = updateDto.DeleteBehaviorTypeId;
+            relation.PrimaryEntityVirPropName = updateDto.PrimaryEntityVirPropName!;
+            relation.ForeignEntityVirPropName = updateDto.ForeignEntityVirPropName!;
+
+            _context.Update(relation);
             _context.SaveChanges();
         }
 

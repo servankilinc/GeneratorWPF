@@ -18,7 +18,6 @@ public class DtoDetailVM : BaseViewModel
     private DtoRepository _dtoRepository;
     private DtoFieldRepository _dtoFieldRepository;
     private ValidationRepository _validationRepository;
-    public ICommand UpdateChangesCommand { get; set; }
     public ICommand ReturnHomeCommand { get; set; }
     public ICommand ShowAddDtoFieldCommand { get; set; }
     public ICommand ShowUpdateDtoFieldCommand { get; set; }
@@ -32,15 +31,15 @@ public class DtoDetailVM : BaseViewModel
     public Dto Dto { get => _dto; set { _dto = value; OnPropertyChanged(nameof(Dto)); } }
 
     private DtoUpdateDto _dtoUpdateModel;
-    public DtoUpdateDto DtoUpdateModel { get => _dtoUpdateModel; set { _dtoUpdateModel = value; OnPropertyChanged(nameof(DtoUpdateModel)); }}
+    public DtoUpdateDto DtoUpdateModel { get => _dtoUpdateModel; set { _dtoUpdateModel = value; OnPropertyChanged(nameof(DtoUpdateModel)); } }
 
     private ObservableCollection<DtoField> _dtoFields;
-    public ObservableCollection<DtoField> DtoFields { get => _dtoFields; set { _dtoFields = value; OnPropertyChanged(nameof(DtoFields)); }}
-    
+    public ObservableCollection<DtoField> DtoFields { get => _dtoFields; set { _dtoFields = value; OnPropertyChanged(nameof(DtoFields)); } }
+
     private ObservableCollection<ValidationResponse> _validations;
-    public ObservableCollection<ValidationResponse> Validations { get => _validations; set { _validations = value; OnPropertyChanged(nameof(Validations)); }}
+    public ObservableCollection<ValidationResponse> Validations { get => _validations; set { _validations = value; OnPropertyChanged(nameof(Validations)); } }
     private Visibility _btnCreateEnable = Visibility.Visible;
-    public Visibility BtnCreateEnable { get => _btnCreateEnable; set { _btnCreateEnable = value; OnPropertyChanged(nameof(BtnCreateEnable)); }}
+    public Visibility BtnCreateEnable { get => _btnCreateEnable; set { _btnCreateEnable = value; OnPropertyChanged(nameof(BtnCreateEnable)); } }
     private Visibility _btnAddValidationEnable = Visibility.Hidden;
     public Visibility BtnAddValidationEnable { get => _btnAddValidationEnable; set { _btnAddValidationEnable = value; OnPropertyChanged(nameof(BtnAddValidationEnable)); } }
     public DtoDetailVM(INavigationService navigation)
@@ -54,40 +53,12 @@ public class DtoDetailVM : BaseViewModel
         Dto = _dtoRepository.Get(f => f.Id == StateStatics.DtoDetailId);
         StateStatics.DtoDetailRelatedEntityId = Dto.RelatedEntityId;
 
-        DtoUpdateModel = new DtoUpdateDto
-        {
-            Id = Dto.Id,
-            Name = Dto.Name,
-            RelatedEntityId = Dto.RelatedEntityId,
-        };
-
         DtoFields = new ObservableCollection<DtoField>(_dtoFieldRepository.GetBySourceField(f => f.DtoId == StateStatics.DtoDetailId));
         Validations = new ObservableCollection<ValidationResponse>(_dtoFieldRepository.GetValidations(StateStatics.DtoDetailId));
-        
+
         BtnCreateEnable = Validations.Count > 0 ? Visibility.Hidden : Visibility.Visible;
         BtnAddValidationEnable = Validations.Count > 0 ? Visibility.Visible : Visibility.Hidden;
 
-        UpdateChangesCommand = new RellayCommand(obj =>
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(DtoUpdateModel.Name) || DtoUpdateModel.Id == default || DtoUpdateModel.RelatedEntityId == default)
-                {
-                    MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                _dtoRepository.Update(DtoUpdateModel);
-
-                MessageBox.Show("Dto Updated Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                _navigation.NavigateTo<DtoHomeVM>();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        });
 
         ShowAddDtoFieldCommand = new RellayCommand(obj =>
         {
@@ -174,7 +145,7 @@ public class DtoDetailVM : BaseViewModel
                 dialog.Show();
             }
         });
-         
+
 
         RemoveValidationCommand = new RellayCommand(validationId =>
         {

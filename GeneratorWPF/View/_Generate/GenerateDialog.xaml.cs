@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GeneratorWPF.Services;
+using GeneratorWPF.ViewModel._Entity;
+using GeneratorWPF.ViewModel._Generate;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace GeneratorWPF.View._Generate
 {
@@ -19,9 +10,13 @@ namespace GeneratorWPF.View._Generate
     /// </summary>
     public partial class GenerateDialog : Window
     {
-        public GenerateDialog()
+        public GenerateDialog(INavigationService navigationService)
         {
             InitializeComponent();
+
+            var viewModel = new GenerateVM(navigationService);
+            viewModel.CloseDialogAction = () => this.Close(); // Dialog'u kapatma işlemi
+            this.DataContext = viewModel;
         }
     }
 }

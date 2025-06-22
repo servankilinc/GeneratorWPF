@@ -10,6 +10,7 @@ namespace GeneratorWPF.Models
 
         public int? CreateDtoId { get; set; }
         public int? UpdateDtoId { get; set; }
+        public int? DeleteDtoId { get; set; }
         public int? BasicResponseDtoId { get; set; }
         public int? DetailResponseDtoId { get; set; }
 
@@ -20,6 +21,7 @@ namespace GeneratorWPF.Models
 
         public virtual Dto? CreateDto { get; set; }
         public virtual Dto? UpdateDto { get; set; }
+        public virtual Dto? DeleteDto { get; set; }
         public virtual Dto? BasicResponseDto { get; set; }
         public virtual Dto? DetailResponseDto { get; set; }
         public virtual ICollection<Field> Fields { get; set; } = null!;

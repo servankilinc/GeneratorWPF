@@ -47,9 +47,13 @@ namespace GeneratorWPF.Repository
             return context.Dtos
                     .Where(expresion)
                     .Include(i => i.RelatedEntity)
+                    .Include(i => i.CrudType)
                     .Include(i => i.DtoFields)
                         .ThenInclude(df => df.SourceField)
                             .ThenInclude(sf => sf.FieldType)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.SourceField)
+                            .ThenInclude(sf => sf.Entity)
                     .ToList();
         }
 
@@ -64,10 +68,11 @@ namespace GeneratorWPF.Repository
                 {
                     Name = createDto.Name,
                     RelatedEntityId = createDto.RelatedEntityId,
+                    CrudTypeId = createDto.CrudTypeId,
                 }).Entity;
                 _context.SaveChanges();
 
-                // Insert Dto as FiledType
+                // Insert Dto as FiledType (Dto ismi güncellendiğinde bu kaydın ismi de güncellenmeli) // add like variable int, string ...
                 var insertedFieldType = _context.FieldTypes.Add(new FieldType
                 {
                     Name = insertedDto.Name,
@@ -75,7 +80,7 @@ namespace GeneratorWPF.Repository
                 }).Entity;
                 _context.SaveChanges();
 
-                // Insert Field
+                // Insert Field (Dto EntityId ve Name güncellendiğinde bu kayıt güncellenmeli) // ad like props name, age ...
                 var insertedField = _context.Fields.Add(new Field()
                 {
                     EntityId = createDto.RelatedEntityId,
@@ -114,8 +119,8 @@ namespace GeneratorWPF.Repository
             bool nameChanged = existData.Name != updateModel.Name;
             bool entityIdChanged = existData.RelatedEntityId != updateModel.RelatedEntityId;
 
-            var existFieldType = context.FieldTypes.FirstOrDefault(f => f.Name == existData.Name && f.SourceTypeId == (int)FieldTypeSourceEnums.Dto);
-            var existField = context.Fields.FirstOrDefault(f => f.Name == existData.Name && f.EntityId == existData.RelatedEntityId);
+            FieldType? existFieldType = context.FieldTypes.FirstOrDefault(f => f.Name == existData.Name && f.SourceTypeId == (int)FieldTypeSourceEnums.Dto);
+            Field? existField = context.Fields.FirstOrDefault(f => f.Name == existData.Name && f.EntityId == existData.RelatedEntityId);
             if (nameChanged)
             {
                 if (existFieldType != null) existFieldType.Name = updateModel.Name;
@@ -133,6 +138,8 @@ namespace GeneratorWPF.Repository
             if (existField != null) context.Update(existField);
             if (existFieldType != null) context.Update(existFieldType);
 
+            existData.CrudTypeId = updateModel.CrudTypeId;
+
             context.Update(existData);
             context.SaveChanges();
         }
@@ -140,11 +147,20 @@ namespace GeneratorWPF.Repository
         public void Delete(int id)
         {
             using var context = new LocalContext();
-            var existData = context.Dtos.FirstOrDefault(f => f.Id == id);
 
-            if (existData == null) throw new Exception("Data not found!");
+            Dto? dto = context.Dtos.FirstOrDefault(f => f.Id == id);
 
-            context.Remove(existData);
+            if (dto == null) throw new Exception("Data not found!");
+
+            FieldType? fieldType = context.FieldTypes.FirstOrDefault(f => f.Name == dto.Name && f.SourceTypeId == (int)FieldTypeSourceEnums.Dto);
+            Field? field = context.Fields.FirstOrDefault(f => f.Name == dto.Name && f.EntityId == dto.RelatedEntityId);
+
+            if (fieldType == null || field == null) throw new Exception("Related Data(s) not found!");
+            
+            context.Remove(dto);
+            context.Remove(field);
+            context.Remove(fieldType);
+
             context.SaveChanges();
         }
     }

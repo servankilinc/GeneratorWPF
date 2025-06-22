@@ -64,7 +64,7 @@ namespace GeneratorWPF.Repository
         public virtual void DeleteByFilter(Expression<Func<TEntity, bool>> filter)
         {
             using var _context = new LocalContext();
-            var entity = _context.Set<TEntity>().Where(filter).FirstOrDefault();
+            var entity = _context.Set<TEntity>().FirstOrDefault(filter);
             if (entity == null) throw new InvalidOperationException("The specified entity to delete could not be found.");
             _context.Entry(entity).State = EntityState.Deleted;
             _context.SaveChanges();

@@ -6,6 +6,7 @@ using GeneratorWPF.Dtos._Entity;
 using GeneratorWPF.Services;
 using System.Collections.ObjectModel;
 using GeneratorWPF.Models;
+using GeneratorWPF.Models.Enums;
 
 namespace GeneratorWPF.ViewModel._Entity;
 
@@ -17,7 +18,10 @@ public class EntityUpdateVM : BaseViewModel
     public ICommand SaveCommand { get; set; }  
     public ICommand CancelCommand { get; set; }
      
-    public ObservableCollection<Dto> DtoList { get; set; } = new ObservableCollection<Dto>();
+    public ObservableCollection<Dto> ReadDtoList { get; set; } = new ObservableCollection<Dto>();
+    public ObservableCollection<Dto> CreateDtoList { get; set; } = new ObservableCollection<Dto>();
+    public ObservableCollection<Dto> UpdateDtoList { get; set; } = new ObservableCollection<Dto>();
+    public ObservableCollection<Dto> DeleteDtoList { get; set; } = new ObservableCollection<Dto>();
 
     private EntityUpdateDto _entityUpdateModel = new EntityUpdateDto();
     public EntityUpdateDto EntityUpdateModel { get => _entityUpdateModel; set { _entityUpdateModel = value; OnPropertyChanged(nameof(EntityUpdateModel)); } }
@@ -29,7 +33,10 @@ public class EntityUpdateVM : BaseViewModel
         _entityRepository = new EntityRepository();
         _dtoRepository = new DtoRepository();
 
-        DtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId));
+        ReadDtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId && f.CrudTypeId == (int)CrudTypeEnums.Read));
+        CreateDtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId && f.CrudTypeId == (int)CrudTypeEnums.Create));
+        UpdateDtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId && f.CrudTypeId == (int)CrudTypeEnums.Update));
+        DeleteDtoList = new ObservableCollection<Dto>(_dtoRepository.GetAll(f => f.RelatedEntityId == StateStatics.EntityUpdateId && f.CrudTypeId == (int)CrudTypeEnums.Delete));
 
         var entity = _entityRepository.Get(f => f.Id == StateStatics.EntityUpdateId);
         EntityUpdateModel = new EntityUpdateDto
@@ -43,6 +50,7 @@ public class EntityUpdateVM : BaseViewModel
             Archivable = entity.Archivable,
             CreateDtoId = entity.CreateDtoId,
             UpdateDtoId = entity.UpdateDtoId,
+            DeleteDtoId = entity.DeleteDtoId,
             BasicResponseDtoId = entity.BasicResponseDtoId,
             DetailResponseDtoId = entity.DetailResponseDtoId
         };

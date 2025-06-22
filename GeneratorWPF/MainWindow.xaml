@@ -7,8 +7,8 @@
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel"
         mc:Ignorable="d"
         Title="Generator V1"
-        Height="600"
-        Width="960"
+        Height="820"
+        Width="1020"
         Background="#244cb3" 
         Foreground="White">
 

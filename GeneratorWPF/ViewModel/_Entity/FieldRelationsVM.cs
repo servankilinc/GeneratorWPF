@@ -26,6 +26,39 @@ public class FieldRelationsVM : BaseViewModel
     public ObservableCollection<RelationType> RelationTypeList { get; set; } = new ObservableCollection<RelationType>();
     public ObservableCollection<DeleteBehaviorType> DeleteBehaviorTypeList { get; set; } = new ObservableCollection<DeleteBehaviorType>();
 
+    public DeleteBehaviorType? SetNullBehavior { get; set; }
+    
+    private int _foreignFieldId;
+    public int ForeignFieldId
+    {
+        get => _foreignFieldId;
+        set
+        {
+            _foreignFieldId = value;
+            RelationCreateModel.ForeignFieldId = value;
+
+            //RelationCreateModel.ForeignEntityVirPropName = ForeignEntity.Fields.First(f => f.Id == value).Entity?.Name;
+
+            if (DeleteBehaviorTypeList == null) return;
+
+            // Check to foreign field if required set deisable SetNull delete behavior
+            if(ForeignEntity.Fields != null && ForeignEntity.Fields.First(f => f.Id == value).IsRequired)
+            {
+                if (DeleteBehaviorTypeList.Any(f => f.Id == (int)DeleteBehaviorTypeEnums.SetNull))
+                {
+                    SetNullBehavior = DeleteBehaviorTypeList.First(f => f.Id == (int)DeleteBehaviorTypeEnums.SetNull);
+                    DeleteBehaviorTypeList.Remove(SetNullBehavior);
+                }
+            }
+            else 
+            {
+                if (!DeleteBehaviorTypeList.Any(f => f.Id == (int)DeleteBehaviorTypeEnums.SetNull) && SetNullBehavior != null)
+                {
+                    DeleteBehaviorTypeList.Add(SetNullBehavior);
+                }
+            }
+        }
+    }
 
     private Entity _primaryEntity;
     public Entity PrimaryEntity { get => _primaryEntity; set { _primaryEntity = value; OnPropertyChanged(nameof(PrimaryEntity)); } }
@@ -51,7 +84,7 @@ public class FieldRelationsVM : BaseViewModel
         {
             try
             {
-                if (RelationCreateModel.PrimaryFieldId == default || RelationCreateModel.ForeignFieldId == default || RelationCreateModel.RelationTypeId == default || RelationCreateModel.DeleteBehaviorTypeId == default)
+                if (RelationCreateModel.PrimaryFieldId == default || RelationCreateModel.ForeignFieldId == default || RelationCreateModel.RelationTypeId == default || RelationCreateModel.DeleteBehaviorTypeId == default || string.IsNullOrEmpty(RelationCreateModel.PrimaryEntityVirPropName) || string.IsNullOrEmpty(RelationCreateModel.ForeignEntityVirPropName))
                 {
                     MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;

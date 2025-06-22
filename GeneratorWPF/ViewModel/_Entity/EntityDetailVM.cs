@@ -18,6 +18,7 @@ public class EntityDetailVM : BaseViewModel
     private readonly RelationRepository _relationRepository;
     private readonly FieldRepository _fieldRepository;
     public ICommand ShowRelationsDialogCommand { get; set; }
+    public ICommand ShowRelationsUpdateDialogCommand { get; set; }
     public ICommand ShowFieldUpdateDialogCommand { get; set; }
     public ICommand ShowAddFieldCommand { get; set; }
     public ICommand ReturnEntityHomeCommand { get; set; }
@@ -25,7 +26,7 @@ public class EntityDetailVM : BaseViewModel
     public ICommand RemoveRelationCommand { get; set; }
 
     private Entity _entity;
-    public Entity Entity { get => _entity; set { _entity = value; OnPropertyChanged(nameof(Entity)); }}
+    public Entity Entity { get => _entity; set { _entity = value; OnPropertyChanged(nameof(Entity)); } }
     public ObservableCollection<Field> Fields { get; set; } = new ObservableCollection<Field>();
     public ObservableCollection<RelationUIModel> RelationList { get; set; } = new ObservableCollection<RelationUIModel>();
 
@@ -51,12 +52,24 @@ public class EntityDetailVM : BaseViewModel
             PrimaryRelationName = $"{x.PrimaryField.Entity.Name} => {x.PrimaryField.Name}",
             ForeignRelationName = $"{x.ForeignField.Entity.Name} => {x.ForeignField.Name}",
             RelationTypeName = x.RelationType.Name,
-            DeleteBehaviorTypeName = x.DeleteBehaviorType.Name
+            DeleteBehaviorTypeName = x.DeleteBehaviorType.Name,
+            PrimaryEntityVirPropName = x.PrimaryEntityVirPropName,
+            ForeignEntityVirPropName= x.ForeignEntityVirPropName,
         }));
 
         ShowRelationsDialogCommand = new RellayCommand(obj =>
         {
             var dialog = new FieldRelationsDialog(navigationService);
+            if (dialog.ShowDialog() == true)
+            {
+                dialog.Show();
+            }
+        });
+
+        ShowRelationsUpdateDialogCommand = new RellayCommand(obj =>
+        {
+            StateStatics.RelationUpdateId = (int)obj;
+            var dialog = new FieldRelationsUpdateDialog(navigationService);
             if (dialog.ShowDialog() == true)
             {
                 dialog.Show();
@@ -88,10 +101,10 @@ public class EntityDetailVM : BaseViewModel
             {
                 var confirmation = MessageBox.Show("Are you sure to remove?", "Successful", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (confirmation == MessageBoxResult.No) return;
-                
-                _fieldRepository.DeleteByFilter(f => f.Id == ((Field)obj).Id);
-           
-                Fields.Remove((Field)obj);
+
+                _fieldRepository.DeleteByFilter(f => f.Id == (int)obj);
+
+                Fields.Remove(Fields.First(f => f.Id == (int)obj));
             }
         });
 
@@ -105,7 +118,7 @@ public class EntityDetailVM : BaseViewModel
                 _relationRepository.Delete(existData);
                 RelationList.Remove((RelationUIModel)obj);
             }
-        }); 
+        });
 
         ReturnEntityHomeCommand = new RellayCommand(obj =>
         {
@@ -121,5 +134,7 @@ public class EntityDetailVM : BaseViewModel
         public string ForeignRelationName { get; set; }
         public string RelationTypeName { get; set; }
         public string DeleteBehaviorTypeName { get; set; }
+        public string PrimaryEntityVirPropName { get; set; }
+        public string ForeignEntityVirPropName { get; set; }
     }
 }

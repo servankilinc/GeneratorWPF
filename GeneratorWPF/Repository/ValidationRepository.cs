@@ -13,6 +13,7 @@ namespace GeneratorWPF.Repository
             using var _context = new LocalContext();
             return _context.Set<ValidatorType>().Include(i => i.ValidatorTypeParams).ToList();
         }
+
         public ValidatorType GetValidatorType(int validatorTypeId)
         {
             using var _context = new LocalContext();

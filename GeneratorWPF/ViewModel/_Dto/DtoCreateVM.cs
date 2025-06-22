@@ -12,18 +12,25 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
 {
     public class DtoCreateVM : BaseViewModel
     {
-        private EntityRepository _entityRepository{ get; set; }
+        private EntityRepository _entityRepository { get; set; }
         private DtoRepository _dtoRepository { get; set; }
         private FieldRepository _fieldRepository { get; set; }
+        private CrudTypeRepository _crudTypeRepository { get; set; }
+
         private readonly INavigationService _navigation;
         public ICommand SaveCommand { get; set; }
         public ICommand AddFieldCommand { get; set; }
         public ICommand RemoveCommand { get; set; }
         public ICommand CancelCommand { get; set; }
         public Action? CloseDialogAction { get; set; }
+
         private ObservableCollection<Entity> _entityList;
         public ObservableCollection<Entity> EntityList { get => _entityList; set { _entityList = value; OnPropertyChanged(nameof(EntityList)); } }
- 
+
+        private ObservableCollection<CrudType> _crudTypes;
+        public ObservableCollection<CrudType> CrudTypes { get => _crudTypes; set { _crudTypes = value; OnPropertyChanged(nameof(CrudTypes)); } }
+
+
         public DtoCreateDto DtoToCreate { get; set; } = new DtoCreateDto();
         private ObservableCollection<DtoFieldCreateDto> _dtoFields = new ObservableCollection<DtoFieldCreateDto>();
         public ObservableCollection<DtoFieldCreateDto> DtoFields { get => _dtoFields; set { _dtoFields = value; OnPropertyChanged(nameof(DtoFields)); } }
@@ -32,17 +39,18 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
         {
             _navigation = navigation;
             _entityRepository = new EntityRepository();
+            _crudTypeRepository = new CrudTypeRepository();
             _fieldRepository = new FieldRepository();
             _dtoRepository = new DtoRepository();
 
             EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
+            CrudTypes = new ObservableCollection<CrudType>(_crudTypeRepository.GetAll());
 
-
-            SaveCommand = new RellayCommand(obj => 
+            SaveCommand = new RellayCommand(obj =>
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(DtoToCreate.Name) || DtoToCreate.RelatedEntityId == default || DtoFields.Count == 0)
+                    if (string.IsNullOrEmpty(DtoToCreate.Name) || DtoToCreate.RelatedEntityId == default || DtoToCreate.CrudTypeId == default || DtoFields.Count == 0)
                     {
                         MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
@@ -50,7 +58,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
 
                     DtoToCreate.DtoFields = DtoFields;
                     _dtoRepository.CreateByFields(DtoToCreate);
-                     
+
 
                     MessageBox.Show("Dto Created Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
@@ -65,7 +73,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
             });
 
 
-            AddFieldCommand = new RellayCommand(obj => 
+            AddFieldCommand = new RellayCommand(obj =>
             {
                 if (DtoToCreate.RelatedEntityId == default)
                 {

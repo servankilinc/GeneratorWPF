@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GeneratorWPF.View._Dto.Partials"
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Dto"
         mc:Ignorable="d"
-        Title="DtoUpdateDialog" Height="300" Width="400">
+        Title="DtoUpdateDialog" Height="350" Width="400">
     <!--<Window.DataContext>
         <vm:DtoUpdateVM/>
     </Window.DataContext>-->
@@ -18,19 +18,31 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="10">
+
             <Label>Related Entity:</Label>
             <ComboBox 
-            ItemsSource="{Binding EntityList}"
-            SelectedValue="{Binding DtoUpdateModel.RelatedEntityId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-            SelectedValuePath="Id"
-            DisplayMemberPath="Name"
-            HorizontalAlignment="Left" 
-            MinWidth="350"
-        />
+                ItemsSource="{Binding EntityList}"
+                SelectedValue="{Binding DtoUpdateModel.RelatedEntityId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"
+                HorizontalAlignment="Left" 
+                MinWidth="350"
+            />
+
+            <Label>Crud Type:</Label>
+            <ComboBox 
+                ItemsSource="{Binding CrudTypes}"
+                SelectedValue="{Binding DtoUpdateModel.CrudTypeId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"
+                HorizontalAlignment="Left" 
+                MinWidth="350"
+            />
+
             <Label Margin="0,10,0,0">Dto Name:</Label>
             <TextBox x:Name="txtDtoName" Text="{Binding DtoUpdateModel.Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource textBoxStyle}" />
         </StackPanel>
- 
+
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource SuccessBtnStyle}"/>

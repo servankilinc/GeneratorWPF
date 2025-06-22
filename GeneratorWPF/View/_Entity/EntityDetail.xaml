@@ -90,6 +90,22 @@
                     <DataGridTextColumn Header="Foreign Field" Binding="{Binding ForeignRelationName}" Width="*" />
                     <DataGridTextColumn Header="Type Name" Binding="{Binding RelationTypeName}" Width="*" />
                     <DataGridTextColumn Header="Delete Behavior" Binding="{Binding DeleteBehaviorTypeName}" Width="*" />
+                    <DataGridTextColumn Header="Virtual Field of Primary Entity" Binding="{Binding PrimaryEntityVirPropName}" Width="*" />
+                    <DataGridTextColumn Header="Virtual Field of Foreign Entity" Binding="{Binding ForeignEntityVirPropName}" Width="*" />
+                    <DataGridTemplateColumn Header="Update" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button 
+                                    Content="Update" 
+                                    Command="{Binding DataContext.ShowRelationsUpdateDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                    CommandParameter="{Binding Id}" 
+                                    Style="{StaticResource PrimaryBtnStyle}"
+                                    Width="60"
+                                    HorizontalAlignment="Center"
+                                  />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Remove" Width="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

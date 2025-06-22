@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using GeneratorWPF.Models;
+using GeneratorWPF.Models.Enums;
 
 namespace GeneratorWPF.Context
 {
-    public class LocalContext: DbContext
+    public class LocalContext : DbContext
     {
         //public LocalContext(DbContextOptions<LocalContext> options) : base(options)
         //{
         //}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=SERVAN; Initial Catalog=CodeGeneratorV1; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Data Source=.; Initial Catalog=CodeGeneratorV1; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
             //optionsBuilder.UseLazyLoadingProxies();
         }
 
@@ -21,11 +22,13 @@ namespace GeneratorWPF.Context
         public DbSet<Field> Fields { get; set; }
         public DbSet<FieldType> FieldTypes { get; set; }
         public DbSet<FieldTypeSource> FieldTypeSources { get; set; }
-        
+
         public DbSet<DeleteBehaviorType> DeleteBehaviorTypes { get; set; }
         public DbSet<Relation> Relations { get; set; }
         public DbSet<RelationType> RelationTypes { get; set; }
-        
+
+        public DbSet<CrudType> CrudTypes { get; set; }
+
         public DbSet<Dto> Dtos { get; set; }
         public DbSet<DtoField> DtoFields { get; set; }
 
@@ -52,13 +55,15 @@ namespace GeneratorWPF.Context
             {
                 ap.HasKey(ap => ap.Id);
 
-                ap.HasData(new AppSetting() { 
-                    Id = 1, 
-                    Path = "C:\\Generator", 
-                    ProjectName = "MyProject", 
-                    SolutionName="MyProject", 
-                    Control = false, 
-                    DBConnectionString = "" 
+                ap.HasData(new AppSetting()
+                {
+                    Id = 1,
+                    Path = "C:\\Generator",
+                    ProjectName = "MyProject",
+                    SolutionName = "MyProject",
+                    IsThereIdentiy = true,
+                    Control = false,
+                    DBConnectionString = "Data Source=.; Initial Catalog=MyGeneratedDatabase; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;"
                 });
 
                 modelBuilder.Entity<AppSetting>()
@@ -75,7 +80,7 @@ namespace GeneratorWPF.Context
 
             #region Entity
             modelBuilder.Entity<Entity>(e =>
-            { 
+            {
                 e.HasKey(e => e.Id);
 
                 e.HasOne(e => e.CreateDto)
@@ -86,6 +91,11 @@ namespace GeneratorWPF.Context
                 e.HasOne(e => e.UpdateDto)
                     .WithMany(cd => cd.UpdateEntities)
                     .HasForeignKey(e => e.UpdateDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(e => e.DeleteDto)
+                    .WithMany(cd => cd.DeleteEntities)
+                    .HasForeignKey(e => e.DeleteDtoId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 e.HasOne(e => e.BasicResponseDto)
@@ -111,7 +121,7 @@ namespace GeneratorWPF.Context
                     .HasForeignKey(s => s.RelatedEntityId);
             });
             #endregion
-            
+
             #region Field
             modelBuilder.Entity<Field>(f =>
             {
@@ -226,12 +236,12 @@ namespace GeneratorWPF.Context
                 r.HasOne(r => r.PrimaryField)
                     .WithMany(f => f.RelationsPrimary)
                     .HasForeignKey(r => r.PrimaryFieldId);
-                    //.OnDelete(DeleteBehavior.Restrict);
+                //.OnDelete(DeleteBehavior.Restrict);
 
                 r.HasOne(r => r.ForeignField)
                     .WithMany(f => f.RelationsForeign)
                     .HasForeignKey(r => r.ForeignFieldId);
-                    //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
+                //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
 
                 r.HasOne(r => r.RelationType)
                     .WithMany(rt => rt.Relations)
@@ -254,16 +264,48 @@ namespace GeneratorWPF.Context
                     .HasForeignKey(r => r.RelationTypeId);
 
                 rt.HasData(
-                    new RelationType { Id = 1, Name = "OnoToOne" },
-                    new RelationType { Id = 2, Name = "OnoToMany" }
+                    new RelationType { Id = (int)RelationTypeEnums.OneToOne, Name = "OnoToOne" },
+                    new RelationType { Id = (int)RelationTypeEnums.OneToMany, Name = "OnoToMany" }
+                );
+            });
+            #endregion
+
+            #region CrudType
+            modelBuilder.Entity<CrudType>(ct =>
+            {
+                ct.HasKey(ct => ct.Id);
+
+                ct.HasMany(ct => ct.Dtos)
+                    .WithOne(d => d.CrudType)
+                    .HasForeignKey(d => d.CrudTypeId);
+
+                ct.HasData(
+                    new CrudType { Id = (int)CrudTypeEnums.Read, Name = "Read" },
+                    new CrudType { Id = (int)CrudTypeEnums.Create, Name = "Create" },
+                    new CrudType { Id = (int)CrudTypeEnums.Update, Name = "Update" },
+                    new CrudType { Id = (int)CrudTypeEnums.Delete, Name = "Delete" }
                 );
             });
             #endregion
 
             #region Dto
-            modelBuilder.Entity<Dto>(d=>
+            modelBuilder.Entity<Dto>(d =>
             {
                 d.HasKey(d => d.Id);
+
+                d.HasOne(d => d.RelatedEntity)
+                    .WithMany(r => r.Dtos)
+                    .HasForeignKey(r => r.RelatedEntityId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                d.HasOne(d => d.CrudType)
+                    .WithMany(ct => ct.Dtos)
+                    .HasForeignKey(d => d.CrudTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                d.HasMany(d => d.DtoFields)
+                    .WithOne(r => r.Dto)
+                    .HasForeignKey(r => r.DtoId);
 
                 d.HasMany(e => e.CreateEntities)
                     .WithOne(cd => cd.CreateDto)
@@ -273,6 +315,10 @@ namespace GeneratorWPF.Context
                     .WithOne(cd => cd.UpdateDto)
                     .HasForeignKey(e => e.UpdateDtoId);
 
+                d.HasMany(e => e.DeleteEntities)
+                    .WithOne(cd => cd.DeleteDto)
+                    .HasForeignKey(e => e.DeleteDtoId);
+
                 d.HasMany(e => e.BasicResponseEntities)
                     .WithOne(cd => cd.BasicResponseDto)
                     .HasForeignKey(e => e.BasicResponseDtoId);
@@ -280,15 +326,6 @@ namespace GeneratorWPF.Context
                 d.HasMany(e => e.DetailResponseEntities)
                     .WithOne(cd => cd.DetailResponseDto)
                     .HasForeignKey(e => e.DetailResponseDtoId);
-
-                d.HasOne(d => d.RelatedEntity)
-                    .WithMany(r => r.Dtos)
-                    .HasForeignKey(r => r.RelatedEntityId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                d.HasMany(d => d.DtoFields)
-                    .WithOne(r => r.Dto)
-                    .HasForeignKey(r => r.DtoId);
             });
             #endregion
 

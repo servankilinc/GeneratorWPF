@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:GeneratorWPF.ViewModel._Dto"
         xmlns:local="clr-namespace:GeneratorWPF.View._Dto.Partials"
         mc:Ignorable="d"
-        Title="DtoFieldAddDialog" Height="350" Width="800">
+        Title="DtoFieldAddDialog" Height="550" Width="800">
     
     <!--<Window.DataContext>
         <vm:DtoFieldAddVM/>
@@ -15,6 +15,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" /> 
+            <RowDefinition Height="*" /> 
             <RowDefinition Height="*" /> 
             <RowDefinition Height="Auto" /> 
         </Grid.RowDefinitions>
@@ -54,7 +55,81 @@
             </StackPanel>
         </DockPanel>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+
+        <ScrollViewer Grid.Row="2" Visibility="{Binding DtoFieldCreateDto.SourceFromAnotherEntity}">
+            <StackPanel>
+                
+            <DataGrid ItemsSource="{Binding DtoFieldCreateDto.DtoFieldRelations}" Style="{StaticResource DataGridStyle}" ColumnHeaderStyle="{StaticResource StyleDataGridHeader}" AutoGenerateColumns="False" Margin="10" CanUserAddRows="False" CanUserDeleteRows="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Sequence No" Binding="{Binding SequenceNo}" Width="*" />
+
+                    <DataGridTemplateColumn Header="Source Entity" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox 
+                                    ItemsSource="{Binding DataContext.EntityList, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    SelectedValue="{Binding FirstEntityId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedValuePath="Id"
+                                    DisplayMemberPath="Name"
+                                    Tag="{Binding}"
+                                />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="Host Entity" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox 
+                                    ItemsSource="{Binding DataContext.EntityList, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    SelectedValue="{Binding SecondEntityId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    SelectedValuePath="Id"
+                                    DisplayMemberPath="Name"
+                                    Tag="{Binding}" 
+                                />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="Relation" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox
+                                    ItemsSource="{Binding Relations, Mode=OneWay}"
+                                    SelectedValue="{Binding RelationId, UpdateSourceTrigger=PropertyChanged}"
+                                    SelectedValuePath="Id"
+                                    DisplayMemberPath="Name"
+                                    Tag="{Binding}"
+                                />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="Remove" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Remove" 
+                                    Command="{Binding DataContext.RemoveRelationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                    CommandParameter="{Binding}" 
+                                    Style="{StaticResource DangerBtnStyle}"
+                                    HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+
+
+            <Button Content="Add" 
+                        Command="{Binding AddRelationCommand}" 
+                        CommandParameter="{Binding}" 
+                    HorizontalAlignment="Right"
+                        Style="{StaticResource PrimaryBtnStyle}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryBtnStyle}"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource SuccessBtnStyle}"/>
         </StackPanel>

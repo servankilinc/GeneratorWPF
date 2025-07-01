@@ -1,12 +1,13 @@
-﻿using GeneratorWPF.Utils;
-using System.Windows.Input;
+﻿using GeneratorWPF.Dtos._Dto;
+using GeneratorWPF.Dtos._DtoField;
 using GeneratorWPF.Models;
 using GeneratorWPF.Repository;
-using GeneratorWPF.View._Dto.Partials;
 using GeneratorWPF.Services;
-using GeneratorWPF.Dtos._DtoField;
-using System.Windows;
+using GeneratorWPF.Utils;
+using GeneratorWPF.View._Dto.Partials;
 using GeneratorWPF.ViewModel._Entity;
+using System.Windows;
+using System.Windows.Input;
 
 namespace GeneratorWPF.ViewModel._Dto
 {
@@ -20,8 +21,8 @@ namespace GeneratorWPF.ViewModel._Dto
         public ICommand RemoveCommand { get; set; }
         public List<Entity> EntityList { get; set; }
 
-        private List<Dto> _DtoList = new List<Dto>();
-        public List<Dto> DtoList { get { return _DtoList; } set { _DtoList = value; OnPropertyChanged(nameof(DtoList)); } }
+        private List<DtoDetailResponseDto> _DtoList = new List<DtoDetailResponseDto>();
+        public List<DtoDetailResponseDto> DtoList { get { return _DtoList; } set { _DtoList = value; OnPropertyChanged(nameof(DtoList)); } }
 
         private int _entiyIdForFilter = default;
         public int EntiyIdForFilter { 
@@ -30,7 +31,7 @@ namespace GeneratorWPF.ViewModel._Dto
                 _entiyIdForFilter = value; 
                 OnPropertyChanged(nameof(EntiyIdForFilter));
 
-                DtoList = _dtoRepository.GetList(f => f.RelatedEntityId == value);
+                DtoList = _dtoRepository.GetDetailList(f => f.RelatedEntityId == value);
             }
         } 
 
@@ -41,7 +42,7 @@ namespace GeneratorWPF.ViewModel._Dto
             _dtoRepository = new DtoRepository();
 
             EntityList = entityRepository.GetAll(enableTracking: false);
-            DtoList = _dtoRepository.GetList(f => true);
+            DtoList = _dtoRepository.GetDetailList(f => true);
 
             ShowCreateCommand = new RellayCommand(RellayCommand =>
             {
@@ -82,7 +83,7 @@ namespace GeneratorWPF.ViewModel._Dto
                 {
                     _dtoRepository.Delete((int)dtoId);
                     MessageBox.Show("Dto removed successfully ", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    DtoList = _dtoRepository.GetList(f => EntiyIdForFilter != default ? f.Id == EntiyIdForFilter : true);
+                    DtoList = _dtoRepository.GetDetailList(f => EntiyIdForFilter != default ? f.Id == EntiyIdForFilter : true);
                 }
                 catch (Exception)
                 {

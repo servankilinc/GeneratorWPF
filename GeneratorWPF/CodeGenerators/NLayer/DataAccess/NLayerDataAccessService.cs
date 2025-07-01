@@ -1,5 +1,4 @@
-﻿using GeneratorWPF.CodeGenerators.NLayer.Model;
-using GeneratorWPF.Models;
+﻿using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
 using Humanizer;
@@ -2113,8 +2112,6 @@ public class RefreshTokenRepository : RepositoryBase<RefreshToken, AppDbContext>
 
         var entities = _entityRepository.GetAll(f => f.Control == false);
 
-        var roslynEntityGenerator = new RoslynEntityGenerator(_appSetting);
-
         #region Abstract
         StringBuilder sbAbstract = new();
         sbAbstract.AppendLine("using DataAccess.Abstract;\n");
@@ -2180,10 +2177,10 @@ public class UnitOfWork : IUnitOfWork
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            string argType = $"{entity.Name}Repository";
-            string argName = char.ToLowerInvariant(argType[0]) + argType.Substring(1);
+            string c_argType = $"{entity.Name}Repository";
+            string argName = char.ToLowerInvariant(c_argType[0]) + c_argType.Substring(1);
             bool isLastArg = (i + 1 < entities.Count) || _appSetting.IsThereIdentiy;
-            sbConcrete.AppendLine($"\t\tI{argType} {argName}" + (isLastArg ? "," : ""));
+            sbConcrete.AppendLine($"\t\tI{c_argType} {argName}" + (isLastArg ? "," : ""));
         }
         if (_appSetting.IsThereIdentiy)
         {
@@ -2194,8 +2191,8 @@ public class UnitOfWork : IUnitOfWork
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            string argType = $"{entity.Name}Repository";
-            string argName = char.ToLowerInvariant(argType[0]) + argType.Substring(1);
+            string c_argType = $"{entity.Name}Repository";
+            string argName = char.ToLowerInvariant(c_argType[0]) + c_argType.Substring(1);
             sbConcrete.AppendLine($"\t\t{entity.Name.Pluralize()} = {argName};");
         }
         if (_appSetting.IsThereIdentiy)
@@ -2311,8 +2308,6 @@ public class UnitOfWork : IUnitOfWork
 
         var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
-        var roslynEntityGenerator = new RoslynEntityGenerator(_appSetting);
-
         // Concretes
         StringBuilder sb = new();
         sb.AppendLine("using Microsoft.AspNetCore.Identity;");
@@ -2340,6 +2335,11 @@ public class UnitOfWork : IUnitOfWork
                 sb.AppendLine($"\tpublic DbSet<{entity.Name}> {entity.Name.Pluralize()} {{ get; set; }}");
             }
         }
+        if (_appSetting.IsThereIdentiy)
+        {
+            sb.AppendLine($"\tpublic DbSet<RefreshToken> RefreshTokens {{ get; set; }}");
+        }
+
         sb.AppendLine();
         sb.AppendLine("\t// Project Entities");
         sb.AppendLine("\tpublic DbSet<Log> Logs { get; set; }");
@@ -2371,7 +2371,7 @@ public class UnitOfWork : IUnitOfWork
             }
             else
             {
-                var uniqueFields = entity.Fields.Select(x => $"{eSc}.{x.Name}");
+                var uniqueFields = entity.Fields.Where(f => f.IsUnique).Select(x => $"{eSc}.{x.Name}");
                 string keys = string.Join(",", uniqueFields);
                 sb.AppendLine($"\t\t\t{eSc}.HasKey({eSc} => new {{ {keys} }});");
             }
@@ -2386,7 +2386,7 @@ public class UnitOfWork : IUnitOfWork
                 char f_eSc = relation.ForeignField.Entity.Name.Trim().ToLowerInvariant()[0];
                 if (relation.RelationTypeId == (int)RelationTypeEnums.OneToOne)
                 {
-                    if (relation.PrimaryFieldId == entity.Id)
+                    if (relation.PrimaryField.EntityId == entity.Id)
                     {
                         sb.AppendLine($"\t\t\t{eSc}.HasOne({eSc} => {eSc}.{relation.PrimaryEntityVirPropName})");
                         sb.AppendLine($"\t\t\t\t.WithOne({f_eSc} => {f_eSc}.{relation.ForeignEntityVirPropName})");
@@ -2403,7 +2403,7 @@ public class UnitOfWork : IUnitOfWork
                 }
                 else if (relation.RelationTypeId == (int)RelationTypeEnums.OneToMany)
                 {
-                    if (relation.PrimaryFieldId == entity.Id)
+                    if (relation.PrimaryField.EntityId == entity.Id)
                     {
                         sb.AppendLine($"\t\t\t{eSc}.HasMany({eSc} => {eSc}.{relation.PrimaryEntityVirPropName})");
                         sb.AppendLine($"\t\t\t\t.WithOne({f_eSc} => {f_eSc}.{relation.ForeignEntityVirPropName})");
@@ -2421,6 +2421,16 @@ public class UnitOfWork : IUnitOfWork
                 sb.AppendLine();
             }
             // **** Relations ****
+
+            if (_appSetting.IsThereUser && entity.Id == _appSetting.UserEntityId)
+            {
+                sb.AppendLine(@"
+    u.HasMany(u => u.RefreshTokens)
+        .WithOne(r => r.User)
+        .HasForeignKey(r => r.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
+");
+            }
 
             // **** Seed Data ****
             if (_appSetting.IsThereRole && entity.Id == _appSetting.RoleEntityId)
@@ -2461,7 +2471,7 @@ public class UnitOfWork : IUnitOfWork
 
             if (entity.SoftDeletable)
             {
-                sb.AppendLine($"\t\t\t{eSc}.HasQueryFilter({eSc} => !{eSc}.IsDeleted);");
+                sb.AppendLine($"\t\t\t{eSc}.HasQueryFilter(f => !f.IsDeleted);");
             }
             sb.AppendLine("\t\t});");
             sb.AppendLine();
@@ -2505,7 +2515,7 @@ public class UnitOfWork : IUnitOfWork
         {
             if (!_appSetting.IsThereUser)
             {
-                sb.AppendLine("\t\tmodelBuilder.Entity<IdentityUser<Guid>>(entity => { entity.ToTable(\"Users\"); });")
+                sb.AppendLine("\t\tmodelBuilder.Entity<IdentityUser<Guid>>(entity => { entity.ToTable(\"Users\"); });");
             }
 
             if (!_appSetting.IsThereRole)
@@ -2557,7 +2567,8 @@ public class UnitOfWork : IUnitOfWork
 
         modelBuilder.Entity<IdentityUserRole<Guid>>(entity => { entity.ToTable(""UserRoles""); });
 
-        modelBuilder.Entity<IdentityUserToken<Guid>>(entity => { entity.ToTable(""UserTokens""); });");
+        modelBuilder.Entity<IdentityUserToken<Guid>>(entity => { entity.ToTable(""UserTokens""); });
+");
         }
 
         #endregion
@@ -2575,7 +2586,7 @@ public class UnitOfWork : IUnitOfWork
         var results = new List<string>();
 
         var entities = _entityRepository.GetAll(f => f.Control == false);
- 
+
         StringBuilder sb = new();
         sb.AppendLine("using Autofac;");
         sb.AppendLine("using Autofac.Extras.DynamicProxy;");
@@ -2597,7 +2608,8 @@ public class UnitOfWork : IUnitOfWork
             sb.AppendLine("\t\t\t.InstancePerLifetimeScope();");
             sb.AppendLine();
         }
-        if (_appSetting.IsThereRole) {
+        if (_appSetting.IsThereIdentiy)
+        {
             sb.AppendLine($"\t\tbuilder.RegisterType<RefreshTokenRepository>().As<IRefreshTokenRepository>()");
             sb.AppendLine("\t\t\t.EnableInterfaceInterceptors()");
             sb.AppendLine("\t\t\t.InterceptedBy(typeof(DataAccessExceptionHandlerInterceptor))");

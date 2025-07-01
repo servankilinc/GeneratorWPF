@@ -17,7 +17,7 @@ namespace GeneratorWPF.Models
         public virtual Field ForeignField { get; set; } = null!;
         public virtual RelationType RelationType { get; set; } = null!;
         public virtual DeleteBehaviorType DeleteBehaviorType { get; set; } = null!;
-
+        public virtual ICollection<DtoFieldRelations>? DtoFieldRelations { get; set; }
 
         public string GetOnDeleteType()
         {

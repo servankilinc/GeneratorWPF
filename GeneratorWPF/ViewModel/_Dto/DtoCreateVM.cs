@@ -14,6 +14,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
     {
         private EntityRepository _entityRepository { get; set; }
         private DtoRepository _dtoRepository { get; set; }
+        private RelationRepository _relationRepository { get; set; }
         private FieldRepository _fieldRepository { get; set; }
         private CrudTypeRepository _crudTypeRepository { get; set; }
 
@@ -42,6 +43,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
             _crudTypeRepository = new CrudTypeRepository();
             _fieldRepository = new FieldRepository();
             _dtoRepository = new DtoRepository();
+            _relationRepository = new RelationRepository();
 
             EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
             CrudTypes = new ObservableCollection<CrudType>(_crudTypeRepository.GetAll());
@@ -50,7 +52,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(DtoToCreate.Name) || DtoToCreate.RelatedEntityId == default || DtoToCreate.CrudTypeId == default || DtoFields.Count == 0)
+                    if (string.IsNullOrEmpty(DtoToCreate.Name) || DtoToCreate.RelatedEntityId == default || DtoToCreate.CrudTypeId == default)
                     {
                         MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
@@ -81,7 +83,7 @@ namespace GeneratorWPF.ViewModel._Dto.Partial
                     return;
                 }
 
-                DtoFields.Add(new DtoFieldCreateDto(_fieldRepository)
+                DtoFields.Add(new DtoFieldCreateDto(_fieldRepository, _relationRepository)
                 {
                     Name = "New Field",
                     SourceFieldId = DtoToCreate.RelatedEntityId,

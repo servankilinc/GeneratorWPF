@@ -15,8 +15,11 @@ public class DtoFieldAddVM : BaseViewModel
     private FieldRepository _fieldRepository { get; set; }
     private DtoFieldRepository _dtoFieldRepository { get; set; }
     private EntityRepository _entityRepository { get; set; }
+    private RelationRepository _relationRepository { get; set; }
     public ICommand SaveCommand { get; set; }
     public ICommand CancelCommand { get; set; }
+    public ICommand AddRelationCommand { get; set; }
+    public ICommand RemoveRelationCommand { get; set; }
 
     public ObservableCollection<Entity> EntityList { get; set; }
 
@@ -30,15 +33,17 @@ public class DtoFieldAddVM : BaseViewModel
         _fieldRepository = new FieldRepository();
         _dtoFieldRepository = new DtoFieldRepository();
         _entityRepository = new EntityRepository();
+        _relationRepository = new RelationRepository();
 
         EntityList = new ObservableCollection<Entity>(_entityRepository.GetAll());
 
-        DtoFieldCreateDto = new DtoFieldCreateDto(_fieldRepository) 
+        DtoFieldCreateDto = new DtoFieldCreateDto(_fieldRepository, _relationRepository) 
         { 
             DtoId = StateStatics.DtoDetailAddDtoFieldDtoId,
             SourceEntityId = StateStatics.DtoDetailRelatedEntityId,
             IsRequired = true,
-            IsList = false
+            IsList = false,
+            DtoRelatedEntityId = StateStatics.DtoDetailRelatedEntityId
         };
 
         SaveCommand = new RellayCommand(obj =>
@@ -50,7 +55,14 @@ public class DtoFieldAddVM : BaseViewModel
                     MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-                
+
+                if (DtoFieldCreateDto.SourceEntityId != DtoFieldCreateDto.DtoRelatedEntityId)
+                {
+                    if (DtoFieldCreateDto.DtoFieldRelations!.Count == 0)
+                    MessageBox.Show("Check The Relations!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
                 _dtoFieldRepository.Add(DtoFieldCreateDto);
 
                 MessageBox.Show("Field Added Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -64,6 +76,34 @@ public class DtoFieldAddVM : BaseViewModel
             }
         });
 
+        AddRelationCommand = new RellayCommand(obj =>
+        {
+            try
+            {
+                DtoFieldCreateDto.DtoFieldRelations!.Add(new DtoFieldRelationsCreateModel(_relationRepository)
+                {
+                    FirstEntityId = DtoFieldCreateDto.DtoRelatedEntityId,
+                    SecondEntityId = DtoFieldCreateDto.SourceEntityId,
+                    SequenceNo = DtoFieldCreateDto.DtoFieldRelations.Count() + 1,
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
+
+        RemoveRelationCommand = new RellayCommand(obj =>
+        {
+            try
+            {
+                DtoFieldCreateDto.DtoFieldRelations!.Remove((DtoFieldRelationsCreateModel)obj);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
 
         CancelCommand = new RellayCommand(obj =>
         {

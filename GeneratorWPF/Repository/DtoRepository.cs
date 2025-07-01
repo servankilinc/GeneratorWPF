@@ -1,5 +1,6 @@
 ﻿using GeneratorWPF.Context;
 using GeneratorWPF.Dtos._Dto;
+using GeneratorWPF.Dtos._DtoField;
 using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +58,48 @@ namespace GeneratorWPF.Repository
                     .ToList();
         }
 
+        public List<DtoDetailResponseDto> GetDetailList(Expression<Func<Dto, bool>> expresion)
+        {
+            using var context = new LocalContext();
+            return context.Dtos
+                    .Where(expresion)
+                    .Include(i => i.RelatedEntity)
+                    .Include(i => i.CrudType)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.SourceField)
+                            .ThenInclude(sf => sf.FieldType)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.SourceField)
+                            .ThenInclude(sf => sf.Entity)
+                    .Include(i => i.DtoFields)
+                        .ThenInclude(df => df.DtoFieldRelations)
+                    .Select(x => new DtoDetailResponseDto
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        RelatedEntityName = x.RelatedEntity.Name,
+                        CrudTypeName = x.CrudType.Name,
+                        DtoFields = x.DtoFields.Select(y => new DtoFieldResponseDto
+                        {
+                            Id = y.Id,
+                            Name = y.Name,
+                            DtoId = x.Id,
+                            SourceFieldName = y.SourceField.Name,
+                            EntityName = y.SourceField.Entity.Name,
+                            FieldTypeName = y.SourceField.FieldType.Name,
+                            IsRequired = y.IsRequired,
+                            IsList = y.IsList,
+                            IsSourceFromForeignEntity = x.RelatedEntityId != y.SourceField.EntityId,
+                            IsThereRelations = y.DtoFieldRelations != null && y.DtoFieldRelations.Any(),
+                            DtoFieldRelationsPath =
+                                y.DtoFieldRelations != null ?
+                                    string.Join(",\n", y.DtoFieldRelations.OrderBy(o => o.SequenceNo)
+                                        .Select(dr => $"{dr.Relation.PrimaryEntityVirPropName}.{dr.Relation.ForeignEntityVirPropName}")) :
+                                    string.Empty
+                        }).ToList()
+                    }).ToList();
+        }
+
         public void CreateByFields(DtoCreateDto createDto)
         {
             using var _context = new LocalContext();
@@ -90,16 +133,19 @@ namespace GeneratorWPF.Repository
                 _context.SaveChanges();
 
                 // Insert DtoFields
-                foreach (var sourceField in createDto.DtoFields)
+                if (createDto.DtoFields != null && createDto.DtoFields.Any())
                 {
-                    _context.DtoFields.Add(new DtoField
+                    foreach (var sourceField in createDto.DtoFields)
                     {
-                        DtoId = insertedDto.Id,
-                        SourceFieldId = sourceField.SourceFieldId,
-                        Name = sourceField.Name,
-                    });
+                        _context.DtoFields.Add(new DtoField
+                        {
+                            DtoId = insertedDto.Id,
+                            SourceFieldId = sourceField.SourceFieldId,
+                            Name = sourceField.Name,
+                        });
+                    }
+                    _context.SaveChanges();
                 }
-                _context.SaveChanges();
 
                 transaction.Commit();
             }

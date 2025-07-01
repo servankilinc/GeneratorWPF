@@ -1,6 +1,7 @@
 ﻿using GeneratorWPF.Context;
 using GeneratorWPF.Dtos._Relation;
 using GeneratorWPF.Models;
+using GeneratorWPF.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeneratorWPF.Repository
@@ -50,6 +51,26 @@ namespace GeneratorWPF.Repository
                         .ThenInclude(ti => ti.Entity)
                     .AsNoTracking()
                     .ToList();
+        }
+
+        public List<Relation> GetRelationsBehindEntities(int entityId_ofPrimaryField, int entityId_ofForeignField)
+        {
+            using var _context = new LocalContext();
+            // category Id primary 
+            // blog CategoryId foreign
+            return _context.Relations
+              .Include(r => r.PrimaryField)
+                  .ThenInclude(f => f.Entity)
+              .Include(r => r.ForeignField)
+                  .ThenInclude(f => f.Entity)
+              .Where(r => 
+                //r.RelationTypeId == (int)RelationTypeEnums.OneToMany ? 
+                //    (r.ForeignField.Entity.Id == entityId_ofForeignField && r.PrimaryField.Entity.Id == entityId_ofPrimaryField) :
+                    (
+                        (r.ForeignField.Entity.Id == entityId_ofForeignField && r.PrimaryField.Entity.Id == entityId_ofPrimaryField) ||
+                        (r.ForeignField.Entity.Id == entityId_ofPrimaryField && r.PrimaryField.Entity.Id == entityId_ofForeignField)
+                    )
+              ).ToList();
         }
 
         public void AddRelation(RelationCreateDto createDto)

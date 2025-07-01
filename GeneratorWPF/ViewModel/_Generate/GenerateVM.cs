@@ -43,7 +43,7 @@ namespace GeneratorWPF.ViewModel._Generate
                 IsCancelVisible = Visibility.Hidden;
 
                 bool result = await Task.Run(() =>
-                {
+                {   
                     bool stepControl = true;
                     //stepControl = _layerGeneratorService.GenerateSolution(AppendToResults);
                     //if (!stepControl) return false;
@@ -51,7 +51,13 @@ namespace GeneratorWPF.ViewModel._Generate
                     //stepControl = _layerGeneratorService.GenerateCoreLayer(AppendToResults);
                     //if (!stepControl) return false;
 
-                    stepControl = _layerGeneratorService.GenerateModelLayer(AppendToResults);
+                    //stepControl = _layerGeneratorService.GenerateModelLayer(AppendToResults);
+                    //if (!stepControl) return false;
+
+                    //stepControl = _layerGeneratorService.GenerateDataAccessLayer(AppendToResults);
+                    //if (!stepControl) return false;
+
+                    stepControl = _layerGeneratorService.GenerateBusinessLayer(AppendToResults);
                     if (!stepControl) return false;
 
                     return true;

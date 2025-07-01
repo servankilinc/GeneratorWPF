@@ -79,11 +79,14 @@
                         <DataGrid ItemsSource="{Binding DtoFields}" Style="{StaticResource DataGridStyle}" ColumnHeaderStyle="{StaticResource StyleDataGridHeader}" AutoGenerateColumns="False" Margin="10" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Field Name" Binding="{Binding Name}" />
-                                <DataGridTextColumn Header="Source Entity Name" Binding="{Binding SourceField.Entity.Name}" />
-                                <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceField.Name}" />
-                                <DataGridTextColumn Header="Source Field Type" Binding="{Binding SourceField.FieldType.Name}" />
+                                <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceFieldName}" />
+                                <DataGridCheckBoxColumn Header="Is Foreign" Binding="{Binding IsSourceFromForeignEntity}" />
+                                <DataGridCheckBoxColumn Header="Is There Relation" Binding="{Binding IsThereRelations}" />
+                                <DataGridTextColumn Header="Source Entity Name" Binding="{Binding EntityName}" />
+                                <DataGridTextColumn Header="Source Field Type" Binding="{Binding FieldTypeName}" />
                                 <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" />
                                 <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" />
+                                <DataGridTextColumn Header="Relations Path" Binding="{Binding DtoFieldRelationsPath}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </DataTemplate>

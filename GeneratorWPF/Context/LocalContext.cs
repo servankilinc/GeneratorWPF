@@ -11,7 +11,7 @@ namespace GeneratorWPF.Context
         //}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=.; Initial Catalog=CodeGeneratorV1; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Data Source=.; Initial Catalog=CodeGeneratorV2; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
             //optionsBuilder.UseLazyLoadingProxies();
         }
 
@@ -31,6 +31,7 @@ namespace GeneratorWPF.Context
 
         public DbSet<Dto> Dtos { get; set; }
         public DbSet<DtoField> DtoFields { get; set; }
+        public DbSet<DtoFieldRelations> DtoFieldRelations { get; set; }
 
         public DbSet<Validation> Validations { get; set; }
         public DbSet<ValidationParam> ValidationParams { get; set; }
@@ -247,6 +248,10 @@ namespace GeneratorWPF.Context
                     .WithMany(rt => rt.Relations)
                     .HasForeignKey(r => r.RelationTypeId);
                 //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
+                
+                r.HasMany(r => r.DtoFieldRelations)
+                  .WithOne(df => df.Relation)
+                  .HasForeignKey(r => r.RelationId);
 
                 r.HasOne(r => r.DeleteBehaviorType)
                     .WithMany(dbt => dbt.Relations)
@@ -346,6 +351,25 @@ namespace GeneratorWPF.Context
                 df.HasMany(df => df.Validations)
                    .WithOne(v => v.DtoField)
                    .HasForeignKey(v => v.DtoFieldId);
+
+                df.HasMany(df => df.DtoFieldRelations)
+                   .WithOne(dfr => dfr.DtoField)
+                   .HasForeignKey(dfr => dfr.DtoFieldId);
+            });
+            #endregion
+
+            #region DtoFieldRelations
+            modelBuilder.Entity<DtoFieldRelations>(dfr =>
+            {
+                dfr.HasKey(dfr => new { dfr.DtoFieldId, dfr.RelationId, dfr.SequenceNo });
+
+                dfr.HasOne(dfr => dfr.DtoField)
+                   .WithMany(df => df.DtoFieldRelations)
+                   .HasForeignKey(dfr => dfr.DtoFieldId);
+
+                dfr.HasOne(df => df.Relation)
+                   .WithMany(r => r.DtoFieldRelations)
+                   .HasForeignKey(dfr => dfr.RelationId);
             });
             #endregion
 

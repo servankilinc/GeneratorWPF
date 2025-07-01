@@ -11,8 +11,9 @@ namespace GeneratorWPF.Models
         public bool IsRequired { get; set; }
         public bool IsList { get; set; }
 
-        public Dto Dto { get; set; } = null!;
-        public Field SourceField { get; set; } = null!;
+        public virtual Dto Dto { get; set; } = null!;
+        public virtual Field SourceField { get; set; } = null!;
         public virtual ICollection<Validation>? Validations { get; set; }
+        public virtual ICollection<DtoFieldRelations>? DtoFieldRelations { get; set; }
     }
 }

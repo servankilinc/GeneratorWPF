@@ -8,5 +8,5 @@ public class DtoCreateDto
     public string Name { get; set; } = null!;
     public int RelatedEntityId { get; set; }
     public int CrudTypeId { get; set; }
-    public ObservableCollection<DtoFieldCreateDto> DtoFields { get; set; } = null!;
+    public ObservableCollection<DtoFieldCreateDto>? DtoFields { get; set; }
 }

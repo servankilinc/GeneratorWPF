@@ -1,13 +1,14 @@
-﻿using GeneratorWPF.Utils;
-using System.Windows.Input;
-using GeneratorWPF.Repository;
-using System.Windows;
-using GeneratorWPF.Services;
-using GeneratorWPF.Dtos._Dto;
-using GeneratorWPF.Models;
-using System.Collections.ObjectModel;
-using GeneratorWPF.View._Dto.Partials;
+﻿using GeneratorWPF.Dtos._Dto;
+using GeneratorWPF.Dtos._DtoField;
 using GeneratorWPF.Dtos._Validation;
+using GeneratorWPF.Models;
+using GeneratorWPF.Repository;
+using GeneratorWPF.Services;
+using GeneratorWPF.Utils;
+using GeneratorWPF.View._Dto.Partials;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Input;
 
 namespace GeneratorWPF.ViewModel._Dto;
 
@@ -33,8 +34,8 @@ public class DtoDetailVM : BaseViewModel
     private DtoUpdateDto _dtoUpdateModel;
     public DtoUpdateDto DtoUpdateModel { get => _dtoUpdateModel; set { _dtoUpdateModel = value; OnPropertyChanged(nameof(DtoUpdateModel)); } }
 
-    private ObservableCollection<DtoField> _dtoFields;
-    public ObservableCollection<DtoField> DtoFields { get => _dtoFields; set { _dtoFields = value; OnPropertyChanged(nameof(DtoFields)); } }
+    private ObservableCollection<DtoFieldResponseDto> _dtoFields;
+    public ObservableCollection<DtoFieldResponseDto> DtoFields { get => _dtoFields; set { _dtoFields = value; OnPropertyChanged(nameof(DtoFields)); } }
 
     private ObservableCollection<ValidationResponse> _validations;
     public ObservableCollection<ValidationResponse> Validations { get => _validations; set { _validations = value; OnPropertyChanged(nameof(Validations)); } }
@@ -53,7 +54,7 @@ public class DtoDetailVM : BaseViewModel
         Dto = _dtoRepository.Get(f => f.Id == StateStatics.DtoDetailId);
         StateStatics.DtoDetailRelatedEntityId = Dto.RelatedEntityId;
 
-        DtoFields = new ObservableCollection<DtoField>(_dtoFieldRepository.GetBySourceField(f => f.DtoId == StateStatics.DtoDetailId));
+        DtoFields = new ObservableCollection<DtoFieldResponseDto>(_dtoFieldRepository.GetDetailList(f => f.DtoId == StateStatics.DtoDetailId));
         Validations = new ObservableCollection<ValidationResponse>(_dtoFieldRepository.GetValidations(StateStatics.DtoDetailId));
 
         BtnCreateEnable = Validations.Count > 0 ? Visibility.Hidden : Visibility.Visible;
@@ -93,7 +94,7 @@ public class DtoDetailVM : BaseViewModel
             try
             {
                 _dtoFieldRepository.Delete((int)dtoFieldId);
-                DtoFields = new ObservableCollection<DtoField>(_dtoFieldRepository.GetBySourceField(f => f.DtoId == StateStatics.DtoDetailId));
+                DtoFields = new ObservableCollection<DtoFieldResponseDto>(_dtoFieldRepository.GetDetailList(f => f.DtoId == StateStatics.DtoDetailId));
 
                 MessageBox.Show("Field Deleted Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -157,7 +158,7 @@ public class DtoDetailVM : BaseViewModel
                     if (confirmation == MessageBoxResult.No) return;
 
                     _validationRepository.DeleteByFilter(f => f.Id == (int)validationId);
-                    DtoFields = new ObservableCollection<DtoField>(_dtoFieldRepository.GetBySourceField(f => f.DtoId == StateStatics.DtoDetailId));
+                    DtoFields = new ObservableCollection<DtoFieldResponseDto>(_dtoFieldRepository.GetDetailList(f => f.DtoId == StateStatics.DtoDetailId));
 
                     MessageBox.Show("Validation Removed Successfully", "Successful", MessageBoxButton.OK, MessageBoxImage.Information);
                 }

@@ -1,4 +1,5 @@
-﻿using GeneratorWPF.Models.Signature;
+﻿using GeneratorWPF.Models.Enums;
+using GeneratorWPF.Models.Signature;
 
 namespace GeneratorWPF.Models
 {
@@ -17,5 +18,24 @@ namespace GeneratorWPF.Models
         public virtual ICollection<Relation> RelationsPrimary { get; set; } = null!;
         public virtual ICollection<Relation> RelationsForeign { get; set; } = null!;
         public virtual ICollection<DtoField> DtoFields { get; set; } = null!;
+
+        public string GetMapedTypeName()
+        {
+            return this.FieldTypeId switch
+            {
+                (int)FieldTypeEnums.Int => "int",
+                (int)FieldTypeEnums.String => "string",
+                (int)FieldTypeEnums.Long => "long",
+                (int)FieldTypeEnums.Float => "float",
+                (int)FieldTypeEnums.Double => "double",
+                (int)FieldTypeEnums.Bool => "bool",
+                (int)FieldTypeEnums.Char => "char",
+                (int)FieldTypeEnums.Byte => "byte",
+                (int)FieldTypeEnums.DateTime => "DateTime",
+                (int)FieldTypeEnums.DateOnly => "DateOnly",
+                (int)FieldTypeEnums.Guid => "Guid",
+                _ => this.Name
+            };
+        }
     }
 }

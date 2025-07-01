@@ -37,10 +37,14 @@
             <DataGrid ItemsSource="{Binding DtoFields, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource DataGridStyle}" ColumnHeaderStyle="{StaticResource StyleDataGridHeader}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                    <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceField.Name}" Width="*" />
-                    <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" />
-                    <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" />
-                    <!--<DataGridTextColumn Header="Source Field Entity" Binding="{Binding SourceField.Entity.Name}" Width="*" />-->
+                    <DataGridTextColumn Header="Source Field Name" Binding="{Binding SourceFieldName}" Width="*" />
+                    <DataGridCheckBoxColumn Header="Is Foreign" Binding="{Binding IsSourceFromForeignEntity}" Width="*" />
+                    <DataGridCheckBoxColumn Header="Is There Relation" Binding="{Binding IsThereRelations}" Width="*" />
+                    <DataGridTextColumn Header="Source Entity Name" Binding="{Binding EntityName}" Width="*" />
+                    <DataGridTextColumn Header="Source Field Type" Binding="{Binding FieldTypeName}" Width="*" />
+                    <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" Width="*" />
+                    <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" Width="*" />
+                    <DataGridTextColumn Header="Relations Path" Binding="{Binding DtoFieldRelationsPath}" Width="*" />
                     <DataGridTemplateColumn Header="Update" Width="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

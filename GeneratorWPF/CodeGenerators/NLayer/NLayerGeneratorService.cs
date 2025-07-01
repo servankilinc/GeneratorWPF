@@ -1,4 +1,5 @@
 ﻿using GeneratorWPF.CodeGenerators.NLayer.Base;
+using GeneratorWPF.CodeGenerators.NLayer.Business;
 using GeneratorWPF.CodeGenerators.NLayer.Core;
 using GeneratorWPF.CodeGenerators.NLayer.DataAccess;
 using GeneratorWPF.CodeGenerators.NLayer.Model;
@@ -178,6 +179,50 @@ public class NLayerGeneratorService
 
             // 7. Service Registrations
             log(nLayerDataAccessService.GenerateServiceRegistrations(solutionPath));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log(ex.Message);
+            return false;
+        }
+    }
+
+    public bool GenerateBusinessLayer(Action<string> log)
+    {
+        try
+        {
+            if (_appSetting == null || string.IsNullOrEmpty(_appSetting.Path) || string.IsNullOrEmpty(_appSetting.SolutionName))
+                throw new Exception("App Settings Not Completted To Generate!");
+
+            var nLayerBusinessService = new NLayerBusinessService(_appSetting);
+
+            string solutionPath = Path.Combine(_appSetting.Path, _appSetting.SolutionName);
+
+            // 1. Create Core Class Library if not exists
+            log(nLayerBusinessService.CreateProject(solutionPath, _appSetting.SolutionName));
+
+            // 2. Add Packages
+            log(nLayerBusinessService.AddPackage(solutionPath, "AutoMapper"));
+
+            // 3. Service Base
+            log(nLayerBusinessService.GenerateServiceBase(solutionPath));
+
+            // 4. Utils
+            log(nLayerBusinessService.GenerateUtils(solutionPath));
+
+            // 5. Mappings
+            log(nLayerBusinessService.GenerateMappings(solutionPath));
+
+            // 6. Abstracts
+            log(nLayerBusinessService.GenerateAbstracts(solutionPath));
+
+            // 7. Concretes
+            log(nLayerBusinessService.GenerateConcretes(solutionPath));
+
+            // 8. Service Registrations
+            log(nLayerBusinessService.GenerateServiceRegistrations(solutionPath));
 
             return true;
         }

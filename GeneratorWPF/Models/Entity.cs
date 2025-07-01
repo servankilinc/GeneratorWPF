@@ -1,3 +1,4 @@
+using GeneratorWPF.Extensions;
 using GeneratorWPF.Models.Signature;
 
 namespace GeneratorWPF.Models
@@ -29,5 +30,11 @@ namespace GeneratorWPF.Models
         public virtual ICollection<Service>? Services { get; set; }
         public virtual AppSetting? AsUserAppSetting { get; set; }
         public virtual AppSetting? AsRoleAppSetting { get; set; }
+
+
+        public string GetUniqueArgs()
+        {
+            return String.Join(", ", Fields.Where(f => f.IsUnique).Select(f => $"{f.GetMapedTypeName()} {f.Name.ToCamelCase()}").ToArray());
+        }
     }
 }

@@ -223,7 +223,6 @@ public partial class RoslynDtoGenerator
         if (dto.CrudTypeId == (int)CrudTypeEnums.Create && dto.RelatedEntityId == appSettings.UserEntityId)
         {
             sb.AppendLine("\t\tRuleFor(v => v.Password).NotNull().WithMessage(\"Password cannot be null.\");");
-            sb.AppendLine("\t\tRuleFor(v => v.Password).NotEmpty().WithMessage(\"Password is required.\");");
             sb.AppendLine("\t\tRuleFor(v => v.Password).MinimumLength(6).WithMessage(\"Password must be at least 6 characters long.\");");
         }
 

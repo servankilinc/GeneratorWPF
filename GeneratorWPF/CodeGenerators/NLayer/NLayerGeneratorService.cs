@@ -1,4 +1,5 @@
-﻿using GeneratorWPF.CodeGenerators.NLayer.Base;
+﻿using GeneratorWPF.CodeGenerators.NLayer.API;
+using GeneratorWPF.CodeGenerators.NLayer.Base;
 using GeneratorWPF.CodeGenerators.NLayer.Business;
 using GeneratorWPF.CodeGenerators.NLayer.Core;
 using GeneratorWPF.CodeGenerators.NLayer.DataAccess;
@@ -123,9 +124,12 @@ public class NLayerGeneratorService
             log(NLayerModelService.CreateProject(solutionPath, _appSetting.SolutionName));
 
             // 2. Auth
-            log(NLayerModelService.GenerateAuthLogin(solutionPath));
-            log(NLayerModelService.GenerateAuthRefreshAuth(solutionPath));
-            log(NLayerModelService.GenerateAuthSignUp(solutionPath));
+            if (_appSetting.IsThereIdentiy)
+            {
+                log(NLayerModelService.GenerateAuthLogin(solutionPath));
+                log(NLayerModelService.GenerateAuthRefreshAuth(solutionPath));
+                log(NLayerModelService.GenerateAuthSignUp(solutionPath));
+            }
 
             // 3. Dtos
             log(NLayerModelService.GenerateDtos(solutionPath));
@@ -167,10 +171,10 @@ public class NLayerGeneratorService
 
             // 3. Interceptors
             log(nLayerDataAccessService.GenerateInterceptors(solutionPath));
-            
+
             // 4. Servises
             log(nLayerDataAccessService.GenerateServices(solutionPath));
-            
+
             // 5. UOW
             log(nLayerDataAccessService.GenerateUOW(solutionPath));
 
@@ -215,14 +219,55 @@ public class NLayerGeneratorService
             // 5. Mappings
             log(nLayerBusinessService.GenerateMappings(solutionPath));
 
-            // 6. Abstracts
-            log(nLayerBusinessService.GenerateAbstracts(solutionPath));
+            // 6. Concretes
+            log(nLayerBusinessService.GeneraterService(solutionPath));
 
-            // 7. Concretes
-            log(nLayerBusinessService.GenerateConcretes(solutionPath));
-
-            // 8. Service Registrations
+            // 7. Service Registrations
             log(nLayerBusinessService.GenerateServiceRegistrations(solutionPath));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log(ex.Message);
+            return false;
+        }
+    }
+
+    public bool GenerateAPILayer(Action<string> log)
+    {
+        try
+        {
+            if (_appSetting == null || string.IsNullOrEmpty(_appSetting.Path) || string.IsNullOrEmpty(_appSetting.SolutionName))
+                throw new Exception("App Settings Not Completted To Generate!");
+
+            var nLayerAPIService = new NLayerAPIService(_appSetting);
+
+            string solutionPath = Path.Combine(_appSetting.Path, _appSetting.SolutionName);
+
+            // 1. Create Core Class Library if not exists
+            log(nLayerAPIService.CreateProject(solutionPath, _appSetting.SolutionName));
+
+            // 2. Add Packages
+            log(nLayerAPIService.AddPackage(solutionPath, "Microsoft.AspNetCore.Authentication.JwtBearer"));
+            log(nLayerAPIService.AddPackage(solutionPath, "Microsoft.AspNetCore.OpenApi"));
+            log(nLayerAPIService.AddPackage(solutionPath, "Microsoft.EntityFrameworkCore.Design"));
+            log(nLayerAPIService.AddPackage(solutionPath, "Scalar.AspNetCore"));
+
+            // 3. Exception Handler
+            log(nLayerAPIService.GenerateExceptionHandler(solutionPath));
+
+            // 4. Scalar Security Scheme Transformer
+            log(nLayerAPIService.GenerateScalarSecuritySchemeTransformer(solutionPath));
+
+            // 5. Program.cs
+            log(nLayerAPIService.GenerateProgramCs(solutionPath));
+
+            // 6. Mappings
+            log(nLayerAPIService.GenerateAppSettings(solutionPath));
+
+            // 7. Controllers
+            log(nLayerAPIService.GenerateControllers(solutionPath));
 
             return true;
         }

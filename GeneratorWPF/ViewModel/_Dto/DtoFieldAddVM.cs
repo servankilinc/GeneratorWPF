@@ -59,8 +59,10 @@ public class DtoFieldAddVM : BaseViewModel
                 if (DtoFieldCreateDto.SourceEntityId != DtoFieldCreateDto.DtoRelatedEntityId)
                 {
                     if (DtoFieldCreateDto.DtoFieldRelations!.Count == 0)
-                    MessageBox.Show("Check The Relations!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    {
+                        MessageBox.Show("Check The Relations!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
                 }
 
                 _dtoFieldRepository.Add(DtoFieldCreateDto);

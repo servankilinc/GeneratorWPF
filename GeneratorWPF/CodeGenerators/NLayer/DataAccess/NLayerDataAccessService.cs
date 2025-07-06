@@ -87,6 +87,7 @@ public class NLayerDataAccessService
     }
     #endregion
 
+    #region Static Files
     public string GenerateRepositoryBase(string solutionPath)
     {
         string code_IRepository = @"
@@ -2024,6 +2025,7 @@ public static class EntityEntryExtension
 
         return string.Join("\n", results);
     }
+    #endregion
 
     public string GenerateServices(string solutionPath)
     {
@@ -2031,76 +2033,28 @@ public static class EntityEntryExtension
 
         var entities = _entityRepository.GetAll(f => f.Control == false);
 
-        // Abstracts
+        var roslynRepositoryServiceGenerator = new RoslynRepositoryServiceGenerator();
+
+        string folderPathAbstract = Path.Combine(solutionPath, "DataAccess", "Abstract");
+        string folderPathConcrete = Path.Combine(solutionPath, "DataAccess", "Concrete");
+
         foreach (var entity in entities)
         {
-            StringBuilder sb = new();
-            sb.AppendLine("using DataAccess.Repository;");
-            sb.AppendLine("using Model.Entities;\n");
-            sb.AppendLine("namespace DataAccess.Abstract;\n");
-            sb.AppendLine($"public interface I{entity.Name}Repository : IRepository<{entity.Name}>, IRepositoryAsync<{entity.Name}>");
-            sb.AppendLine("{");
-            sb.AppendLine("}");
+            string code_abstract = roslynRepositoryServiceGenerator.GeneraterAbstract(entity.Name);
+            string code_concrete = roslynRepositoryServiceGenerator.GeneraterConcrete(entity.Name);
 
-            string folderPath = Path.Combine(solutionPath, "DataAccess", "Abstract");
-            results.Add(AddFile(folderPath, $"I{entity.Name}Repository", sb.ToString()));
+            results.Add(AddFile(folderPathAbstract, $"I{entity.Name}Repository", code_abstract));
+            results.Add(AddFile(folderPathConcrete, $"{entity.Name}Repository", code_concrete));
         }
 
-        // Concretes
-        foreach (var entity in entities)
-        {
-            StringBuilder sb = new();
-            sb.AppendLine("using Core.Utils.CrossCuttingConcerns;");
-            sb.AppendLine("using DataAccess.Abstract;");
-            sb.AppendLine("using DataAccess.Contexts;");
-            sb.AppendLine("using DataAccess.Repository;");
-            sb.AppendLine("using Model.Entities;\n");
-            sb.AppendLine("namespace DataAccess.Concrete;\n");
-            sb.AppendLine("[DataAccessException]");
-            sb.AppendLine($"public class {entity.Name}Repository : RepositoryBase<{entity.Name}, AppDbContext>, I{entity.Name}Repository");
-            sb.AppendLine("{");
-            sb.AppendLine($"\tpublic {entity.Name}Repository(AppDbContext context) : base(context)");
-            sb.AppendLine("\t{");
-            sb.AppendLine("\t}");
-            sb.AppendLine("}");
-
-            string folderPath = Path.Combine(solutionPath, "DataAccess", "Concrete");
-            results.Add(AddFile(folderPath, $"{entity.Name}Repository", sb.ToString()));
-        }
 
         if (_appSetting.IsThereIdentiy)
         {
-            string codeRefreshTokenAbstract = @"using DataAccess.Repository;
-using Model.Entities;
+            string code_abstract = roslynRepositoryServiceGenerator.GeneraterAbstract("RefreshToken");
+            string code_concrete = roslynRepositoryServiceGenerator.GeneraterAbstract("RefreshToken");
 
-namespace DataAccess.Abstract;
-
-public interface IRefreshTokenRepository : IRepository<RefreshToken>, IRepositoryAsync<RefreshToken>
-{
-}";
-
-            string codeRefreshTokenConcrete = @"
-using Core.Utils.CrossCuttingConcerns;
-using DataAccess.Abstract;
-using DataAccess.Contexts;
-using DataAccess.Repository;
-using Model.Entities;
-
-namespace DataAccess.Concrete;
-
-[DataAccessException]
-public class RefreshTokenRepository : RepositoryBase<RefreshToken, AppDbContext>, IRefreshTokenRepository
-{
-    public RefreshTokenRepository(AppDbContext context) : base(context)
-    {
-    }
-}";
-
-
-            string folderPathAbstract = Path.Combine(solutionPath, "DataAccess", "Abstract");
-            string folderPathConcrete = Path.Combine(solutionPath, "DataAccess", "Concrete");
-            results.Add(AddFile(folderPathAbstract, "IRefreshTokenRepository", codeRefreshTokenAbstract));
-            results.Add(AddFile(folderPathConcrete, "RefreshTokenRepository", codeRefreshTokenConcrete));
+            results.Add(AddFile(folderPathAbstract, "IRefreshTokenRepository", code_abstract));
+            results.Add(AddFile(folderPathConcrete, "RefreshTokenRepository", code_concrete));
         }
 
         return string.Join("\n", results);
@@ -2110,194 +2064,17 @@ public class RefreshTokenRepository : RepositoryBase<RefreshToken, AppDbContext>
     {
         var results = new List<string>();
 
+        var roslynUOWGenerator = new RoslynUOWGenerator(_appSetting);
+
         var entities = _entityRepository.GetAll(f => f.Control == false);
 
-        #region Abstract
-        StringBuilder sbAbstract = new();
-        sbAbstract.AppendLine("using DataAccess.Abstract;\n");
-        sbAbstract.AppendLine("namespace DataAccess.UoW;\n");
-        sbAbstract.AppendLine("public interface IUnitOfWork : IDisposable, IAsyncDisposable");
-        sbAbstract.AppendLine("{");
-        sbAbstract.AppendLine("\t#region Repositories");
-        foreach (var entity in entities)
-        {
-            sbAbstract.AppendLine($"\tI{entity.Name}Repository {entity.Name.Pluralize()} {{ get; }}");
-        }
-        if (_appSetting.IsThereIdentiy)
-        {
-            sbAbstract.AppendLine($"\tIRefreshTokenRepository RefreshTokens {{ get; }}");
-        }
-        sbAbstract.AppendLine("\t#endregion");
-        sbAbstract.AppendLine();
-        sbAbstract.AppendLine("\tint SaveChanges();");
-        sbAbstract.AppendLine("\tvoid BeginTransaction();");
-        sbAbstract.AppendLine("\tvoid CommitTransaction();");
-        sbAbstract.AppendLine("\tvoid RollbackTransaction();");
-        sbAbstract.AppendLine();
-        sbAbstract.AppendLine("\tTask<int> SaveChangesAsync(CancellationToken cancellationToken = default);");
-        sbAbstract.AppendLine("\tTask BeginTransactionAsync(CancellationToken cancellationToken = default);");
-        sbAbstract.AppendLine("\tTask CommitTransactionAsync(CancellationToken cancellationToken = default);");
-        sbAbstract.AppendLine("\tTask RollbackTransactionAsync(CancellationToken cancellationToken = default);");
-        sbAbstract.AppendLine("}");
+        string code_IUnitOfWork = roslynUOWGenerator.GeneraterAbstract(entities);
+        string code_UnitOfWork = roslynUOWGenerator.GeneraterConcrete(entities);
 
-        string folderPathAbstract = Path.Combine(solutionPath, "DataAccess", "UoW");
-        results.Add(AddFile(folderPathAbstract, $"IUnitOfWork", sbAbstract.ToString()));
-        #endregion
+        string folderPath = Path.Combine(solutionPath, "DataAccess", "UoW");
 
-        #region Concrete
-        StringBuilder sbConcrete = new();
-        sbConcrete.Append(@"
-using DataAccess.Abstract;
-using DataAccess.Contexts;
-using Microsoft.EntityFrameworkCore.Storage;
-
-namespace DataAccess.UoW;
-
-public class UnitOfWork : IUnitOfWork
-{
-    private readonly AppDbContext _context;
-    private IDbContextTransaction? _transaction;
-
-    #region Repositories");
-        sbConcrete.AppendLine();
-        foreach (var entity in entities)
-        {
-            sbConcrete.AppendLine($"\tpublic I{entity.Name}Repository {entity.Name.Pluralize()} {{ get; private set; }}");
-        }
-        if (_appSetting.IsThereIdentiy)
-        {
-            sbConcrete.AppendLine($"\tpublic IRefreshTokenRepository RefreshTokens {{ get; private set; }}");
-        }
-        sbConcrete.AppendLine("\t#endregion");
-
-        sbConcrete.AppendLine();
-
-        sbConcrete.AppendLine("\tpublic UnitOfWork(");
-        sbConcrete.AppendLine("\t\tAppDbContext context" + (entities.Any() ? "," : ""));
-        for (int i = 0; i < entities.Count; i++)
-        {
-            var entity = entities[i];
-            string c_argType = $"{entity.Name}Repository";
-            string argName = char.ToLowerInvariant(c_argType[0]) + c_argType.Substring(1);
-            bool isLastArg = (i + 1 < entities.Count) || _appSetting.IsThereIdentiy;
-            sbConcrete.AppendLine($"\t\tI{c_argType} {argName}" + (isLastArg ? "," : ""));
-        }
-        if (_appSetting.IsThereIdentiy)
-        {
-            sbConcrete.AppendLine($"\t\tIRefreshTokenRepository refreshTokens");
-        }
-        sbConcrete.AppendLine("\t){");
-        sbConcrete.AppendLine("\t\t_context = context;");
-        for (int i = 0; i < entities.Count; i++)
-        {
-            var entity = entities[i];
-            string c_argType = $"{entity.Name}Repository";
-            string argName = char.ToLowerInvariant(c_argType[0]) + c_argType.Substring(1);
-            sbConcrete.AppendLine($"\t\t{entity.Name.Pluralize()} = {argName};");
-        }
-        if (_appSetting.IsThereIdentiy)
-        {
-            sbConcrete.AppendLine($"\t\tRefreshTokens = refreshTokens;");
-        }
-        sbConcrete.AppendLine("\t}");
-        sbConcrete.AppendLine("");
-        sbConcrete.Append(@"
-    #region Sync Methods
-    public int SaveChanges()
-    {
-        return _context.SaveChanges();
-    }
-
-    public void BeginTransaction()
-    {
-        if (_transaction != null) throw new InvalidOperationException(""Transaction already started for begin transaction."");
-
-        _transaction = _context.Database.BeginTransaction();
-    }
-
-    public void CommitTransaction()
-    {
-        if (_transaction == null) throw new InvalidOperationException(""Transaction has not been started for commit transaction."");
-
-        _transaction.Commit();
-
-        _transaction.Dispose();
-        _transaction = null;
-    }
-
-    public void RollbackTransaction()
-    {
-        if (_transaction != null)
-        {
-            _transaction.Rollback();
-            _transaction.Dispose();
-            _transaction = null;
-        }
-    }
-    #endregion
-
-
-    #region Async Methods
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_transaction != null) throw new InvalidOperationException(""Transaction already started for begin transaction."");
-
-        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-    }
-
-    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_transaction == null) throw new InvalidOperationException(""Transaction has not been started for commit."");
-
-        await _transaction.CommitAsync(cancellationToken);
-
-        await _transaction.DisposeAsync();
-        _transaction = null;
-    }
-
-    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_transaction != null)
-        {
-            await _transaction.RollbackAsync(cancellationToken);
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
-    }
-    #endregion
-
-
-    public void Dispose()
-    {
-        if (_transaction != null)
-        {
-            _transaction.Dispose();
-            _transaction = null;
-        }
-
-        _context.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_transaction != null)
-        {
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
-
-        await _context.DisposeAsync();
-    }
-}");
-
-        string folderPathConcrete = Path.Combine(solutionPath, "DataAccess", "UoW");
-        results.Add(AddFile(folderPathConcrete, $"UnitOfWork", sbConcrete.ToString()));
-        #endregion
+        results.Add(AddFile(folderPath, "IUnitOfWork", code_IUnitOfWork));
+        results.Add(AddFile(folderPath, "UnitOfWork", code_UnitOfWork));
 
         return string.Join("\n", results);
     }
@@ -2675,16 +2452,16 @@ public static class ServiceRegistration
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, code);
-                return $"OK: File {fileName} added to Model project.";
+                return $"OK: File {fileName} added to DataAccess project.";
             }
             else
             {
-                return $"INFO: File {fileName} already exists in Model project.";
+                return $"INFO: File {fileName} already exists in DataAccess project.";
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Model project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to DataAccess project. \n Details:{ex.Message}");
         }
     }
 

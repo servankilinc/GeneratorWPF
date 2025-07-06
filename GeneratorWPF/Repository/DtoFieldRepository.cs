@@ -99,10 +99,13 @@ namespace GeneratorWPF.Repository
                     .Where(f => f.DtoFieldId == dtoFieldId)
                     .Include(x => x.DtoField)
                         .ThenInclude(x => x.SourceField)
+                            .ThenInclude(x => x.FieldType)
                     .Include(x => x.Relation)
                         .ThenInclude(x => x.PrimaryField)
+                            .ThenInclude(x => x.FieldType)
                     .Include(x => x.Relation)
                         .ThenInclude(x => x.ForeignField)
+                    .OrderBy(o => o.SequenceNo)
                     .ToList();
              
             return data;

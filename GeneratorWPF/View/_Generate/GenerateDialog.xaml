@@ -22,8 +22,8 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <ScrollViewer Height="310" Margin="20" Padding="20" Background="#ccc">
-            <TextBlock Grid.Row="0" Text="{Binding Results}" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <ScrollViewer Grid.Row="0" Margin="20" Padding="20" Background="#ccc">
+            <TextBlock Text="{Binding Results}" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top"/>
         </ScrollViewer>
         
         <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="10" >

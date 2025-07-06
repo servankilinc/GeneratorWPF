@@ -1,10 +1,8 @@
 ﻿using GeneratorWPF.CodeGenerators.NLayer;
-using GeneratorWPF.Repository;
 using GeneratorWPF.Services;
 using GeneratorWPF.Utils;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Navigation;
 
 namespace GeneratorWPF.ViewModel._Generate
 {
@@ -39,25 +37,28 @@ namespace GeneratorWPF.ViewModel._Generate
 
             StartGenerationCommand = new RellayCommand(async obj =>
             {
-                Results = "Generation Starting.";
+                Results = "Generation Started.\n";
                 IsCancelVisible = Visibility.Hidden;
 
                 bool result = await Task.Run(() =>
                 {   
                     bool stepControl = true;
-                    //stepControl = _layerGeneratorService.GenerateSolution(AppendToResults);
-                    //if (!stepControl) return false;
+                    stepControl = _layerGeneratorService.GenerateSolution(AppendToResults);
+                    if (!stepControl) return false;
 
-                    //stepControl = _layerGeneratorService.GenerateCoreLayer(AppendToResults);
-                    //if (!stepControl) return false;
+                    stepControl = _layerGeneratorService.GenerateCoreLayer(AppendToResults);
+                    if (!stepControl) return false;
 
-                    //stepControl = _layerGeneratorService.GenerateModelLayer(AppendToResults);
-                    //if (!stepControl) return false;
+                    stepControl = _layerGeneratorService.GenerateModelLayer(AppendToResults);
+                    if (!stepControl) return false;
 
-                    //stepControl = _layerGeneratorService.GenerateDataAccessLayer(AppendToResults);
-                    //if (!stepControl) return false;
+                    stepControl = _layerGeneratorService.GenerateDataAccessLayer(AppendToResults);
+                    if (!stepControl) return false;
 
                     stepControl = _layerGeneratorService.GenerateBusinessLayer(AppendToResults);
+                    if (!stepControl) return false;
+
+                    stepControl = _layerGeneratorService.GenerateAPILayer(AppendToResults);
                     if (!stepControl) return false;
 
                     return true;
@@ -79,6 +80,7 @@ namespace GeneratorWPF.ViewModel._Generate
         public void AppendToResults(string message)
         {
             Results += message + Environment.NewLine;
+            Thread.Sleep(500);
         }
     }
 }

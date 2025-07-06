@@ -1,8 +1,6 @@
-﻿using GeneratorWPF.Extensions;
-using GeneratorWPF.Models;
+﻿using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
-using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.IO;
@@ -56,44 +54,45 @@ public class NLayerBusinessService
     {
         try
         {
-            string projectPath = Path.Combine(path, "DataAccess");
-            string csprojPath = Path.Combine(projectPath, "DataAccess.csproj");
+            string projectPath = Path.Combine(path, "Business");
+            string csprojPath = Path.Combine(projectPath, "Business.csproj");
 
             if (!File.Exists(csprojPath))
-                throw new FileNotFoundException($"DataAccess.csproj not found for adding package({packageName}).");
+                throw new FileNotFoundException($"Business.csproj not found for adding package({packageName}).");
 
             var doc = XDocument.Load(csprojPath);
 
             var packageAlreadyAdded = doc.Descendants("PackageReference").Any(p => p.Attribute("Include")?.Value == packageName);
 
             if (packageAlreadyAdded)
-                return $"INFO: Package {packageName} already exists in DataAccess project.";
+                return $"INFO: Package {packageName} already exists in Business project.";
 
             RunCommand(projectPath, "dotnet", $"add package {packageName}");
 
-            return $"OK: Package {packageName} added to DataAccess project.";
+            return $"OK: Package {packageName} added to Business project.";
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding pacgace to DataAccess project. \n\t Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding pacgace to Business project. \n\t Details:{ex.Message}");
         }
     }
     public string Restore(string path)
     {
         try
         {
-            string projectPath = Path.Combine(path, "DataAccess");
+            string projectPath = Path.Combine(path, "Business");
 
             RunCommand(projectPath, "dotnet", "restore");
-            return "OK: Restored DataAccess project.";
+            return "OK: Restored Business project.";
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while restoring DataAccess project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while restoring Business project. \n Details:{ex.Message}");
         }
     }
     #endregion
 
+    #region Static Files
     public string GenerateServiceBase(string solutionPath)
     {
         string code_IServiceBase = @"
@@ -1551,6 +1550,7 @@ public class TokenService : ITokenService
 
         return string.Join("\n", results);
     }
+    #endregion
 
     public string GenerateMappings(string solutionPath)
     {
@@ -1584,6 +1584,16 @@ public class TokenService : ITokenService
             var dtoList = _dtoRepository.GetAll(f => f.RelatedEntityId == entity.Id, enableTracking: false);
 
             // Response Dtos Mapping
+            if (_appSetting.IsThereIdentiy && _appSetting.UserEntityId == entity.Id)
+            {
+                sb.AppendLine($"\t\tCreateMap<SignUpRequest, {entity.Name}>()");
+                sb.AppendLine($"\t\t\t.ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FirstName))");
+                sb.AppendLine($"\t\t\t.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))");
+                sb.AppendLine($"\t\t\t.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))");
+                sb.AppendLine($"\t\t\t.ReverseMap();");
+                sb.AppendLine();
+            }
+
             foreach (var dto in dtoList.Where(f => f.CrudTypeId == (int)CrudTypeEnums.Read))
             {
                 GenerateResponseDto(ref sb, entity, dto);
@@ -1594,6 +1604,7 @@ public class TokenService : ITokenService
             {
                 GenerateCommandDto(ref sb, entity, dto);
             }
+            sb.AppendLine($"\t\t#endregion");
         }
         sb.AppendLine("\t}");
         sb.AppendLine("}");
@@ -1603,125 +1614,30 @@ public class TokenService : ITokenService
         return AddFile(folderPath, "MappingProfiles", sb.ToString());
     }
 
-    public string GenerateAbstracts(string solutionPath)
+    public string GeneraterService(string solutionPath)
     {
         var results = new List<string>();
 
-        string folderPathAbstract = Path.Combine(solutionPath, "Business", "Abstract");
+        var roslynBusinessServiceGenerator = new RoslynBusinessServiceGenerator(_appSetting);
 
-        var entities = _entityRepository.GetAll(f => f.Control == false);
+        string folderPathAbstract = Path.Combine(solutionPath, "Business", "Abstract");
+        string folderPathConcrete = Path.Combine(solutionPath, "Business", "Concrete");
+
+        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
         foreach (var entity in entities)
         {
             var dtos = _dtoRepository.GetAll(
                 filter: f => f.RelatedEntityId == entity.Id,
-                include: i => i.Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
+                include: i => i
+                    .Include(x => x.DtoFields).ThenInclude(ti => ti.SourceField)
+                    .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
 
-            StringBuilder sb = new();
-            sb.AppendLine("using Business.ServiceBase;");
-            sb.AppendLine("using Core.BaseRequestModels;");
-            sb.AppendLine("using Core.Utils.Datatable;");
-            sb.AppendLine("using Core.Utils.Pagination;");
-            sb.AppendLine("using Model.Entities;");
-            if (dtos.Any()) sb.AppendLine($"using Model.Dtos.{entity.Name}_;");
-            sb.AppendLine();
-            sb.AppendLine("namespace Business.Abstract;");
-            sb.AppendLine();
-            sb.AppendLine($"public interface I{entity.Name}Service : IServiceBase<{entity.Name}>, IServiceBaseAsync<{entity.Name}>");
-            sb.AppendLine("{");
+            string code_abstract = roslynBusinessServiceGenerator.GeneraterAbstract(entity, dtos);
+            string code_concrete = roslynBusinessServiceGenerator.GeneraterConcrete(entity, dtos);
 
-            #region GetBasic
-            var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
-            bool isThereBasicResponseDto = basicResponseDto != null;
-            if (isThereBasicResponseDto)
-            {
-                sb.AppendLine("\t#region GetBasic");
-
-                string uniqueArgs = entity.GetUniqueArgs();
-                sb.AppendLine($"\tTask<{basicResponseDto!.Name}?> GetAsync({uniqueArgs}, CancellationToken cancellationToken = default);");
-                sb.AppendLine($"\tTask<ICollection<{basicResponseDto.Name}>?> GetAllAsync(DynamicRequest? request, CancellationToken cancellationToken = default);");
-                sb.AppendLine($"\tTask<PaginationResponse<{basicResponseDto.Name}>> GetListAsync(DynamicPaginationRequest request, CancellationToken cancellationToken = default);");
-
-                sb.AppendLine("\t#endregion\n");
-            }
-            #endregion
-
-            #region GetDetail
-            var detailResponseDto = dtos.FirstOrDefault(f => f.Id == entity.DetailResponseDtoId);
-            if (detailResponseDto != null)
-            {
-                sb.AppendLine("\t#region GetDetail");
-
-                string uniqueArgs = entity.GetUniqueArgs();
-                sb.AppendLine($"\tTask<{detailResponseDto.Name}?> GetByDetailAsync({uniqueArgs}, CancellationToken cancellationToken = default);");
-                sb.AppendLine($"\tTask<ICollection<{detailResponseDto.Name}>?> GetAllByDetailAsync(DynamicRequest? request, CancellationToken cancellationToken = default);");
-                sb.AppendLine($"\tTask<PaginationResponse<{detailResponseDto.Name}>> GetListByDetailAsync(DynamicPaginationRequest request, CancellationToken cancellationToken = default);");
-
-                sb.AppendLine("\t#endregion\n");
-            }
-            #endregion
-
-            #region Other Read Dtos
-            var readResponseDtos = dtos.Where(f => f.CrudTypeId == (int)CrudTypeEnums.Read && f.Id != entity.BasicResponseDtoId && f.Id != entity.DetailResponseDtoId);
-            if (readResponseDtos != null && readResponseDtos.Any())
-            {
-                foreach (var readDto in readResponseDtos)
-                {
-                    sb.AppendLine($"\t#region Get-{readDto.Name}");
-
-                    string uniqueArgs = entity.GetUniqueArgs();
-                    sb.AppendLine($"\tTask<{readDto.Name}?> Get{readDto.Name}Async({uniqueArgs}, CancellationToken cancellationToken = default);");
-                    sb.AppendLine($"\tTask<ICollection<{readDto.Name}>?> GetAll{readDto.Name}Async(DynamicRequest? request, CancellationToken cancellationToken = default);");
-                    sb.AppendLine($"\tTask<PaginationResponse<{readDto.Name}>> GetList{readDto.Name}Async(DynamicPaginationRequest request, CancellationToken cancellationToken = default);");
-
-                    sb.AppendLine("\t#endregion\n");
-                }
-            }
-            #endregion
-
-            #region Create
-            var createDto = dtos.FirstOrDefault(f => f.Id == entity.CreateDtoId);
-
-            string createArgType = createDto != null ? createDto.Name : entity.Name;
-            string createReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-            sb.AppendLine("\t#region Create");
-            sb.AppendLine($"\tTask<{createReturnType}> CreateAsync({createArgType} request, CancellationToken cancellationToken = default);");
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Update
-            var updateDto = dtos.FirstOrDefault(f => f.Id == entity.UpdateDtoId);
-
-            string updateArgType = updateDto != null ? updateDto.Name : entity.Name;
-            string updateReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-            sb.AppendLine("\t#region Update");
-            sb.AppendLine($"\tTask<{updateReturnType}> UpdateAsync({updateArgType} request, CancellationToken cancellationToken = default);");
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Delete
-            var deleteDto = dtos.FirstOrDefault(f => f.Id == entity.DeleteDtoId);
-
-            string deleteArgType = deleteDto != null ? $"{deleteDto.Name} request" : entity.GetUniqueArgs();
-            string deleteReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-            sb.AppendLine("\t#region Delete");
-            sb.AppendLine($"\tTask<{deleteReturnType}> DeleteAsync({deleteArgType}, CancellationToken cancellationToken = default);");
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Datatable Methods
-            sb.AppendLine("\t#region Datatable Methods");
-            sb.AppendLine($"\tTask<DatatableResponseClientSide<{entity.Name}>> DatatableClientSideAsync(DynamicRequest request, CancellationToken cancellationToken = default);");
-            sb.AppendLine($"\tTask<DatatableResponseServerSide<{entity.Name}>> DatatableServerSideAsync(DynamicDatatableServerSideRequest request, CancellationToken cancellationToken = default);");
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            sb.AppendLine("}");
-
-            results.Add(AddFile(folderPathAbstract, $"I{entity.Name}Service", sb.ToString()));
+            results.Add(AddFile(folderPathAbstract, $"I{entity.Name}Service", code_abstract));
+            results.Add(AddFile(folderPathConcrete, $"{entity.Name}Service", code_concrete));
         }
 
         if (_appSetting.IsThereIdentiy)
@@ -1746,366 +1662,6 @@ public interface IAuthService
         return string.Join("\n", results);
     }
 
-    public string GenerateConcretes(string solutionPath)
-    {
-        var results = new List<string>();
-
-        string folderPathConcrete = Path.Combine(solutionPath, "Business", "Concrete");
-
-        var entities = _entityRepository.GetAll(f => f.Control == false);
-
-        foreach (var entity in entities)
-        {
-            var dtos = _dtoRepository.GetAll(
-                filter: f => f.RelatedEntityId == entity.Id,
-                include: i => i.Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields).Include(i => i.DtoFields));
-
-            StringBuilder sb = new();
-            sb.AppendLine("using AutoMapper;");
-            sb.AppendLine("using Business.Abstract;");
-            sb.AppendLine("using Business.ServiceBase;");
-            sb.AppendLine("using Core.BaseRequestModels;");
-            sb.AppendLine("using Core.Utils.CrossCuttingConcerns;");
-            sb.AppendLine("using Core.Utils.Datatable;");
-            sb.AppendLine("using Core.Utils.Pagination;");
-            sb.AppendLine("using DataAccess.Abstract;");
-            sb.AppendLine("using Microsoft.EntityFrameworkCore;");
-            sb.AppendLine("using Model.Entities;");
-            if (dtos.Any()) sb.AppendLine($"using Model.Dtos.{entity.Name}_;");
-            sb.AppendLine();
-            sb.AppendLine("namespace Business.Concrete;");
-            sb.AppendLine();
-            sb.AppendLine("[ExceptionHandler]");
-            sb.AppendLine();
-            sb.AppendLine($"public class {entity.Name}Service : ServiceBase<{entity.Name}, I{entity.Name}Repository>, I{entity.Name}Service\r\n");
-            sb.AppendLine("{");
-            string respositoryArgName = $"{entity.Name}Repository".Pluralize();
-            sb.AppendLine($"\tpublic {entity.Name}Service(I{entity.Name}Repository {respositoryArgName}, IMapper mapper) : base({respositoryArgName}, mapper)\r\n    {{\r\n    }}\n");
-
-
-            #region GetBasic
-            var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
-            bool isThereBasicResponseDto = basicResponseDto != null;
-            if (isThereBasicResponseDto)
-            {
-                string includeRule = GetIncludeRules(entity, basicResponseDto!);
-
-                sb.AppendLine("\t#region GetBasic");
-                GenerateGetMethod(ref sb, entity, basicResponseDto!, includeRule);
-                GenerateGetAllMethod(ref sb, entity, basicResponseDto!, includeRule);
-                GenerateGetListMethod(ref sb, entity, basicResponseDto!, includeRule);
-                sb.AppendLine("\t#endregion\n");
-            }
-            #endregion
-
-            #region GetDetail
-            var detailResponseDto = dtos.FirstOrDefault(f => f.Id == entity.DetailResponseDtoId);
-            if (detailResponseDto != null)
-            {
-                string includeRule = GetIncludeRules(entity, detailResponseDto);
-
-                sb.AppendLine("\t#region GetDetail");
-                GenerateGetMethod(ref sb, entity, detailResponseDto, includeRule, "ByDetail");
-                GenerateGetAllMethod(ref sb, entity, detailResponseDto, includeRule, "ByDetail");
-                GenerateGetListMethod(ref sb, entity, detailResponseDto, includeRule, "ByDetail");
-                sb.AppendLine("\t#endregion\n");
-            }
-            #endregion
-
-            #region Other Read Dtos
-            var readResponseDtos = dtos.Where(f => f.CrudTypeId == (int)CrudTypeEnums.Read && f.Id != entity.BasicResponseDtoId && f.Id != entity.DetailResponseDtoId);
-            if (readResponseDtos != null && readResponseDtos.Any())
-            {
-                foreach (var readDto in readResponseDtos)
-                {
-                    string includeRule = GetIncludeRules(entity, readDto);
-
-                    sb.AppendLine($"\t#region Get-{readDto.Name}");
-                    GenerateGetMethod(ref sb, entity, readDto, includeRule, readDto.Name);
-                    GenerateGetAllMethod(ref sb, entity, readDto, includeRule, readDto.Name);
-                    GenerateGetListMethod(ref sb, entity, readDto, includeRule, readDto.Name);
-                    sb.AppendLine("\t#endregion\n");
-                }
-            }
-            #endregion
-
-            #region Create
-            sb.AppendLine("\t#region Create");
-            GenerateCreateMethod(ref sb, entity, dtos);
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Update
-            sb.AppendLine("\t#region Update");
-            GenerateUpdateMethod(ref sb, entity, dtos);
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Delete
-            sb.AppendLine("\t#region Delete");
-            GenerateDeleteMethod(ref sb, entity, dtos);
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            #region Datatable Methods
-            sb.AppendLine("\t#region Datatable Methods");
-            GenerateDatatableClientSideAsync(ref sb, entity);
-            GenerateDatatableServerSideAsync(ref sb, entity);
-            sb.AppendLine("\t#endregion\n");
-            #endregion
-
-            sb.AppendLine("}");
-
-            results.Add(AddFile(folderPathConcrete, $"{entity.Name}Service", sb.ToString()));
-        }
-
-
-        if (_appSetting.IsThereIdentiy)
-        {
-            string code_AuthService = @"
-using AutoMapper;
-using Business.Abstract;
-using Business.Utils.TokenService;
-using Core.Utils.Auth;
-using Core.Utils.CrossCuttingConcerns;
-using Core.Utils.ExceptionHandle.Exceptions;
-using Core.Utils.HttpContextManager;
-using DataAccess.UoW;
-using Microsoft.AspNetCore.Identity;
-using Model.Auth.Login;
-using Model.Auth.RefreshAuth;
-using Model.Auth.SignUp;
-using Model.Dtos.User_;
-using Model.Entities;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Threading;
-
-namespace Business.Concrete;
-
-public class AuthService : IAuthService
-{
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ITokenService _tokenService;
-    private readonly UserManager<User> _userManager;
-    private readonly HttpContextManager _httpContextManager;
-    private readonly IMapper _mapper;
-    public AuthService(
-        IUnitOfWork unitOfWork,
-        ITokenService tokenService,
-        UserManager<User> userManager,
-        HttpContextManager httpContextManager,
-        IMapper mapper
-    )
-    {
-        _unitOfWork = unitOfWork;
-        _tokenService = tokenService;
-        _userManager = userManager;
-        _httpContextManager = httpContextManager;
-        _mapper = mapper;
-    }
-
-
-    [Validation(typeof(LoginRequest))]
-    public async Task<LoginResponse> LoginAsync(LoginRequest loginRequest, CancellationToken cancellationToken = default)
-    {
-        User? user = await _userManager.FindByEmailAsync(loginRequest.Email);
-        if (user == null) throw new BusinessException(""The email address is not exist."", description: $""Requester email address: {loginRequest.Email}"");
-
-        bool isPasswordValid = await _userManager.CheckPasswordAsync(user, loginRequest.Password);
-        if (!isPasswordValid) throw new BusinessException(""Password does not correct."", description: $""Requester email address: {loginRequest.Email}"");
-
-        IList<string> roles = await _userManager.GetRolesAsync(user);
-        IList<Claim> claims = await GetClaimsAsync(user, roles);
-        AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
-        RefreshToken refreshToken = _tokenService.GenerateRefreshToken(user);
-
-        string? ipAddress = _httpContextManager.GetClientIp();
-        if (string.IsNullOrEmpty(ipAddress)) throw new GeneralException(""Ip address could not found for login."", description: $""Requester email address: {loginRequest.Email}"");
-
-        await _unitOfWork.RefreshTokens.DeleteAndSaveAsync(where: f => f.UserId == user.Id && f.IpAddress.Trim() == ipAddress.Trim(), cancellationToken);
-        await _unitOfWork.RefreshTokens.AddAndSaveAsync(refreshToken, cancellationToken);
-
-        if (_httpContextManager.IsMobile())
-        {
-            return new LoginTrustedResponse
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                User = _mapper.Map<UserBasicResponseDto>(user),
-                Roles = roles
-            };
-        }
-        else
-        {
-            _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
-            return new LoginResponse
-            {
-                AccessToken = accessToken,
-                User = _mapper.Map<UserBasicResponseDto>(user),
-                Roles = roles
-            };
-        }
-    }
-
-    [Validation(typeof(SignUpRequest))]
-    public async Task<SignUpResponse> SignUpAsync(SignUpRequest signUpRequest, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-            bool isExistEmail = await _unitOfWork.Users.IsExistAsync(where: f => f.NormalizedEmail == signUpRequest.Email.ToUpperInvariant(), cancellationToken: cancellationToken);
-            if (isExistEmail) throw new BusinessException(""The email address is already in use."", description: $""Requester email address: {signUpRequest.Email}"");
-
-            User user = _mapper.Map<User>(signUpRequest);
-            user.UserName = $""{signUpRequest.Email}_{DateTime.UtcNow:yyyyMMddHHmmss}"";
-
-            var result = await _userManager.CreateAsync(user, signUpRequest.Password);
-            if (!result.Succeeded) throw new GeneralException(string.Join(""\n"", result.Errors.Select(e => e.Description)), description: $""User cannot be created. Requester email: {signUpRequest.Email}"");
-            
-            var roleResult = await _userManager.AddToRoleAsync(user, ""User"");
-            if (!roleResult.Succeeded) throw new GeneralException(""Failed to assign role."", description: $""Requester email address: {signUpRequest.Email}"");
-
-            IList<string> roles = await _userManager.GetRolesAsync(user);
-            IList<Claim> claims = await GetClaimsAsync(user, roles);
-            AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
-            RefreshToken refreshToken = _tokenService.GenerateRefreshToken(user);
-
-            await _unitOfWork.RefreshTokens.AddAndSaveAsync(refreshToken, cancellationToken);
-
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            if (_httpContextManager.IsMobile())
-            {
-                return new SignUpTrustedResponse
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken.Token,
-                    User = _mapper.Map<UserBasicResponseDto>(user),
-                    Roles = roles
-                };
-            }
-            else
-            {
-                _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
-                return new SignUpResponse
-                {
-                    AccessToken = accessToken,
-                    User = _mapper.Map<UserBasicResponseDto>(user),
-                    Roles = roles
-                };
-            }
-        }
-        catch (Exception)
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
-    }
-
-
-    [ExceptionHandler]
-    [Validation(typeof(RefreshAuthRequest))]
-    public async Task<RefreshAuthResponse> RefreshAuthAsync(RefreshAuthRequest refreshAuthRequest, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-            if (!_httpContextManager.IsMobile())
-            {
-                refreshAuthRequest.RefreshToken = _httpContextManager.GetRefreshTokenFromCookie();
-            }
-
-            User? user = await _unitOfWork.Users.GetAsync(where: f => f.Id == refreshAuthRequest.UserId, cancellationToken: cancellationToken);
-            if (user == null) throw new GeneralException(""User cannot found for refresh auth!"", description: $""Requester userId: {refreshAuthRequest.UserId}"");
-
-            string? ipAddress = _httpContextManager.GetClientIp();
-            if (string.IsNullOrEmpty(ipAddress)) throw new GeneralException(""Ip address could not readed for refresh auth."");
-
-            DateTime nowOnUtc = DateTime.UtcNow;
-            ICollection<RefreshToken>? refreshTokens = await _unitOfWork.RefreshTokens.GetAllAsync(where: f =>
-                f.UserId == refreshAuthRequest.UserId &&
-                f.TTL > 0 &&
-                f.ExpirationUtc > nowOnUtc &&
-                f.IpAddress.ToLowerInvariant().Trim() == ipAddress.ToLowerInvariant().Trim(),
-                cancellationToken: cancellationToken
-            );
-            if (refreshTokens == null) throw new GeneralException(""There is no available refresh token."");
-
-            RefreshToken? refreshToken = refreshTokens.FirstOrDefault(f => f.Token.Trim() == refreshAuthRequest.RefreshToken);
-            if (refreshToken == null) throw new GeneralException(""There is no available refresh token."");
-
-            refreshToken.Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            refreshToken.TTL -= 1;
-
-            await _unitOfWork.RefreshTokens.DeleteAndSaveAsync(where: f => f.Id != refreshToken.Id && f.UserId == user.Id && f.IpAddress.Trim() == ipAddress.Trim(), cancellationToken);
-            await _unitOfWork.RefreshTokens.UpdateAndSaveAsync(refreshToken, cancellationToken);
-
-            IList<string> roles = await _userManager.GetRolesAsync(user);
-            IList<Claim> claims = await GetClaimsAsync(user, roles);
-            AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
-
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            if (_httpContextManager.IsMobile())
-            {
-                return new RefreshAuthTrustedResponse
-                {
-                    RefreshToken = refreshToken.Token,
-                    AccessToken = accessToken,
-                    User = _mapper.Map<UserBasicResponseDto>(user),
-                };
-            }
-            else
-            {
-                _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
-                return new RefreshAuthResponse
-                {
-                    AccessToken = accessToken,
-                    User = _mapper.Map<UserBasicResponseDto>(user),
-                };
-            }
-        }
-        catch (Exception)
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
-    }
-
-
-    #region Helpers
-    private async Task<IList<Claim>> GetClaimsAsync(User user, IList<string> roles)
-    {
-        List<Claim> claimList = new List<Claim>()
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, $""{user.Name} {user.LastName}"")
-        };
-
-        if (!string.IsNullOrEmpty(user.Email))
-            claimList.Add(new Claim(ClaimTypes.Email, user.Email));
-
-        IList<Claim>? persistentClaims = await _userManager.GetClaimsAsync(user);
-        claimList.AddRange(persistentClaims);
-
-        IEnumerable<Claim>? roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role));
-        claimList.AddRange(roleClaims);
-
-        return claimList;
-    }
-    #endregion
-}
-";
-
-            results.Add(AddFile(folderPathConcrete, "AuthService", code_AuthService));
-        }
-
-        return string.Join("\n", results);
-    }
-
     public string GenerateServiceRegistrations(string solutionPath)
     {
         var results = new List<string>();
@@ -2115,7 +1671,6 @@ public class AuthService : IAuthService
         StringBuilder sb = new();
         sb.AppendLine("using Autofac;");
         sb.AppendLine("using Autofac.Extras.DynamicProxy;");
-        sb.AppendLine("using Core.Utils.CrossCuttingConcerns;");
         sb.AppendLine("using Business.Abstract;");
         sb.AppendLine("using Business.Concrete;");
         if (_appSetting.IsThereIdentiy) sb.AppendLine("using Business.Utils.TokenService;");
@@ -2194,16 +1749,16 @@ public static class ServiceRegistration
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, code);
-                return $"OK: File {fileName} added to Model project.";
+                return $"OK: File {fileName} added to Business project.";
             }
             else
             {
-                return $"INFO: File {fileName} already exists in Model project.";
+                return $"INFO: File {fileName} already exists in Business project.";
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Model project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Business project. \n Details:{ex.Message}");
         }
     }
 
@@ -2278,12 +1833,18 @@ public static class ServiceRegistration
                 // a.1) ilk ilişki koşulu
                 var dfrFirst = dtoFieldRelations.First();
 
+                bool isLastRel = dtoFieldRelations.Count == 1;
                 bool controlOfRelationFirst = dfrFirst.Relation.PrimaryField.EntityId == entity.Id;
 
                 string destPropOfFirst = controlOfRelationFirst ? dfrFirst.Relation.PrimaryEntityVirPropName : dfrFirst.Relation.ForeignEntityVirPropName;
 
                 sb.AppendLine($"\t\t\t\topt => opt.MapFrom(src => src.{destPropOfFirst} != default ?");
-                sb.AppendLine($"\t\t\t\t\tsrc.{destPropOfFirst}");
+
+                if (isLastRel && dfrFirst.DtoField.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)
+                    sb.AppendLine($"\t\t\t\t\tsrc.{destPropOfFirst}.{dfrFirst.DtoField.SourceField.Name}");
+                else
+                    sb.AppendLine($"\t\t\t\t\tsrc.{destPropOfFirst}");
+
 
                 // a.2) diğer ilişkiler
                 bool isFoundList = dfrFirst.Relation.RelationTypeId == (int)RelationTypeEnums.OneToMany;
@@ -2294,27 +1855,40 @@ public static class ServiceRegistration
                 {
                     var dfr = dtoFieldRelations[i];
 
+                    isLastRel = i + 1 == dtoFieldRelations.Count;
+
                     bool controlOfRelation = dfr.Relation.PrimaryField.EntityId == lastDestEntityId;
 
                     string srcProp = controlOfRelation ? dfr.Relation.ForeignEntityVirPropName : dfr.Relation.PrimaryEntityVirPropName;
                     string destProp = controlOfRelation ? dfr.Relation.PrimaryEntityVirPropName : dfr.Relation.ForeignEntityVirPropName;
 
-                    bool isDestList = dfr.RelationId == (int)RelationTypeEnums.OneToMany;
-
+                    bool isDestList =
+                        dfr.Relation.RelationTypeId == (int)RelationTypeEnums.OneToMany &&
+                        controlOfRelation;
+                    // primarykeyin olduğu entity destination ise list olmalalı
                     string tabs = string.Concat(Enumerable.Repeat("\t", i + 5));
                     if (isFoundList == false)
                     {
-                        sb.AppendLine($"{tabs}.{destProp}");
+                        if (isLastRel && dfr.DtoField.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)
+                            sb.AppendLine($"{tabs}{destProp}.{dfr.DtoField.SourceField.Name}");
+                        else
+                            sb.AppendLine($"{tabs}.{destProp}");
                     }
                     else
                     {
                         if (isDestList)
                         {
-                            sb.AppendLine($"{tabs}.SelectMany(x => x.{destProp})");
+                            if (isLastRel && dfr.DtoField.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)
+                                sb.AppendLine($"{tabs}.SelectMany(x => x.{destProp}.{dfr.DtoField.SourceField.Name})");
+                            else
+                                sb.AppendLine($"{tabs}.SelectMany(x => x.{destProp})");
                         }
                         else
                         {
-                            sb.AppendLine($"{tabs}.Select(x => x.{destProp})");
+                            if (isLastRel && dfr.DtoField.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base)
+                                sb.AppendLine($"{tabs}.Select(x => x.{destProp}.{dfr.DtoField.SourceField.Name})");
+                            else
+                                sb.AppendLine($"{tabs}.Select(x => x.{destProp})");
                         }
                     }
 
@@ -2356,228 +1930,6 @@ public static class ServiceRegistration
                 sb.AppendLine($"\t\t\t.ForMember(dest => dest.{dtoField.Name}, opt => opt.MapFrom(src => src))");
             }
         }
-        sb.AppendLine($"\t\t#endregion");
         sb.AppendLine();
-    }
-
-
-    private string GetIncludeRules(Entity entity, Dto _dto_)
-    {
-        StringBuilder sb = new StringBuilder();
-        var dtoFieldIdsOfBasicResponse = _dto_.DtoFields.Select(f => f.Id).ToList();
-        var isThereIncludeBasicResp = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfBasicResponse.Contains(f.DtoFieldId));
-        if (isThereIncludeBasicResp)
-        {
-            sb.AppendLine($"\t\t\tinclude: i => i");
-
-            foreach (var dtoField in _dto_.DtoFields)
-            {
-                var dtoFieldRelations = _dtoFieldRepository.GetDtoFieldRelations(dtoField.Id);
-                if (!dtoFieldRelations.Any()) continue;
-
-                // 1) ilk ilişki koşulu
-                var dfrFirst = dtoFieldRelations.First();
-
-                bool controlOfRelationFirst = dfrFirst.Relation.PrimaryField.EntityId == entity.Id;
-
-                string destPropOfFirst = controlOfRelationFirst ? dfrFirst.Relation.PrimaryEntityVirPropName : dfrFirst.Relation.ForeignEntityVirPropName;
-
-                sb.AppendLine($"\t\t\t\t.Include(x => x.{destPropOfFirst})");
-
-                int lastDestEntityId = controlOfRelationFirst ? dfrFirst.Relation.ForeignField.EntityId : dfrFirst.Relation.PrimaryField.EntityId;
-
-                for (int i = 1; i < dtoFieldRelations.Count; i++)
-                {
-                    var dfr = dtoFieldRelations[i];
-
-                    bool controlOfRelation = dfr.Relation.PrimaryField.EntityId == lastDestEntityId;
-
-                    string destProp = controlOfRelation ? dfr.Relation.PrimaryEntityVirPropName : dfr.Relation.ForeignEntityVirPropName;
-
-                    string tabs = string.Concat(Enumerable.Repeat("\t", i + 4));
-                    sb.AppendLine($"{tabs}.ThenInclude(x => x.{destProp})");
-
-                    lastDestEntityId = controlOfRelation ? dfr.Relation.ForeignField.EntityId : dfr.Relation.PrimaryField.EntityId;
-                }
-            }
-        }
-
-        return sb.ToString();
-    }
-
-
-    private void GenerateGetMethod(ref StringBuilder sb, Entity entity, Dto _dto_, string includeRule, string? extName = "")
-    {
-        string uniqueArgs = entity.GetUniqueArgs();
-        var uniqueFields = entity.Fields.Where(f => f.IsUnique);
-
-        sb.AppendLine($"\tpublic async Task<{_dto_.Name}?> Get{extName}Async({uniqueArgs}, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        // null checks 
-        foreach (var uniqueField in uniqueFields)
-        {
-            string argName = uniqueField.Name.ToCamelCase();
-            sb.AppendLine($"\t\tif ({argName} == default) throw new ArgumentNullException(nameof({argName}));");
-        }
-        sb.AppendLine();
-        // code of method call
-        string rule = string.Join(" && ", uniqueFields.Select(uf => $"f.{uf.Name} == {uf.Name.ToCamelCase()}"));
-        sb.AppendLine($"\t\tvar result = await _GetAsync<{_dto_.Name}>(");
-        sb.AppendLine($"\t\t\twhere: f => {rule},");
-        // includes
-        sb.AppendLine(includeRule + ",");
-        sb.AppendLine($"\t\t\ttracking: false,");
-        sb.AppendLine($"\t\t\tcancellationToken: cancellationToken");
-        sb.AppendLine($"\t\t);");
-        sb.AppendLine();
-        sb.AppendLine($"\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private void GenerateGetAllMethod(ref StringBuilder sb, Entity entity, Dto _dto_, string includeRule, string? extName = "")
-    {
-        sb.AppendLine($"\tpublic async Task<ICollection<{_dto_.Name}>?> GetAll{extName}Async(DynamicRequest? request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        sb.AppendLine($"\t\tvar result = await _GetListAsync<{_dto_.Name}>(");
-        sb.AppendLine($"\t\t\tfilter: request?.Filter,");
-        sb.AppendLine($"\t\t\tsorts: request?.Sorts,");
-        // includes
-        sb.AppendLine(includeRule + ",");
-        sb.AppendLine($"\t\t\ttracking: false,");
-        sb.AppendLine($"\t\t\tcancellationToken: cancellationToken");
-        sb.AppendLine($"\t\t);");
-        sb.AppendLine();
-        sb.AppendLine($"\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private void GenerateGetListMethod(ref StringBuilder sb, Entity entity, Dto _dto_, string includeRule, string? extName = "")
-    {
-        sb.AppendLine($"\tpublic async Task<PaginationResponse<{_dto_.Name}>> GetList{extName}Async(DynamicPaginationRequest request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        sb.AppendLine($"\t\tvar result = await _PaginationAsync<{_dto_.Name}>(");
-        sb.AppendLine($"\t\t\tpaginationRequest: request.PaginationRequest,");
-        sb.AppendLine($"\t\t\tfilter: request.Filter,");
-        sb.AppendLine($"\t\t\tsorts: request?.Sorts,");
-        // includes
-        sb.AppendLine(includeRule + ",");
-        sb.AppendLine($"\t\t\tcancellationToken: cancellationToken");
-        sb.AppendLine($"\t\t);");
-        sb.AppendLine();
-        sb.AppendLine($"\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private static void GenerateCreateMethod(ref StringBuilder sb, Entity entity, List<Dto> dtos)
-    {
-        var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
-        bool isThereBasicResponseDto = basicResponseDto != null;
-
-        var createDto = dtos.FirstOrDefault(f => f.Id == entity.CreateDtoId);
-        bool isThereCreateDto = createDto != null;
-
-        string createArgType = isThereCreateDto ? createDto!.Name : entity.Name;
-        string createReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-        if (isThereCreateDto)
-            sb.AppendLine($"\t[Validation(typeof({createArgType}))]");
-        sb.AppendLine($"\tpublic async Task<{createReturnType}> CreateAsync({createArgType} request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        if (isThereBasicResponseDto)
-            sb.AppendLine($"\t\tvar result = await _AddAsync<{createReturnType}, {basicResponseDto!.Name}>(request, cancellationToken);");
-        else
-            sb.AppendLine($"\t\tvar result = await _AddAsync<{createReturnType}>(request, cancellationToken);");
-        sb.AppendLine();
-        sb.AppendLine("\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private static void GenerateUpdateMethod(ref StringBuilder sb, Entity entity, List<Dto> dtos)
-    {
-        var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
-        bool isThereBasicResponseDto = basicResponseDto != null;
-
-        var updateDto = dtos.FirstOrDefault(f => f.Id == entity.UpdateDtoId);
-        bool isThereUpdateDto = updateDto != null;
-
-        string updateArgType = isThereUpdateDto ? updateDto!.Name : entity.Name;
-        string updateReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-        if (isThereUpdateDto)
-            sb.AppendLine($"\t[Validation(typeof({updateArgType}))]");
-        sb.AppendLine($"\tpublic async Task<{updateReturnType}> UpdateAsync({updateArgType} request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        if (isThereBasicResponseDto) sb.AppendLine($"\t\tvar result = await _UpdateAsync<{updateReturnType}, {basicResponseDto!.Name}>(updateModel: request, where: f => f.Id == request.Id, cancellationToken);");
-        else sb.AppendLine($"\t\tvar result = await _UpdateAsync<{updateReturnType}>(updateModel: request, where: f => f.Id == request.Id, cancellationToken);");
-        sb.AppendLine();
-        sb.AppendLine("\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private static void GenerateDeleteMethod(ref StringBuilder sb, Entity entity, List<Dto> dtos)
-    {
-        var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
-        bool isThereBasicResponseDto = basicResponseDto != null;
-
-        var deleteDto = dtos.FirstOrDefault(f => f.Id == entity.DeleteDtoId);
-        bool isThereDeleteDto = deleteDto != null;
-
-        string deleteArgType = isThereDeleteDto ? deleteDto!.Name : entity.GetUniqueArgs();
-        string deleteReturnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
-
-        var uniqueFields = entity.Fields.Where(f => f.IsUnique);
-
-        if (isThereDeleteDto)
-        {
-            string rule = string.Join(" && ", uniqueFields.Select(uf => $"f.{uf.Name} == request.{uf.Name}"));
-
-            sb.AppendLine($"\tpublic async Task DeleteAsync({deleteArgType} request, CancellationToken cancellationToken = default)");
-            sb.AppendLine("\t\t{");
-            sb.AppendLine($"\t\tawait _DeleteAsync(where: f => {rule}, cancellationToken);");
-            sb.AppendLine("\t}");
-        }
-        else
-        {
-            sb.AppendLine($"\tpublic async Task DeleteAsync({deleteArgType}, CancellationToken cancellationToken = default)");
-            sb.AppendLine("\t{");
-            // null checks 
-            foreach (var uniqueField in uniqueFields)
-            {
-                string argName = uniqueField.Name.ToCamelCase();
-                sb.AppendLine($"\t\tif ({argName} == default) throw new ArgumentNullException(nameof({argName}));");
-            }
-            string rule = string.Join(" && ", uniqueFields.Select(uf => $"f.{uf.Name} == {uf.Name.ToCamelCase()}"));
-
-            sb.AppendLine($"\t\tawait _DeleteAsync(where: f => {rule}, cancellationToken);");
-            sb.AppendLine("\t}");
-        }
-    }
-
-    private void GenerateDatatableClientSideAsync(ref StringBuilder sb, Entity entity)
-    {
-        sb.AppendLine($"\tpublic async Task<DatatableResponseClientSide<{entity.Name}>> DatatableClientSideAsync(DynamicRequest request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        sb.AppendLine($"\t\tvar result = await _DatatableClientSideAsync(");
-        sb.AppendLine($"\t\t\tfilter: request.Filter,");
-        sb.AppendLine($"\t\t\tsorts: request.Sorts,");
-        sb.AppendLine($"\t\t\tcancellationToken: cancellationToken");
-        sb.AppendLine($"\t\t);");
-        sb.AppendLine();
-        sb.AppendLine($"\t\treturn result;");
-        sb.AppendLine("\t}");
-    }
-
-    private void GenerateDatatableServerSideAsync(ref StringBuilder sb, Entity entity)
-    {
-        sb.AppendLine($"\tpublic async Task<DatatableResponseServerSide<User>> DatatableServerSideAsync(DynamicDatatableServerSideRequest request, CancellationToken cancellationToken = default)");
-        sb.AppendLine("\t{");
-        sb.AppendLine($"\t\tvar result = await _DatatableServerSideAsync(");
-        sb.AppendLine($"\t\t\tdatatableRequest: request.DatatableRequest,");
-        sb.AppendLine($"\t\t\tfilter: request.Filter,");
-        sb.AppendLine($"\t\t\tcancellationToken: cancellationToken");
-        sb.AppendLine($"\t\t);");
-        sb.AppendLine();
-        sb.AppendLine($"\t\treturn result;");
-        sb.AppendLine("\t}");
     }
 }

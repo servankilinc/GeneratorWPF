@@ -133,8 +133,8 @@ public partial class RoslynBusinessServiceGenerator
     public string GeneraterConcrete(Entity entity, List<Dto> dtos)
     {
         string serviceName = $"{entity.Name}Service";
-        string repoTypeName = $"I{entity.Name}Repositoty";
-        string repoArgName = $"{entity.Name}Repositoty".ToCamelCase();
+        string repoTypeName = $"I{entity.Name}Repository";
+        string repoArgName = $"{entity.Name}Repository".ToCamelCase();
 
         List<Field> uniqueFields = entity.Fields.Where(f => f.IsUnique).ToList();
 
@@ -214,7 +214,7 @@ public partial class RoslynBusinessServiceGenerator
              .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
              .AddParameterListParameters(
                  SyntaxFactory.Parameter(SyntaxFactory.Identifier(repoArgName)).WithType(SyntaxFactory.ParseTypeName(repoTypeName)),
-                 SyntaxFactory.Parameter(SyntaxFactory.Identifier("IMapper")).WithType(SyntaxFactory.ParseTypeName("mapper"))
+                 SyntaxFactory.Parameter(SyntaxFactory.Identifier("mapper")).WithType(SyntaxFactory.ParseTypeName("IMapper"))
              )
              .WithInitializer(
                  SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
@@ -227,6 +227,7 @@ public partial class RoslynBusinessServiceGenerator
         // 4) Class
         var classDeclaration = SyntaxFactory
             .ClassDeclaration(serviceName)
+            .AddAttributeLists(attributeList)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .AddBaseListTypes(
                 SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName($"ServiceBase<{entity.Name}, {repoTypeName}>")),
@@ -720,10 +721,10 @@ public partial class RoslynBusinessServiceGenerator
         string returnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
 
         // 1) Attribute List
-        var attributeList = SyntaxFactory.AttributeList();
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>();
         if (isThereCreateDto)
         {
-            attributeList = attributeList.AddAttributes(
+            attributeList.Add(
                 SyntaxFactory.Attribute(
                     SyntaxFactory.IdentifierName("Validation"),
                     SyntaxFactory.AttributeArgumentList(
@@ -764,12 +765,14 @@ public partial class RoslynBusinessServiceGenerator
         var awaitInvocation =
             SyntaxFactory.AwaitExpression(
                 SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("_AddAsync"))
-                        .AddTypeArgumentListArguments(identifierNameSyntaxes.ToArray())
+                    identifierNameSyntaxes.Count > 0 ?
+                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("_AddAsync"))
+                            .AddTypeArgumentListArguments(identifierNameSyntaxes.ToArray())
+                        :
+                        SyntaxFactory.IdentifierName("_AddAsync")
                 )
                 .AddArgumentListArguments(
-                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request"))
-                        .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("insertModel"))),
+                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request")),
                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
                 )
             );
@@ -790,23 +793,46 @@ public partial class RoslynBusinessServiceGenerator
 
 
         // 6) Method Decleration
-        return SyntaxFactory
-            .MethodDeclaration(
-                SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
-                SyntaxFactory.Identifier("CreateAsync")
-            )
-            .AddAttributeLists(attributeList)
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-            )
-            .AddParameterListParameters(paramList.ToArray())
-            .WithBody(
-                SyntaxFactory.Block(
-                    methodCallDecleration,
-                    returnStatement
+        if (attributeList.Count > 0)
+        {
+            return SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
+                    SyntaxFactory.Identifier("CreateAsync")
                 )
-            );
+                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+                )
+                .AddParameterListParameters(paramList.ToArray())
+                .WithBody(
+                    SyntaxFactory.Block(
+                        methodCallDecleration,
+                        returnStatement
+                    )
+                );
+        }
+        else
+        {
+
+            return SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
+                    SyntaxFactory.Identifier("CreateAsync")
+                )
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+                )
+                .AddParameterListParameters(paramList.ToArray())
+                .WithBody(
+                    SyntaxFactory.Block(
+                        methodCallDecleration,
+                        returnStatement
+                    )
+                );
+        }
     }
 
     private MethodDeclarationSyntax GeneratorUpdateMethodOfConcrete(Entity entity, List<Dto> dtos, List<Field> uniqueFields)
@@ -821,10 +847,10 @@ public partial class RoslynBusinessServiceGenerator
         string returnType = isThereBasicResponseDto ? basicResponseDto!.Name : entity.Name;
 
         // 1) Attribute List
-        var attributeList = SyntaxFactory.AttributeList();
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>();
         if (isThereUpdateDto)
         {
-            attributeList = attributeList.AddAttributes(
+            attributeList.Add(
                 SyntaxFactory.Attribute(
                     SyntaxFactory.IdentifierName("Validation"),
                     SyntaxFactory.AttributeArgumentList(
@@ -854,17 +880,25 @@ public partial class RoslynBusinessServiceGenerator
             )
         };
 
+
         // 3) Arguments of method call
-        var argumentsOfMethod = new List<ArgumentSyntax>
+        var argumentsOfMethod = new List<ArgumentSyntax>();
+        if (isThereUpdateDto)
         {
-            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request"))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("updateModel"))),
-
-            CreateWhereRule(uniqueFields, "request"),
-
+            argumentsOfMethod.Add(
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request"))
+                    .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("updateModel"))));
+            argumentsOfMethod.Add(CreateWhereRule(uniqueFields, "request"));
+        }
+        else
+        {
+            argumentsOfMethod.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request"))
+                    .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("entity"))));
+            argumentsOfMethod.Add(CreateWhereRule(uniqueFields, "request"));
+        }
+        argumentsOfMethod.Add(
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken")))
-        };
+                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken"))));
 
         // 4) Method Call
         List<IdentifierNameSyntax> identifierNameSyntaxes = new List<IdentifierNameSyntax>();
@@ -873,12 +907,15 @@ public partial class RoslynBusinessServiceGenerator
 
         if (isThereBasicResponseDto)
             identifierNameSyntaxes.Add(SyntaxFactory.IdentifierName(basicResponseDto!.Name));
-
+        ;
         var awaitInvocation =
             SyntaxFactory.AwaitExpression(
                 SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("_UpdateAsync"))
-                        .AddTypeArgumentListArguments(identifierNameSyntaxes.ToArray())
+                    identifierNameSyntaxes.Count > 0 ?
+                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("_UpdateAsync"))
+                            .AddTypeArgumentListArguments(identifierNameSyntaxes.ToArray())
+                        :
+                        SyntaxFactory.IdentifierName("_UpdateAsync")
                 )
                 .AddArgumentListArguments(argumentsOfMethod.ToArray())
             );
@@ -898,23 +935,45 @@ public partial class RoslynBusinessServiceGenerator
         var returnStatement = SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("result"));
 
         // 7) Method Decleration
-        return SyntaxFactory
-            .MethodDeclaration(
-                SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
-                SyntaxFactory.Identifier("UpdateAsync")
-            )
-            .AddAttributeLists(attributeList)
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-            )
-            .AddParameterListParameters(paramList.ToArray())
-            .WithBody(
-                SyntaxFactory.Block(
-                    methodCallDecleration,
-                    returnStatement
+        if (attributeList.Count > 0)
+        {
+            return SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
+                    SyntaxFactory.Identifier("UpdateAsync")
                 )
-            );
+                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+                )
+                .AddParameterListParameters(paramList.ToArray())
+                .WithBody(
+                    SyntaxFactory.Block(
+                        methodCallDecleration,
+                        returnStatement
+                    )
+                );
+        }
+        else
+        {
+            return SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.ParseTypeName($"Task<{returnType}>"),
+                    SyntaxFactory.Identifier("UpdateAsync")
+                )
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+                )
+                .AddParameterListParameters(paramList.ToArray())
+                .WithBody(
+                    SyntaxFactory.Block(
+                        methodCallDecleration,
+                        returnStatement
+                    )
+                );
+        }
     }
 
     private MethodDeclarationSyntax GeneratorDeleteMethodOfConcrete(Entity entity, List<Dto> dtos, List<Field> uniqueFields)
@@ -923,10 +982,10 @@ public partial class RoslynBusinessServiceGenerator
         bool isThereDeleteDto = deleteDto != null;
 
         // 1) Attribute List
-        var attributeList = SyntaxFactory.AttributeList();
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>();
         if (isThereDeleteDto)
         {
-            attributeList = attributeList.AddAttributes(
+            attributeList.Add(
                 SyntaxFactory.Attribute(
                     SyntaxFactory.IdentifierName("Validation"),
                     SyntaxFactory.AttributeArgumentList(
@@ -1001,33 +1060,42 @@ public partial class RoslynBusinessServiceGenerator
             );
 
         // 5) Method Call Decleration by Result
-        var methodCallDecleration = SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
-                .WithVariables(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("result"))
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(awaitInvocation))
-                    )
-                )
-            );
+        var methodCallDecleration = SyntaxFactory.ExpressionStatement(awaitInvocation);
 
         // 7) Method Decleration
         var bodyStatements = new List<StatementSyntax>();
         bodyStatements.AddRange(ifStatements);
         bodyStatements.Add(methodCallDecleration);
 
-        return SyntaxFactory
-            .MethodDeclaration(
-                SyntaxFactory.ParseTypeName("Task"),
-                SyntaxFactory.Identifier("DeleteAsync")
-            )
-            .AddAttributeLists(attributeList)
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-            )
-            .AddParameterListParameters(paramList.ToArray())
-            .WithBody(SyntaxFactory.Block(bodyStatements));
+        if (attributeList.Count > 0)
+        {
+            return SyntaxFactory
+                .MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("Task"),
+                    SyntaxFactory.Identifier("DeleteAsync")
+                )
+                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+                )
+                .AddParameterListParameters(paramList.ToArray())
+                .WithBody(SyntaxFactory.Block(bodyStatements));
+        }
+        else
+        {
+            return SyntaxFactory
+               .MethodDeclaration(
+                   SyntaxFactory.ParseTypeName("Task"),
+                   SyntaxFactory.Identifier("DeleteAsync")
+               )
+               .AddModifiers(
+                   SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                   SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+               )
+               .AddParameterListParameters(paramList.ToArray())
+               .WithBody(SyntaxFactory.Block(bodyStatements));
+        }
     }
 
 
@@ -1197,15 +1265,16 @@ public partial class RoslynBusinessServiceGenerator
     }
     private ArgumentSyntax CreateWhereRule(List<Field> uniqueFields, string? sourceName = null)
     {
-        if (string.IsNullOrEmpty(sourceName)) sourceName = "";
-        else sourceName = $".{sourceName.Trim()}";
+        bool isThereSource = !(string.IsNullOrEmpty(sourceName) || string.IsNullOrWhiteSpace(sourceName));
+        if (isThereSource) sourceName = sourceName!.Trim();
+        else sourceName = "";
 
         var firstField = uniqueFields.First();
 
         BinaryExpressionSyntax combined = SyntaxFactory.BinaryExpression(
             SyntaxKind.EqualsExpression,
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("f"), SyntaxFactory.IdentifierName(firstField.Name)),
-            SyntaxFactory.IdentifierName(sourceName + firstField.Name.ToCamelCase())
+            SyntaxFactory.IdentifierName(isThereSource ? $"{sourceName}.{firstField.Name}" : firstField.Name.ToCamelCase())
         );
 
         for (int i = 1; i < uniqueFields.Count; i++)
@@ -1214,7 +1283,7 @@ public partial class RoslynBusinessServiceGenerator
             var next = SyntaxFactory.BinaryExpression(
                 SyntaxKind.EqualsExpression,
                 SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("f"), SyntaxFactory.IdentifierName(nextField.Name)),
-                SyntaxFactory.IdentifierName(sourceName + nextField.Name.ToCamelCase())
+                SyntaxFactory.IdentifierName(isThereSource ? $"{sourceName}.{nextField.Name}" : nextField.Name.ToCamelCase())
             );
             combined = SyntaxFactory.BinaryExpression(SyntaxKind.LogicalAndExpression, combined, next);
         }

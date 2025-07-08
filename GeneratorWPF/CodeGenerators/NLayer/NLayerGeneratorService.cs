@@ -58,7 +58,7 @@ public class NLayerGeneratorService
             log(NLayerCoreService.AddPackage(solutionPath, "Autofac"));
             log(NLayerCoreService.AddPackage(solutionPath, "Autofac.Extensions.DependencyInjection"));
             log(NLayerCoreService.AddPackage(solutionPath, "Autofac.Extras.DynamicProxy"));
-            log(NLayerCoreService.AddPackage(solutionPath, "AutoMapper"));
+            log(NLayerCoreService.AddPackage(solutionPath, "AutoMapper --version 14.0.0"));
             log(NLayerCoreService.AddPackage(solutionPath, "Castle.Core.AsyncInterceptor"));
             log(NLayerCoreService.AddPackage(solutionPath, "FluentValidation"));
             log(NLayerCoreService.AddPackage(solutionPath, "FluentValidation.DependencyInjectionExtensions"));
@@ -126,9 +126,7 @@ public class NLayerGeneratorService
             // 2. Auth
             if (_appSetting.IsThereIdentiy)
             {
-                log(NLayerModelService.GenerateAuthLogin(solutionPath));
-                log(NLayerModelService.GenerateAuthRefreshAuth(solutionPath));
-                log(NLayerModelService.GenerateAuthSignUp(solutionPath));
+                log(NLayerModelService.GenerateAuthModels(solutionPath));
             }
 
             // 3. Dtos
@@ -207,22 +205,19 @@ public class NLayerGeneratorService
             // 1. Create Core Class Library if not exists
             log(nLayerBusinessService.CreateProject(solutionPath, _appSetting.SolutionName));
 
-            // 2. Add Packages
-            log(nLayerBusinessService.AddPackage(solutionPath, "AutoMapper"));
-
-            // 3. Service Base
+            // 2. Service Base
             log(nLayerBusinessService.GenerateServiceBase(solutionPath));
 
-            // 4. Utils
+            // 3. Utils
             log(nLayerBusinessService.GenerateUtils(solutionPath));
 
-            // 5. Mappings
+            // 4. Mappings
             log(nLayerBusinessService.GenerateMappings(solutionPath));
 
-            // 6. Concretes
+            // 5. Concretes
             log(nLayerBusinessService.GeneraterService(solutionPath));
 
-            // 7. Service Registrations
+            // 6. Service Registrations
             log(nLayerBusinessService.GenerateServiceRegistrations(solutionPath));
 
             return true;

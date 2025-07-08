@@ -25,12 +25,19 @@ public partial class RoslynEntityGenerator
     public string GeneraterEntity(Entity entity)
     {
         // 1) Implemantation List
-        List<string> interfaces = new() { Statics.IEntity };
+        List<string> interfaces = new List<string>();
+
+        if (_appSetting.IsThereUser && _appSetting.UserEntityId == entity.Id)
+            interfaces.Add($"IdentityUser<{entity.Fields.FirstOrDefault(f => f.IsUnique)?.GetMapedTypeName()}>");
+        if (_appSetting.IsThereRole && _appSetting.RoleEntityId == entity.Id)
+            interfaces.Add($"IdentityRole<{entity.Fields.FirstOrDefault(f => f.IsUnique)?.GetMapedTypeName()}>");
+        
+        interfaces.Add(Statics.IEntity);
         if (entity.SoftDeletable) interfaces.Add(Statics.ISoftDeletableEntity);
         if (entity.Archivable) interfaces.Add(Statics.IArchivableEntity);
         if (entity.Auditable) interfaces.Add(Statics.IAuditableEntity);
         if (entity.Loggable) interfaces.Add(Statics.ILoggableEntity);
-        var baseList = interfaces.Select(i => SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(i))).ToArray();
+        SimpleBaseTypeSyntax[] baseList = interfaces.Select(i => SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(i))).ToArray();
 
         // 2) Property List
         var propertyList = new List<MemberDeclarationSyntax>();
@@ -42,10 +49,7 @@ public partial class RoslynEntityGenerator
             propertyList.Add(propertyDeclaration);
         }
 
-        // 3) Virtual Propert List
-        HandleVirtualProps(propertyList, entity.Id);
-
-        // 4) İmplemented İnterface List
+        // 3) İmplemented İnterface List
         if (entity.Auditable)
         {
             propertyList.Add(GeneratorImplementationProperty("string?", "CreatedBy"));
@@ -59,6 +63,9 @@ public partial class RoslynEntityGenerator
             propertyList.Add(GeneratorImplementationProperty("bool", "IsDeleted"));
             propertyList.Add(GeneratorImplementationProperty("DateTime?", "DeletedDateUtc"));
         }
+
+        // 4) Virtual Propert List
+        HandleVirtualProps(propertyList, entity.Id);
 
         // 5) Class
         var classDeclaration = SyntaxFactory

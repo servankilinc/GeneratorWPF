@@ -20,6 +20,7 @@ public class NLayerCoreService
             RunCommand(path, "dotnet", "new classlib -n Core");
             RunCommand(path, "dotnet", $"sln {solutionName}.sln add Core/Core.csproj");
 
+            RemoveFile(projectPath, "Class1.cs");
             return "OK: Core Project Created Successfully";
         }
         catch (Exception ex)
@@ -73,8 +74,7 @@ public class NLayerCoreService
 
     public string GenerateBaseRequestModels(string path)
     {
-        string code = @"
-using Core.Utils.Datatable;
+        string code = @"using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
 using Core.Utils.Pagination;
 
@@ -105,8 +105,7 @@ public class DynamicDatatableServerSideRequest
 
     public string GenerateEnums(string path)
     {
-        string code_AuthenticationTypes = @"
-using System.ComponentModel;
+        string code_AuthenticationTypes = @"using System.ComponentModel;
 
 namespace Core.Enums;
 
@@ -122,8 +121,7 @@ public enum AuthenticationTypes
     Facebook = 3,
 }";
 
-        string code_CrudTypes = @"
-using System.ComponentModel;
+        string code_CrudTypes = @"using System.ComponentModel;
 
 namespace Core.Enums;
 
@@ -141,8 +139,7 @@ public enum CrudTypes
     Undefined = 5,
 }";
 
-        string code_ProblemDetailTypes = @"
-using System.ComponentModel;
+        string code_ProblemDetailTypes = @"using System.ComponentModel;
 
 namespace Core.Enums;
 
@@ -158,8 +155,7 @@ public enum ProblemDetailTypes
     DataAccess = 4,
 }";
 
-        string code_RoleTypes = @"
-using System.ComponentModel;
+        string code_RoleTypes = @"using System.ComponentModel;
 
 namespace Core.Enums;
 
@@ -191,8 +187,7 @@ public enum RoleTypes
 
     public string GenerateModels(string path)
     {
-        string code_IAppException = @"
-namespace Core.Model;
+        string code_IAppException = @"namespace Core.Model;
 
 public interface IAppException
 {
@@ -201,16 +196,14 @@ public interface IAppException
     string? Description { get; set; }
 }";
 
-        string code_IDto = @"
-namespace Core.Model;
+        string code_IDto = @"namespace Core.Model;
 
 public abstract class IDto
 {
     // ... signature class
 }";
 
-        string code_IEntity = @"
-namespace Core.Model;
+        string code_IEntity = @"namespace Core.Model;
 
 /// <summary>
 /// Base interface for all entities.
@@ -278,13 +271,11 @@ public interface IArchivableEntity
     #region Utils
     public string GenerateUtilsAuth(string path)
     {
-        string code_AccessToken = @"
-namespace Core.Utils.Auth;
+        string code_AccessToken = @"namespace Core.Utils.Auth;
 
 public record AccessToken(string Token, DateTime Expiration);";
 
-        string code_TokenSettings = @"
-namespace Core.Utils.Auth;
+        string code_TokenSettings = @"namespace Core.Utils.Auth;
 
 public class TokenSettings
 {
@@ -310,13 +301,11 @@ public class TokenSettings
 
     public string GenerateUtilsCaching(string path)
     {
-        string code_CacheResponse = @"
-namespace Core.Utils.Caching;
+        string code_CacheResponse = @"namespace Core.Utils.Caching;
 
 public record CacheResponse(bool IsSuccess, string? Source = default);";
 
-        string code_CacheService = @"
-using Microsoft.Extensions.Caching.Distributed;
+        string code_CacheService = @"using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using System.Text;
 
@@ -427,8 +416,7 @@ public class CacheService : ICacheService
     }
 }";
 
-        string code_ICacheService = @"
-namespace Core.Utils.Caching;
+        string code_ICacheService = @"namespace Core.Utils.Caching;
 
 public interface ICacheService
 {
@@ -453,8 +441,7 @@ public interface ICacheService
 
     public string GenerateUtilsCriticalData(string path)
     {
-        string code = @"
-using Newtonsoft.Json;
+        string code = @"using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
 
@@ -493,8 +480,7 @@ namespace Core.Utils.CriticalData
 
     public string GenerateUtilsCrossCuttingConcerns(string path)
     {
-        string code_Extensions = @"
-using Castle.DynamicProxy;
+        string code_Extensions = @"using Castle.DynamicProxy;
 using Core.Utils.CriticalData;
 using Newtonsoft.Json;
 using System.Reflection;
@@ -603,8 +589,7 @@ public static bool IsSimpleType(this Type type)
 }
 }";
 
-        string code_CacheInterceptor = @"
-using Castle.DynamicProxy;
+        string code_CacheInterceptor = @"using Castle.DynamicProxy;
 using Core.Utils.Caching;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using Newtonsoft.Json;
@@ -747,8 +732,7 @@ public class CacheAttribute : Attribute
     }
 }";
 
-        string code_CacheRemoveGroupInterceptor = @"
-using Castle.DynamicProxy;
+        string code_CacheRemoveGroupInterceptor = @"using Castle.DynamicProxy;
 using Core.Utils.Caching;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using System.Reflection;
@@ -832,8 +816,7 @@ public class CacheRemoveGroupAttribute : Attribute
     public CacheRemoveGroupAttribute(string[] cacheGroupKeys) => CacheGroupKeys = cacheGroupKeys;
 }";
 
-        string code_CacheRemoveInterceptor = @"
-using Castle.DynamicProxy;
+        string code_CacheRemoveInterceptor = @"using Castle.DynamicProxy;
 using Core.Utils.Caching;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using System.Reflection;
@@ -916,8 +899,7 @@ public class CacheRemoveAttribute : Attribute
     public CacheRemoveAttribute(string cacheKey) => CacheKey = cacheKey;
 }";
 
-        string code_DataAccessExceptionHandlerInterceptor = @"
-using Castle.DynamicProxy;
+        string code_DataAccessExceptionHandlerInterceptor = @"using Castle.DynamicProxy;
 using Core.Model;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using Core.Utils.ExceptionHandle.Exceptions;
@@ -1027,8 +1009,7 @@ public class DataAccessExceptionAttribute : Attribute
 {
 }";
 
-        string code_ExceptionHandlerInterceptor = @"
-using Castle.DynamicProxy;
+        string code_ExceptionHandlerInterceptor = @"using Castle.DynamicProxy;
 using Core.Model;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using Core.Utils.ExceptionHandle.Exceptions;
@@ -1138,8 +1119,7 @@ public class ExceptionHandlerAttribute : Attribute
 {
 }";
 
-        string code_ValidationInterceptor = @"
-using Castle.DynamicProxy;
+        string code_ValidationInterceptor = @"using Castle.DynamicProxy;
 using Core.Utils.CrossCuttingConcerns.Helpers;
 using Core.Utils.ExceptionHandle.Exceptions;
 using FluentValidation;
@@ -1272,8 +1252,7 @@ public class ValidationAttribute : Attribute
 
     public string GenerateUtilsDatatable(string path)
     {
-        string code_DatatableRequest = @"
-namespace Core.Utils.Datatable;
+        string code_DatatableRequest = @"namespace Core.Utils.Datatable;
 
 public class DatatableRequest
 {
@@ -1312,16 +1291,14 @@ public class Column
     public Search? Search { get; set; }
 }";
 
-        string code_DatatableResponseClientSide = @"
-namespace Core.Utils.Datatable;
+        string code_DatatableResponseClientSide = @"namespace Core.Utils.Datatable;
 
 public class DatatableResponseClientSide<TData>
 {
     public List<TData>? Data { get; set; }
 }";
 
-        string code_DatatableResponseServerSide = @"
-namespace Core.Utils.Datatable;
+        string code_DatatableResponseServerSide = @"namespace Core.Utils.Datatable;
 
 public class DatatableResponseServerSide<TData>
 {
@@ -1331,8 +1308,7 @@ public class DatatableResponseServerSide<TData>
     public List<TData>? Data { get; set; }
 }";
 
-        string code_QueryableDatatableExtension = @"
-using Microsoft.EntityFrameworkCore;
+        string code_QueryableDatatableExtension = @"using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
 
 namespace Core.Utils.Datatable;
@@ -1491,8 +1467,7 @@ public static class QueryableDatatableExtension
 
     public string GenerateUtilsDynamicQuery(string path)
     {
-        string code_Filter = @"
-namespace Core.Utils.DynamicQuery;
+        string code_Filter = @"namespace Core.Utils.DynamicQuery;
 
 public class Filter
 {
@@ -1503,8 +1478,7 @@ public class Filter
     public List<Filter>? Filters { get; set; }
 }";
 
-        string code_QueryableFilterExtension = @"
-using System.Linq.Dynamic.Core;
+        string code_QueryableFilterExtension = @"using System.Linq.Dynamic.Core;
 using System.Text;
 
 namespace Core.Utils.DynamicQuery;
@@ -1626,8 +1600,7 @@ public static class QueryableFilterExtension
     }
 }";
 
-        string code_QueryableSortExtension = @"
-using System.Linq.Dynamic.Core;
+        string code_QueryableSortExtension = @"using System.Linq.Dynamic.Core;
 
 namespace Core.Utils.DynamicQuery;
 
@@ -1653,8 +1626,7 @@ public static class QueryableSortExtension
     }
 }";
 
-        string code_Sort = @"
-namespace Core.Utils.DynamicQuery;
+        string code_Sort = @"namespace Core.Utils.DynamicQuery;
 
 public class Sort
 {
@@ -1677,8 +1649,7 @@ public class Sort
 
     public string GenerateUtilsExceptionHandle(string path)
     {
-        string code_BusinessException = @"
-using Core.Model;
+        string code_BusinessException = @"using Core.Model;
 
 namespace Core.Utils.ExceptionHandle.Exceptions;
 
@@ -1703,8 +1674,7 @@ public class BusinessException : Exception, IAppException
     }
 }";
 
-        string code_DataAccessException = @"
-using Core.Model;
+        string code_DataAccessException = @"using Core.Model;
 
 namespace Core.Utils.ExceptionHandle.Exceptions;
 
@@ -1729,8 +1699,7 @@ public class DataAccessException : Exception, IAppException
     }
 }";
 
-        string code_GeneralException = @"
-using Core.Model;
+        string code_GeneralException = @"using Core.Model;
 
 namespace Core.Utils.ExceptionHandle.Exceptions;
 
@@ -1755,8 +1724,7 @@ public class GeneralException : Exception, IAppException
     }
 }";
 
-        string code_ValidationRuleException = @"
-using Core.Model;
+        string code_ValidationRuleException = @"using Core.Model;
 using FluentValidation;
 using FluentValidation.Results;
 
@@ -1790,8 +1758,7 @@ public class ValidationRuleException : ValidationException, IAppException
     }
 }";
 
-        string code_BusinessProblemDetails = @"
-using Microsoft.AspNetCore.Mvc;
+        string code_BusinessProblemDetails = @"using Microsoft.AspNetCore.Mvc;
 
 namespace Core.Utils.ExceptionHandle.ProblemDetailModels;
 
@@ -1799,8 +1766,7 @@ public class BusinessProblemDetails : ProblemDetails
 {
 }";
 
-        string code_DataAccessProblemDetails = @"
-using Microsoft.AspNetCore.Mvc;
+        string code_DataAccessProblemDetails = @"using Microsoft.AspNetCore.Mvc;
 
 namespace Core.Utils.ExceptionHandle.ProblemDetailModels;
 
@@ -1808,8 +1774,7 @@ public class DataAccessProblemDetails : ProblemDetails
 {
 }";
 
-        string code_ValidationProblemDetails = @"
-using FluentValidation.Results;
+        string code_ValidationProblemDetails = @"using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Core.Utils.ExceptionHandle.ProblemDetailModels;
@@ -1838,8 +1803,7 @@ public class ValidationProblemDetails : ProblemDetails
 
     public string GenerateUtilsHttpContextManager(string path)
     {
-        string code = @"
-using Microsoft.AspNetCore.Http;
+        string code = @"using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 namespace Core.Utils.HttpContextManager;
@@ -1912,8 +1876,7 @@ public class HttpContextManager
 
     public string GenerateUtilsPagination(string path)
     {
-        string code_PaginationRequest = @"
-namespace Core.Utils.Pagination;
+        string code_PaginationRequest = @"namespace Core.Utils.Pagination;
 
 public class PaginationRequest
 {
@@ -1931,8 +1894,7 @@ public class PaginationRequest
     }
 }";
 
-        string code_PaginationResponse = @"
-namespace Core.Utils.Pagination;
+        string code_PaginationResponse = @"namespace Core.Utils.Pagination;
 
 public class PaginationResponse<TData>
 {
@@ -1950,8 +1912,7 @@ public class PaginationResponse<TData>
     public bool HasNext => Page + 1 < PageCount;
 }";
 
-        string code_QueryablePaginationExtension = @"
-using Microsoft.EntityFrameworkCore;
+        string code_QueryablePaginationExtension = @"using Microsoft.EntityFrameworkCore;
 
 namespace Core.Utils.Pagination;
 
@@ -2010,8 +1971,7 @@ public static class QueryablePaginationExtension
 
     public string GenerateServiceRegistrations(string path)
     {
-        string code_AutofacModule = @"
-using Autofac;
+        string code_AutofacModule = @"using Autofac;
 using Core.Utils.CrossCuttingConcerns;
 
 namespace Core;
@@ -2030,8 +1990,7 @@ public class AutofacModule : Module
     }
 }";
 
-        string code_ServiceRegistration = @"
-using Core.Utils.Caching;
+        string code_ServiceRegistration = @"using Core.Utils.Caching;
 using Core.Utils.CriticalData;
 using Core.Utils.HttpContextManager;
 using Microsoft.Extensions.Configuration;
@@ -2106,6 +2065,28 @@ public static class ServiceRegistration
         catch (Exception ex)
         {
             throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Core project. \n Details:{ex.Message}");
+        }
+    }
+
+    private string RemoveFile(string folderPath, string fileName)
+    {
+        try
+        {
+            string filePath = Path.Combine(folderPath, fileName);
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                return $"OK: File {fileName} removed from Core project.";
+            }
+            else
+            {
+                return $"INFO: File {fileName} does not exist in Core project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from Core project. \n Details: {ex.Message}");
         }
     }
 

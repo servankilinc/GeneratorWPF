@@ -1,4 +1,5 @@
 ﻿using GeneratorWPF.Models;
+using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -32,6 +33,8 @@ public class NLayerModelService
             RunCommand(path, "dotnet", "new classlib -n Model");
             RunCommand(path, "dotnet", $"sln {solutionName}.sln add Model/Model.csproj");
             RunCommand(projectPath, "dotnet", $"dotnet add reference ../Core/Core.csproj");
+
+            RemoveFile(projectPath, "Class1.cs");
 
             return "OK: Model Project Created Successfully";
         }
@@ -85,179 +88,41 @@ public class NLayerModelService
     #endregion
 
     #region Static Codes
-    public string GenerateAuthLogin(string solutionPath)
+    public string GenerateAuthModels(string solutionPath)
     {
-        string code_LoginRequest = @"
-using Core.Utils.CriticalData;
-using FluentValidation;
+        var results = new List<string>();
+        var roslynAuthModelGenerator = new RoslynAuthModelsGenerator(_appSetting);
 
-namespace Model.Auth.Login;
+        // 1. Login Models
+        string code_LoginRequest = roslynAuthModelGenerator.GeneraterLoginRequest();
+        string code_LoginResponse = roslynAuthModelGenerator.GeneraterLoginResponse();
 
-public class LoginRequest
-{
-    public string Email { get; set; } = null!;
+        string folderPathLogin = Path.Combine(solutionPath, "Model", "Auth", "Login");
+        results.Add(AddFile(folderPathLogin, "LoginRequest", code_LoginRequest));
+        results.Add(AddFile(folderPathLogin, "LoginResponse", code_LoginResponse));
+       
+        // 2. Refresh Auth Models
+        string code_RefreshAuthRequest = roslynAuthModelGenerator.GeneraterRefreshAuthRequest();
+        string code_RefreshAuthResponse = roslynAuthModelGenerator.GeneraterRefreshAuthResponse();
+        
+        string folderPathRefreshAuth = Path.Combine(solutionPath, "Model", "Auth", "RefreshAuth");
+        results.Add(AddFile(folderPathRefreshAuth, "RefreshAuthRequest", code_RefreshAuthRequest));
+        results.Add(AddFile(folderPathRefreshAuth, "RefreshAuthResponse", code_RefreshAuthResponse));
 
-    [CriticalData]
-    public string Password { get; set; } = null!;
-}
+        // 3. Signup Models
+        string code_SignUpRequest = roslynAuthModelGenerator.GeneraterSignUpRequest();
+        string code_SignUpResponse = roslynAuthModelGenerator.GeneraterSignUpResponse();
 
-
-public class LoginRequestValidator : AbstractValidator<LoginRequest>
-{
-    public LoginRequestValidator()
-    {
-        RuleFor(b => b.Email).NotNull().EmailAddress().NotEmpty().EmailAddress();
-        RuleFor(b => b.Password).NotNull().MinimumLength(6).NotEmpty();
-    }
-}";
-
-        string code_LoginResponse = @"
-using Core.Utils.Auth;
-using Model.Dtos.User_;
-
-namespace Model.Auth.Login;
-
-public class LoginResponse
-{
-    public UserBasicResponseDto User { get; set; } = null!;
-    public AccessToken AccessToken { get; set; } = null!;
-    public IList<string>? Roles { get; set; }
-}
-
-public class LoginTrustedResponse : LoginResponse
-{
-    public string RefreshToken { get; set; } = null!;
-}";
-
-
-        string folderPath = Path.Combine(solutionPath, "Model", "Auth", "Login");
-
-        var results = new List<string>
-        {
-            AddFile(folderPath, "LoginRequest", code_LoginRequest),
-            AddFile(folderPath, "LoginResponse", code_LoginResponse)
-        };
-
-        return string.Join("\n", results);
-    }
-
-    public string GenerateAuthRefreshAuth(string solutionPath)
-    {
-        string code_RefreshAuthRequest = @"
-using FluentValidation;
-
-namespace Model.Auth.RefreshAuth;
-
-public class RefreshAuthRequest
-{
-    public Guid UserId { get; set; }
-    public bool IsTrusted { get; set; }
-    public string RefreshToken { get; set; } = null!;
-}
-
-public class RefreshAuthRequestValidator : AbstractValidator<RefreshAuthRequest>
-{
-    public RefreshAuthRequestValidator()
-    {
-        RuleFor(b => b.UserId).NotNull().NotEqual(Guid.Empty).NotEmpty();
-        When(b => b.IsTrusted, () =>
-        {
-            RuleFor(b => b.RefreshToken)
-                .NotNull()
-                .NotEmpty();
-        });
-    }
-}";
-
-        string code_RefreshAuthResponse = @"
-using Core.Utils.Auth;
-using Model.Dtos.User_;
-
-namespace Model.Auth.RefreshAuth;
-
-public class RefreshAuthResponse
-{
-    public UserBasicResponseDto User { get; set; } = null!;
-    public AccessToken AccessToken { get; set; } = null!;
-}
-
-public class RefreshAuthTrustedResponse : RefreshAuthResponse
-{
-    public string RefreshToken { get; set; } = null!;
-}";
-
-
-        string folderPath = Path.Combine(solutionPath, "Model", "Auth", "RefreshAuth");
-
-        var results = new List<string>
-        {
-            AddFile(folderPath, "RefreshAuthRequest", code_RefreshAuthRequest),
-            AddFile(folderPath, "RefreshAuthResponse", code_RefreshAuthResponse)
-        };
-
-        return string.Join("\n", results);
-    }
-
-    public string GenerateAuthSignUp(string solutionPath)
-    {
-        string code_SignUpRequest = @"
-using FluentValidation;
-
-namespace Model.Auth.SignUp;
-
-public class SignUpRequest
-{
-    public string Email { get; set; } = null!;
-    public string Password { get; set; } = null!;
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
-}
-
-public class SignUpRequestValidator : AbstractValidator<SignUpRequest>
-{
-    public SignUpRequestValidator()
-    {
-        RuleFor(b => b.Email).NotNull().EmailAddress().NotEmpty().EmailAddress();
-        RuleFor(b => b.Password).NotNull().MinimumLength(6).NotEmpty();
-        RuleFor(b => b.FirstName).NotNull().MinimumLength(2).NotEmpty();
-        RuleFor(b => b.LastName).NotNull().MinimumLength(2).NotEmpty().NotEqual(s => s.FirstName);
-    }
-}";
-
-        string code_SignUpResponse = @"
-using Core.Utils.Auth;
-using Model.Dtos.User_;
-
-namespace Model.Auth.SignUp;
-
-public class SignUpResponse
-{
-    public UserBasicResponseDto User { get; set; } = null!;
-    public AccessToken AccessToken { get; set; } = null!;
-    public IList<string>? Roles { get; set; }
-}
-
-public class SignUpTrustedResponse : SignUpResponse
-{
-    public string RefreshToken { get; set; } = null!;
-}";
-
-
-        string folderPath = Path.Combine(solutionPath, "Model", "Auth", "SignUp");
-
-        var results = new List<string>
-        {
-            AddFile(folderPath, "SignUpRequest", code_SignUpRequest),
-            AddFile(folderPath, "SignUpResponse", code_SignUpResponse)
-        };
+        string folderPathSignup = Path.Combine(solutionPath, "Model", "Auth", "SignUp");
+        results.Add(AddFile(folderPathSignup, "SignUpRequest", code_SignUpRequest));
+        results.Add(AddFile(folderPathSignup, "SignUpResponse", code_SignUpResponse));
 
         return string.Join("\n", results);
     }
 
     public string GenerateProjectEntities(string solutionPath)
     {
-        string code_Archive = @"
-using Core.Enums;
+        string code_Archive = @"using Core.Enums;
 using Core.Model;
 
 namespace Model.ProjectEntities;
@@ -275,8 +140,7 @@ public class Archive: IEntity, IProjectEntity
     public DateTime DateUtc { get; set; }
 }";
 
-        string code_Log = @"
-using Core.Enums;
+        string code_Log = @"using Core.Enums;
 using Core.Model;
 
 namespace Model.ProjectEntities;
@@ -332,7 +196,7 @@ public class Log: IEntity, IProjectEntity
     {
         var results = new List<string>();
 
-        var entities = _entityRepository.GetAll(f => f.Control == false);
+        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
         var roslynEntityGenerator = new RoslynEntityGenerator(_appSetting);
 
@@ -346,23 +210,9 @@ public class Log: IEntity, IProjectEntity
 
         if (_appSetting.IsThereIdentiy)
         {
-            string code_refreshToken = @"
-using Core.Model;
+            var roslynAuthModelsGenerator = new RoslynAuthModelsGenerator(_appSetting);
 
-namespace Model.Entities;
-
-public class RefreshToken : IEntity
-{
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string IpAddress { get; set; } = null!;
-    public string Token { get; set; } = null!;
-    public DateTime ExpirationUtc { get; set; }
-    public DateTime CreateDateUtc { get; set; }
-    public int TTL { get; set; }
-
-    public virtual User? User { get; set; }
-}";
+            string code_refreshToken = roslynAuthModelsGenerator.GeneraterRefreshTokenEntity();
 
             string folderPath = Path.Combine(solutionPath, "Model", "Entities");
             results.Add(AddFile(folderPath, "RefreshToken", code_refreshToken));
@@ -421,6 +271,28 @@ public class RefreshToken : IEntity
         catch (Exception ex)
         {
             throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Model project. \n Details:{ex.Message}");
+        }
+    }
+
+    private string RemoveFile(string folderPath, string fileName)
+    {
+        try
+        {
+            string filePath = Path.Combine(folderPath, fileName);
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                return $"OK: File {fileName} removed from Model project.";
+            }
+            else
+            {
+                return $"INFO: File {fileName} does not exist in Model project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from Model project. \n Details: {ex.Message}");
         }
     }
 

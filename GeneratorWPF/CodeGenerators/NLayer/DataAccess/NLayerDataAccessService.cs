@@ -1,4 +1,5 @@
-﻿using GeneratorWPF.Models;
+﻿using GeneratorWPF.Extensions;
+using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
 using Humanizer;
@@ -13,12 +14,14 @@ namespace GeneratorWPF.CodeGenerators.NLayer.DataAccess;
 public class NLayerDataAccessService
 {
     private readonly EntityRepository _entityRepository;
+    private readonly FieldRepository _fieldRepository;
     private readonly RelationRepository _relationRepository;
     private readonly AppSetting _appSetting;
     public NLayerDataAccessService(AppSetting appSetting)
     {
         _appSetting = appSetting;
         _entityRepository = new();
+        _fieldRepository = new();
         _relationRepository = new();
     }
 
@@ -36,6 +39,7 @@ public class NLayerDataAccessService
             RunCommand(path, "dotnet", $"sln {solutionName}.sln add DataAccess/DataAccess.csproj");
             RunCommand(projectPath, "dotnet", $"dotnet add reference ../Model/Model.csproj");
 
+            RemoveFile(projectPath, "Class1.cs");
             return "OK: DataAccess Project Created Successfully";
         }
         catch (Exception ex)
@@ -90,8 +94,45 @@ public class NLayerDataAccessService
     #region Static Files
     public string GenerateRepositoryBase(string solutionPath)
     {
-        string code_IRepository = @"
-using AutoMapper;
+        // IDENTITY SETTINGS
+        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
+
+        Entity? roleEntity = null;
+        Entity? userEntity = null;
+        string IdentityKeyType = "int";
+        if (_appSetting.RoleEntityId != null)
+        {
+            roleEntity = entities.FirstOrDefault(f => f.Id == _appSetting.RoleEntityId);
+
+            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
+            if (uniqueFields != null)
+            {
+                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+            }
+        }
+        if (_appSetting.UserEntityId != null)
+        {
+            userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
+
+            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
+            if (uniqueFields != null)
+            {
+                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+            }
+        }
+        string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
+        string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
+        if (userEntity != null) IdentityUserType = userEntity.Name;
+        if (roleEntity != null) IdentityRoleType = roleEntity.Name;
+
+        string contextRule = "DbContext";
+        if (_appSetting.IsThereIdentiy)
+        {
+            contextRule = $"IdentityDbContext<{IdentityUserType}, {IdentityRoleType}, {IdentityKeyType}>";
+        }
+        // IDENTITY SETTINGS
+
+        string code_IRepository = @"using AutoMapper;
 using Core.Model;
 using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
@@ -302,8 +343,7 @@ public interface IRepository<TEntity> where TEntity : IEntity
     #endregion
 }";
 
-        string code_IRepositoryAsync = @"
-using AutoMapper;
+        string code_IRepositoryAsync = @"using AutoMapper;
 using Core.Model;
 using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
@@ -527,9 +567,8 @@ public interface IRepositoryAsync<TEntity> where TEntity : IEntity
     );
     #endregion
 }";
-
-        string code_RepositoryBase = @"
-using AutoMapper;
+        
+        string code_RepositoryBase_1 = @"using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Core.Model;
 using Core.Utils.Datatable;
@@ -546,7 +585,9 @@ namespace DataAccess.Repository;
 
 public class RepositoryBase<TEntity, TContext> : IRepository<TEntity>, IRepositoryAsync<TEntity>
     where TEntity : class, IEntity
-    where TContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
+    where TContext : "; 
+    
+        var code_RepositoryBase_2 = @"
     // DbContext 
     // IdentityDbContext<User, IdentityRole<Guid>, Guid> && IdentityDbContext<User, Role<Guid>, Guid>
 {
@@ -1534,7 +1575,7 @@ public class RepositoryBase<TEntity, TContext> : IRepository<TEntity>, IReposito
         {
             AddFile(folderPath, "IRepository", code_IRepository),
             AddFile(folderPath, "IRepositoryAsync", code_IRepositoryAsync),
-            AddFile(folderPath, "RepositoryBase", code_RepositoryBase)
+            AddFile(folderPath, "RepositoryBase", code_RepositoryBase_1 + contextRule + code_RepositoryBase_2)
         };
 
         return string.Join("\n", results);
@@ -1542,8 +1583,7 @@ public class RepositoryBase<TEntity, TContext> : IRepository<TEntity>, IReposito
 
     public string GenerateInterceptors(string solutionPath)
     {
-        string code_ArchiveInterceptor = @"
-using Core.Model;
+        string code_ArchiveInterceptor = @"using Core.Model;
 using Core.Utils.HttpContextManager;
 using DataAccess.Interceptors.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -1623,8 +1663,7 @@ public sealed class ArchiveInterceptor : SaveChangesInterceptor
     }
 }";
 
-        string code_AuditInterceptor = @"
-using Core.Model;
+        string code_AuditInterceptor = @"using Core.Model;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -1696,8 +1735,7 @@ public sealed class AuditInterceptor : SaveChangesInterceptor
     }
 }";
 
-        string code_LogInterceptor = @"
-using Core.Model;
+        string code_LogInterceptor = @"using Core.Model;
 using Core.Utils.HttpContextManager;
 using DataAccess.Interceptors.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -1864,8 +1902,7 @@ public sealed class LogInterceptor : SaveChangesInterceptor
     }
 }";
 
-        string code_SoftDeleteInterceptor = @"
-using Core.Model;
+        string code_SoftDeleteInterceptor = @"using Core.Model;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -1925,8 +1962,7 @@ public sealed class SoftDeleteInterceptor : SaveChangesInterceptor
     }
 }";
 
-        string code_Helpers = @"
-using Core.Enums;
+        string code_Helpers = @"using Core.Enums;
 using Core.Utils.CriticalData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -2051,7 +2087,7 @@ public static class EntityEntryExtension
         if (_appSetting.IsThereIdentiy)
         {
             string code_abstract = roslynRepositoryServiceGenerator.GeneraterAbstract("RefreshToken");
-            string code_concrete = roslynRepositoryServiceGenerator.GeneraterAbstract("RefreshToken");
+            string code_concrete = roslynRepositoryServiceGenerator.GeneraterConcrete("RefreshToken");
 
             results.Add(AddFile(folderPathAbstract, "IRefreshTokenRepository", code_abstract));
             results.Add(AddFile(folderPathConcrete, "RefreshTokenRepository", code_concrete));
@@ -2085,6 +2121,37 @@ public static class EntityEntryExtension
 
         var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
+        // IDENTITY SETTINGS
+        Entity? roleEntity = null;
+        Entity? userEntity = null;
+        string IdentityKeyType = "int";
+        if (_appSetting.RoleEntityId != null)
+        {
+            roleEntity = entities.FirstOrDefault(f => f.Id == _appSetting.RoleEntityId);
+
+            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
+            if (uniqueFields != null)
+            {
+                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+            }
+        }
+        if (_appSetting.UserEntityId != null)
+        {
+            userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
+            
+            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
+            if (uniqueFields != null)
+            {
+                IdentityKeyType = uniqueFields.First().MapFieldTypeName(); 
+            }
+        }
+        string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
+        string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
+        if (userEntity != null) IdentityUserType = userEntity.Name;
+        if (roleEntity != null) IdentityRoleType = roleEntity.Name;
+        // IDENTITY SETTINGS
+
+
         // Concretes
         StringBuilder sb = new();
         sb.AppendLine("using Microsoft.AspNetCore.Identity;");
@@ -2095,7 +2162,14 @@ public static class EntityEntryExtension
         sb.AppendLine();
         sb.AppendLine("namespace DataAccess.Contexts;");
         sb.AppendLine();
-        sb.AppendLine("public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid> // DbContext");
+        if (_appSetting.IsThereIdentiy)
+        {
+            sb.AppendLine($"public class AppDbContext : IdentityDbContext<{IdentityUserType}, {IdentityRoleType}, {IdentityKeyType}> // DbContext");
+        }
+        else
+        {
+            sb.AppendLine($"public class AppDbContext : DbContext");
+        }
         sb.AppendLine("{");
         sb.AppendLine("\tpublic AppDbContext(DbContextOptions<AppDbContext> options) : base(options)");
         sb.AppendLine("\t{");
@@ -2462,6 +2536,28 @@ public static class ServiceRegistration
         catch (Exception ex)
         {
             throw new Exception($"ERROR: An error occurred while adding file({fileName}) to DataAccess project. \n Details:{ex.Message}");
+        }
+    }
+
+    private string RemoveFile(string folderPath, string fileName)
+    {
+        try
+        {
+            string filePath = Path.Combine(folderPath, fileName);
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                return $"OK: File {fileName} removed from DataAccess project.";
+            }
+            else
+            {
+                return $"INFO: File {fileName} does not exist in DataAccess project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from DataAccess project. \n Details: {ex.Message}");
         }
     }
 

@@ -11,7 +11,7 @@ namespace GeneratorWPF.Context
         //}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=.; Initial Catalog=CodeGeneratorV2; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Data Source=.; Initial Catalog=CodeGeneratorV3; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;");
             //optionsBuilder.UseLazyLoadingProxies();
         }
 

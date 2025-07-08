@@ -36,6 +36,9 @@ public class NLayerAPIService
             RunCommand(path, "dotnet", $"sln {solutionName}.sln add API/API.csproj");
             RunCommand(projectPath, "dotnet", $"add reference ../Business/Business.csproj");
 
+            RemoveFile(projectPath, "Program.cs");
+            RemoveFile(projectPath, "appsettings.json");
+
             return "OK: API Project Created Successfully";
         }
         catch (Exception ex)
@@ -374,14 +377,13 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         sb.AppendLine("app.Run();");
 
         string folderPath = Path.Combine(solutionPath, "API");
-        RemoveFile(folderPath, "Program");
+
         return AddFile(folderPath, "Program", sb.ToString());
     }
 
     public string GenerateAppSettings(string solutionPath)
     {
-        string code = @"
-{
+        string code = @"{
   ""Logging"": {
     ""LogLevel"": {
       ""Default"": ""Information"",
@@ -656,7 +658,7 @@ public class AccountController : ControllerBase
     {
         try
         {
-            string filePath = Path.Combine(folderPath, $"{fileName}.cs");
+            string filePath = Path.Combine(folderPath, fileName);
 
             if (File.Exists(filePath))
             {
@@ -710,6 +712,7 @@ public class AccountController : ControllerBase
     {
         sb.AppendLine("");
         sb.AppendLine("// ------- CORS -------");
+        sb.AppendLine("builder.Services.AddCors(options =>");
         sb.AppendLine("{");
         sb.AppendLine("\toptions.AddPolicy(\"policy_cors\", builder =>");
         sb.AppendLine("\t{");

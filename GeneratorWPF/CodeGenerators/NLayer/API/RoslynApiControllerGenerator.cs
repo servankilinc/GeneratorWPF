@@ -109,7 +109,7 @@ public partial class RoslynApiControllerGenerator
 
                 methodList.Add(GeneratorGetMethod($"Get{subModelName}", serviceName, $"Get{readDto.Name}Async", uniqueFields));
                 methodList.Add(GeneratorGetAllMethod($"GetAll{subModelName}", serviceName, $"GetAll{readDto.Name}Async"));
-                methodList.Add(GeneratorGetAllMethod($"GetList{subModelName}", serviceName, $"GetList{readDto.Name}Async"));
+                methodList.Add(GeneratorGetListMethod($"GetList{subModelName}", serviceName, $"GetList{readDto.Name}Async"));
             }
         }
         #endregion
@@ -154,7 +154,8 @@ public partial class RoslynApiControllerGenerator
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Business.Abstract")),
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Core.BaseRequestModels")),
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Authorization")),
-            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc"))
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")),
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Model.Entities"))
         };
         if (dtos != null && dtos.Any())
         {

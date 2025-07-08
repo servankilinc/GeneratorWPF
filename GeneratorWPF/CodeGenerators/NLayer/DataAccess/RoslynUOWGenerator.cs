@@ -76,8 +76,8 @@ public partial class RoslynUOWGenerator
         // 1) Field List
         var fieldList = new List<FieldDeclarationSyntax>
         {
-            GeneratorFieldOfConcrete("AppDbContext", "_context"),
-            GeneratorFieldOfConcrete("IDbContextTransaction", "_transaction")
+            GeneratorFieldOfConcrete("AppDbContext", "_context", isReadOnly: true, isNullable: false),
+            GeneratorFieldOfConcrete("IDbContextTransaction", "_transaction", isReadOnly: false, isNullable: true)
         };
 
         // 2) Property List
@@ -93,66 +93,457 @@ public partial class RoslynUOWGenerator
         }
 
         // 3) Method List
+        var methodList = new List<MethodDeclarationSyntax>();
+
         #region Method Bodies
-        string bodyOfBeginSaveChanges = @"return _context.SaveChanges();";
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("int"), "SaveChanges")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("_context"),
+                            SyntaxFactory.IdentifierName("SaveChanges")
+                        )
+                    )
+                )
+            )));
 
-        string bodyOfBeginTransaction = @"
-            if (_transaction != null) throw new InvalidOperationException(""Transaction already started for begin transaction."");
-            _transaction = _context.Database.BeginTransaction()";
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "BeginTransaction")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.NotEqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.ThrowStatement(
+                        SyntaxFactory.ObjectCreationExpression(
+                            SyntaxFactory.IdentifierName("InvalidOperationException"))
+                        .WithArgumentList(SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.LiteralExpression(
+                                        SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal("Transaction already started for begin transaction.")
+                                    )
+                                )
+                            )
+                        ))
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    SyntaxFactory.IdentifierName("_context"),
+                                    SyntaxFactory.IdentifierName("Database")),
+                                SyntaxFactory.IdentifierName("BeginTransaction"))
+                        )
+                    )
+                )
+            )));
 
-        string bodyOfCommitTransaction = @"
-            if (_transaction == null) throw new InvalidOperationException(""Transaction has not been started for commit transaction."");
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "CommitTransaction")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.EqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.ThrowStatement(
+                        SyntaxFactory.ObjectCreationExpression(
+                            SyntaxFactory.IdentifierName("InvalidOperationException"))
+                        .WithArgumentList(SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.LiteralExpression(
+                                        SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal("Transaction has not been started for commit transaction.")
+                                    )
+                                )
+                            )
+                        ))
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("_transaction"),
+                            SyntaxFactory.IdentifierName("Commit")
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("_transaction"),
+                            SyntaxFactory.IdentifierName("Dispose")
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    )
+                )
+            )));
 
-            _transaction.Commit();
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "RollbackTransaction")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.NotEqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.Block(
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.InvocationExpression(
+                                SyntaxFactory.MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    SyntaxFactory.IdentifierName("_transaction"),
+                                    SyntaxFactory.IdentifierName("Rollback")
+                                )
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.InvocationExpression(
+                                SyntaxFactory.MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    SyntaxFactory.IdentifierName("_transaction"),
+                                    SyntaxFactory.IdentifierName("Dispose")
+                                )
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                            )
+                        )
+                    )
+                )
+            )));
 
-            _transaction.Dispose();
-            _transaction = null;";
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task<int>"), "SaveChangesAsync")
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                            .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                    )
+                )
+            )
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("_context"),
+                                SyntaxFactory.IdentifierName("SaveChangesAsync")
+                            )
+                        )
+                        .WithArgumentList(SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
+                            )
+                        ))
+                    )
+                )
+            )));
 
-        string bodyOfRollbackTransaction = @"
-            if (_transaction != null)
-            {
-                _transaction.Rollback();
-                _transaction.Dispose();
-                _transaction = null;
-            }";
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "BeginTransactionAsync")
+             .AddModifiers(
+                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                 SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+             .WithParameterList(
+                 SyntaxFactory.ParameterList(
+                     SyntaxFactory.SingletonSeparatedList(
+                         SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                             .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                     )
+                 )
+             )
+             .WithBody(SyntaxFactory.Block(
+                 SyntaxFactory.IfStatement(
+                     SyntaxFactory.BinaryExpression(
+                         SyntaxKind.NotEqualsExpression,
+                         SyntaxFactory.IdentifierName("_transaction"),
+                         SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                     ),
+                     SyntaxFactory.ThrowStatement(
+                         SyntaxFactory.ObjectCreationExpression(
+                             SyntaxFactory.IdentifierName("InvalidOperationException"))
+                         .WithArgumentList(SyntaxFactory.ArgumentList(
+                             SyntaxFactory.SingletonSeparatedList(
+                                 SyntaxFactory.Argument(
+                                     SyntaxFactory.LiteralExpression(
+                                         SyntaxKind.StringLiteralExpression,
+                                         SyntaxFactory.Literal("Transaction already started for begin transaction.")
+                                     )
+                                 )
+                             ))
+                         )
+                     )
+                 ),
+                 SyntaxFactory.ExpressionStatement(
+                     SyntaxFactory.AssignmentExpression(
+                         SyntaxKind.SimpleAssignmentExpression,
+                         SyntaxFactory.IdentifierName("_transaction"),
+                         SyntaxFactory.AwaitExpression(
+                             SyntaxFactory.InvocationExpression(
+                                 SyntaxFactory.MemberAccessExpression(
+                                     SyntaxKind.SimpleMemberAccessExpression,
+                                     SyntaxFactory.MemberAccessExpression(
+                                         SyntaxKind.SimpleMemberAccessExpression,
+                                         SyntaxFactory.IdentifierName("_context"),
+                                         SyntaxFactory.IdentifierName("Database")),
+                                     SyntaxFactory.IdentifierName("BeginTransactionAsync"))
+                             )
+                             .WithArgumentList(SyntaxFactory.ArgumentList(
+                                 SyntaxFactory.SingletonSeparatedList(
+                                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
+                                 )
+                             ))
+                         )
+                     )
+                 )
+             )));
 
-        string bodyOfBeginSaveChangesAsync = @"return await _context.SaveChangesAsync(cancellationToken);";
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "CommitTransactionAsync")
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                            .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                    )
+                )
+            )
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.EqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.ThrowStatement(
+                        SyntaxFactory.ObjectCreationExpression(
+                            SyntaxFactory.IdentifierName("InvalidOperationException"))
+                        .WithArgumentList(SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.LiteralExpression(
+                                        SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal("Transaction has not been started for commit.")
+                                    )
+                                )
+                            ))
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.IdentifierName("CommitAsync")
+                            )
+                        )
+                        .WithArgumentList(SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
+                            )
+                        ))
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.IdentifierName("DisposeAsync")
+                            )
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    )
+                )
+            )));
 
-        string bodyOfBeginTransactionAsync = @"
-            if (_transaction != null) throw new InvalidOperationException(""Transaction already started for begin transaction."");
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "RollbackTransactionAsync")
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                            .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                    )
+                )
+            )
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.NotEqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.Block(
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AwaitExpression(
+                                SyntaxFactory.InvocationExpression(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.IdentifierName("_transaction"),
+                                        SyntaxFactory.IdentifierName("RollbackAsync")
+                                    )
+                                )
+                                .WithArgumentList(SyntaxFactory.ArgumentList(
+                                    SyntaxFactory.SingletonSeparatedList(
+                                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
+                                    )
+                                ))
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AwaitExpression(
+                                SyntaxFactory.InvocationExpression(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.IdentifierName("_transaction"),
+                                        SyntaxFactory.IdentifierName("DisposeAsync")
+                                    )
+                                )
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                            )
+                        )
+                    )
+                )
+            )));
 
-            _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);";
 
-        string bodyOfCommitTransactionAsync = @"
-            if (_transaction == null) throw new InvalidOperationException(""Transaction has not been started for commit."");
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "Dispose")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.NotEqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.Block(
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.InvocationExpression(
+                                SyntaxFactory.MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    SyntaxFactory.IdentifierName("_transaction"),
+                                    SyntaxFactory.IdentifierName("Dispose")
+                                )
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                            )
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("_context"),
+                            SyntaxFactory.IdentifierName("Dispose")
+                        )
+                    )
+                )
+            )));
 
-            await _transaction.CommitAsync(cancellationToken);
-
-            await _transaction.DisposeAsync();
-            _transaction = null;";
-
-        string bodyOfRollbackTransactionAsync = @"
-            if (_transaction != null)
-            {
-                await _transaction.RollbackAsync(cancellationToken);
-                await _transaction.DisposeAsync();
-                _transaction = null;
-            }";
-
+        methodList.Add(SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("ValueTask"), "DisposeAsync")
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+            .WithBody(SyntaxFactory.Block(
+                SyntaxFactory.IfStatement(
+                    SyntaxFactory.BinaryExpression(
+                        SyntaxKind.NotEqualsExpression,
+                        SyntaxFactory.IdentifierName("_transaction"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    ),
+                    SyntaxFactory.Block(
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AwaitExpression(
+                                SyntaxFactory.InvocationExpression(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.IdentifierName("_transaction"),
+                                        SyntaxFactory.IdentifierName("DisposeAsync")
+                                    )
+                                )
+                            )
+                        ),
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_transaction"),
+                                SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                            )
+                        )
+                    )
+                ),
+                SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("_context"),
+                                SyntaxFactory.IdentifierName("DisposeAsync")
+                            )
+                        )
+                    )
+                )
+            )));
         #endregion
 
-        var methodList = new List<MethodDeclarationSyntax>()
-        {
-            GeneratorMethodOfConcrete("int", "SaveChanges", bodyOfBeginSaveChanges),
-            GeneratorMethodOfConcrete("void", "BeginTransaction", bodyOfBeginTransaction),
-            GeneratorMethodOfConcrete("void", "CommitTransaction", bodyOfCommitTransaction),
-            GeneratorMethodOfConcrete("void", "RollbackTransaction", bodyOfRollbackTransaction),
-
-            GeneratorAsyncMethodOfConcrete("Task<int>", "SaveChangesAsync", bodyOfBeginSaveChangesAsync),
-            GeneratorAsyncMethodOfConcrete("Task", "BeginTransactionAsync", bodyOfBeginTransactionAsync),
-            GeneratorAsyncMethodOfConcrete("Task", "CommitTransactionAsync", bodyOfCommitTransactionAsync),
-            GeneratorAsyncMethodOfConcrete("Task", "RollbackTransactionAsync", bodyOfRollbackTransactionAsync),
-        };
 
         // 4) Constructor
         var parameterList = new List<ParameterSyntax>()
@@ -222,9 +613,6 @@ public partial class RoslynUOWGenerator
                 SyntaxFactory.ParseTypeName(type),
                 SyntaxFactory.Identifier(name)
             )
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword)
-            )
             .AddAccessorListAccessors(
                 SyntaxFactory
                     .AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
@@ -238,9 +626,6 @@ public partial class RoslynUOWGenerator
                 SyntaxFactory.ParseTypeName(returnType),
                 SyntaxFactory.Identifier(name)
             )
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword)
-            )
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
     }
 
@@ -250,9 +635,6 @@ public partial class RoslynUOWGenerator
             .MethodDeclaration(
                 SyntaxFactory.ParseTypeName(returnType),
                 SyntaxFactory.Identifier(name)
-            )
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword)
             )
             .AddParameterListParameters(
                 SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
@@ -270,16 +652,27 @@ public partial class RoslynUOWGenerator
     #endregion
 
     #region Helpers Concrete
-    private FieldDeclarationSyntax GeneratorFieldOfConcrete(string type, string name)
+    private FieldDeclarationSyntax GeneratorFieldOfConcrete(string type, string name, bool? isReadOnly = false, bool? isNullable = false)
     {
-        return SyntaxFactory
+        if (isReadOnly == true)
+        {
+            return SyntaxFactory
             .FieldDeclaration(
-                SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(type)
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(type + (isNullable  == true ? "?" : string.Empty))
             )
             .AddVariables(SyntaxFactory.VariableDeclarator(name)))
             .AddModifiers(
                 SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
                 SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)
+            );
+        }
+        return SyntaxFactory
+            .FieldDeclaration(
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(type + (isNullable == true ? "?" : string.Empty))
+            )
+            .AddVariables(SyntaxFactory.VariableDeclarator(name)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PrivateKeyword)
             );
     }
 
@@ -301,48 +694,6 @@ public partial class RoslynUOWGenerator
                     .AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword))
                     .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)));
-    }
-
-    private MethodDeclarationSyntax GeneratorMethodOfConcrete(string returnType, string name, string body)
-    {
-        return SyntaxFactory
-            .MethodDeclaration(
-                SyntaxFactory.ParseTypeName(returnType),
-                SyntaxFactory.Identifier(name)
-            )
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword)
-            )
-            .WithBody(SyntaxFactory.Block(
-                SyntaxFactory.ParseStatement(body)
-            ));
-    }
-
-    private MethodDeclarationSyntax GeneratorAsyncMethodOfConcrete(string returnType, string name, string body)
-    {
-        return SyntaxFactory
-            .MethodDeclaration(
-                SyntaxFactory.ParseTypeName(returnType),
-                SyntaxFactory.Identifier(name)
-            )
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
-            )
-            .AddParameterListParameters(
-                SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
-                    .WithType(SyntaxFactory.ParseTypeName("CancellationToken"))
-                    .WithDefault(SyntaxFactory.EqualsValueClause(
-                        SyntaxFactory.LiteralExpression(
-                            SyntaxKind.DefaultLiteralExpression,
-                            SyntaxFactory.Token(SyntaxKind.DefaultKeyword)
-                        )
-                    )
-                )
-            )
-            .WithBody(SyntaxFactory.Block(
-                SyntaxFactory.ParseStatement(body)
-            ));
     }
     #endregion
 }

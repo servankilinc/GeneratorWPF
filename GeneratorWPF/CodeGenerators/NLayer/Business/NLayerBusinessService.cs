@@ -41,6 +41,8 @@ public class NLayerBusinessService
             RunCommand(path, "dotnet", $"sln {solutionName}.sln add Business/Business.csproj");
             RunCommand(projectPath, "dotnet", $"dotnet add reference ../DataAccess/DataAccess.csproj");
 
+            RemoveFile(projectPath, "Class1.cs");
+
             return "OK: Business Project Created Successfully";
         }
         catch (Exception ex)
@@ -95,8 +97,7 @@ public class NLayerBusinessService
     #region Static Files
     public string GenerateServiceBase(string solutionPath)
     {
-        string code_IServiceBase = @"
-using Core.Model;
+        string code_IServiceBase = @"using Core.Model;
 using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
 using Core.Utils.Pagination;
@@ -122,8 +123,8 @@ public interface IServiceBase<TEntity> where TEntity : class, IEntity
     #endregion
 
     #region Update
-    TEntity _Update(TEntity entity);
-    TDtoResponse _Update<TDtoResponse>(TEntity entity) where TDtoResponse : IDto;
+    TEntity _Update(TEntity entity, Expression<Func<TEntity, bool>> where);
+    TDtoResponse _Update<TDtoResponse>(TEntity entity, Expression<Func<TEntity, bool>> where) where TDtoResponse : IDto;
     TEntity _Update<TDtoRequest>(TDtoRequest updateModel, Expression<Func<TEntity, bool>> where) where TDtoRequest : IDto;
     TDtoResponse _Update<TDtoRequest, TDtoResponse>(TDtoRequest updateModel, Expression<Func<TEntity, bool>> where) where TDtoRequest : IDto where TDtoResponse : IDto;
     #endregion
@@ -273,7 +274,6 @@ public interface IServiceBase<TEntity> where TEntity : class, IEntity
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object?>>? include = null,
         bool ignoreFilters = false);
-
     PaginationResponse<TDtoResponse> _Pagination<TDtoResponse>(
         PaginationRequest paginationRequest,
         Expression<Func<TEntity, TDtoResponse>> select,
@@ -283,7 +283,6 @@ public interface IServiceBase<TEntity> where TEntity : class, IEntity
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object?>>? include = null,
         bool ignoreFilters = false) where TDtoResponse : IDto;
-
     PaginationResponse<TDtoResponse> _Pagination<TDtoResponse>(
         PaginationRequest paginationRequest,
         Filter? filter = null,
@@ -295,8 +294,7 @@ public interface IServiceBase<TEntity> where TEntity : class, IEntity
     #endregion
 }";
 
-        string code_IServiceBaseAsync = @"
-using Core.Model;
+        string code_IServiceBaseAsync = @"using Core.Model;
 using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
 using Core.Utils.Pagination;
@@ -322,8 +320,8 @@ public interface IServiceBaseAsync<TEntity> where TEntity : class, IEntity
     #endregion
 
     #region Update
-    Task<TEntity> _UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
-    Task<TDtoResponse> _UpdateAsync<TDtoResponse>(TEntity entity, CancellationToken cancellationToken = default) where TDtoResponse : IDto;
+    Task<TEntity> _UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default);
+    Task<TDtoResponse> _UpdateAsync<TDtoResponse>(TEntity entity, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default) where TDtoResponse : IDto;
     Task<TEntity> _UpdateAsync<TDtoRequest>(TDtoRequest updateModel, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default) where TDtoRequest : IDto;
     Task<TDtoResponse> _UpdateAsync<TDtoRequest, TDtoResponse>(TDtoRequest updateModel, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default) where TDtoRequest : IDto where TDtoResponse : IDto;
     #endregion
@@ -507,8 +505,7 @@ public interface IServiceBaseAsync<TEntity> where TEntity : class, IEntity
     #endregion
 }";
 
-        string code_ServiceBase = @"
-using AutoMapper;
+        string code_ServiceBase = @"using AutoMapper;
 using Core.Model;
 using Core.Utils.Datatable;
 using Core.Utils.DynamicQuery;
@@ -516,7 +513,6 @@ using Core.Utils.ExceptionHandle.Exceptions;
 using Core.Utils.Pagination;
 using DataAccess.Repository;
 using Microsoft.EntityFrameworkCore.Query;
-using Newtonsoft.Json;
 using System.Linq.Expressions;
 
 namespace Business.ServiceBase;
@@ -588,14 +584,24 @@ public class ServiceBase<TEntity, TRepository> : IServiceBase<TEntity>, IService
     #endregion
 
     #region Update
-    public TEntity _Update(TEntity entity)
+    public TEntity _Update(TEntity entity, Expression<Func<TEntity, bool>> where)
     {
-        return _repository.UpdateAndSave(entity);
+        TEntity? originalEntity = _repository.Get(where: where);
+        if (originalEntity == null) throw new GeneralException($""The entity({nameof(TEntity)}) was not found to update."");
+
+        _mapper.Map(entity, originalEntity);
+
+        return _repository.UpdateAndSave(originalEntity);
     }
 
-    public TDtoResponse _Update<TDtoResponse>(TEntity entity) where TDtoResponse : IDto
+    public TDtoResponse _Update<TDtoResponse>(TEntity entity, Expression<Func<TEntity, bool>> where) where TDtoResponse : IDto
     {
-        TEntity updatedEntity = _repository.UpdateAndSave(entity);
+        TEntity? originalEntity = _repository.Get(where: where);
+        if (originalEntity == null) throw new GeneralException($""The entity({nameof(TEntity)}) was not found to update."");
+
+        _mapper.Map(entity, originalEntity);
+
+        TEntity updatedEntity = _repository.UpdateAndSave(originalEntity);
         return _mapper.Map<TDtoResponse>(updatedEntity);
     }
 
@@ -1031,14 +1037,24 @@ public class ServiceBase<TEntity, TRepository> : IServiceBase<TEntity>, IService
     #endregion
 
     #region Update
-    public async Task<TEntity> _UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
+    public async Task<TEntity> _UpdateAsync(TEntity entity, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default)
     {
-        return await _repository.UpdateAndSaveAsync(entity, cancellationToken);
+        TEntity? originalEntity = await _repository.GetAsync(where: where, cancellationToken: cancellationToken);
+        if (originalEntity == null) throw new GeneralException($""The entity({nameof(TEntity)}) was not found to update."");
+
+        _mapper.Map(entity, originalEntity);
+
+        return await _repository.UpdateAndSaveAsync(originalEntity, cancellationToken);
     }
 
-    public async Task<TDtoResponse> _UpdateAsync<TDtoResponse>(TEntity entity, CancellationToken cancellationToken = default) where TDtoResponse : IDto
+    public async Task<TDtoResponse> _UpdateAsync<TDtoResponse>(TEntity entity, Expression<Func<TEntity, bool>> where, CancellationToken cancellationToken = default) where TDtoResponse : IDto
     {
-        TEntity updatedEntity = await _repository.UpdateAndSaveAsync(entity, cancellationToken);
+        TEntity? originalEntity = await _repository.GetAsync(where: where, cancellationToken: cancellationToken);
+        if (originalEntity == null) throw new GeneralException($""The entity({nameof(TEntity)}) was not found to update."");
+
+        _mapper.Map(entity, originalEntity);
+
+        TEntity updatedEntity = await _repository.UpdateAndSaveAsync(originalEntity, cancellationToken);
         return _mapper.Map<TDtoResponse>(updatedEntity);
     }
 
@@ -1448,7 +1464,8 @@ public class ServiceBase<TEntity, TRepository> : IServiceBase<TEntity>, IService
             cancellationToken: cancellationToken);
     }
     #endregion
-}";
+}
+";
 
         string folderPath = Path.Combine(solutionPath, "Business", "ServiceBase");
 
@@ -1464,8 +1481,7 @@ public class ServiceBase<TEntity, TRepository> : IServiceBase<TEntity>, IService
 
     public string GenerateUtils(string solutionPath)
     {
-        string code_ITokenService = @"
-using Core.Utils.Auth;
+        string code_ITokenService = @"using Core.Utils.Auth;
 using Model.Entities;
 using System.Security.Claims;
 
@@ -1477,8 +1493,7 @@ public interface ITokenService
     RefreshToken GenerateRefreshToken(User user);
 }";
 
-        string code_TokenService = @"
-using Core.Utils.Auth;
+        string code_TokenService = @"using Core.Utils.Auth;
 using Core.Utils.CrossCuttingConcerns;
 using Core.Utils.ExceptionHandle.Exceptions;
 using Core.Utils.HttpContextManager;
@@ -1576,21 +1591,27 @@ public class TokenService : ITokenService
         sb.AppendLine("\t{");
         sb.AppendLine("\t\t// CreateMap<source, dest>");
 
-        var entities = _entityRepository.GetAll(f => true, enableTracking: false);
+        var entities = _entityRepository.GetAll(f => true, include: i => i.Include(x => x.Fields).ThenInclude(ti => ti.FieldType), enableTracking: false);
         foreach (var entity in entities)
         {
             sb.AppendLine();
             sb.AppendLine($"\t\t#region {entity.Name}");
             var dtoList = _dtoRepository.GetAll(f => f.RelatedEntityId == entity.Id, enableTracking: false);
 
+            sb.AppendLine($@"CreateMap<{entity.Name}, {entity.Name}>().ForAllMembers(opt => opt.Condition((src, dest, srcMember, destMember) => !Equals(srcMember, destMember)));");
+            sb.AppendLine("");
+
             // Response Dtos Mapping
+            // ** Signup to user
             if (_appSetting.IsThereIdentiy && _appSetting.UserEntityId == entity.Id)
             {
                 sb.AppendLine($"\t\tCreateMap<SignUpRequest, {entity.Name}>()");
-                sb.AppendLine($"\t\t\t.ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FirstName))");
-                sb.AppendLine($"\t\t\t.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))");
+                foreach (var field_user in entity.Fields.Where(f => !f.IsUnique && f.IsRequired && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
+                {
+                    sb.AppendLine($"\t\t\t.ForMember(dest => dest.{field_user.Name}, opt => opt.MapFrom(src => src.{field_user.Name}))");
+                }
                 sb.AppendLine($"\t\t\t.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))");
-                sb.AppendLine($"\t\t\t.ReverseMap();");
+                sb.AppendLine($"\t\t\t.ForAllMembers(opt => opt.Condition((src, dest, srcMember, destMember) => !Equals(srcMember, destMember)));");
                 sb.AppendLine();
             }
 
@@ -1642,8 +1663,7 @@ public class TokenService : ITokenService
 
         if (_appSetting.IsThereIdentiy)
         {
-            string code_IAuthService = @"
-using Model.Auth.Login;
+            string code_IAuthService = @"using Model.Auth.Login;
 using Model.Auth.RefreshAuth;
 using Model.Auth.SignUp;
 
@@ -1657,6 +1677,246 @@ public interface IAuthService
 }";
 
             results.Add(AddFile(folderPathAbstract, "IAuthService", code_IAuthService));
+
+
+            // TODO: Sadece Auth SErvice KALDI Düzeltilmesi Gereken **********
+            string code_AuthService = @"using AutoMapper;
+using Business.Abstract;
+using Business.Utils.TokenService;
+using Core.Utils.Auth;
+using Core.Utils.CrossCuttingConcerns;
+using Core.Utils.ExceptionHandle.Exceptions;
+using Core.Utils.HttpContextManager;
+using DataAccess.UoW;
+using Microsoft.AspNetCore.Identity;
+using Model.Auth.Login;
+using Model.Auth.RefreshAuth;
+using Model.Auth.SignUp;
+using Model.Dtos.User_;
+using Model.Entities;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Threading;
+
+namespace Business.Concrete;
+
+public class AuthService : IAuthService
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenService _tokenService;
+    private readonly UserManager<User> _userManager;
+    private readonly HttpContextManager _httpContextManager;
+    private readonly IMapper _mapper;
+    public AuthService(
+        IUnitOfWork unitOfWork,
+        ITokenService tokenService,
+        UserManager<User> userManager,
+        HttpContextManager httpContextManager,
+        IMapper mapper
+    )
+    {
+        _unitOfWork = unitOfWork;
+        _tokenService = tokenService;
+        _userManager = userManager;
+        _httpContextManager = httpContextManager;
+        _mapper = mapper;
+    }
+
+
+    [Validation(typeof(LoginRequest))]
+    public async Task<LoginResponse> LoginAsync(LoginRequest loginRequest, CancellationToken cancellationToken = default)
+    {
+        User? user = await _userManager.FindByEmailAsync(loginRequest.Email);
+        if (user == null) throw new BusinessException(""The email address is not exist."", description: $""Requester email address: {loginRequest.Email}"");
+
+        bool isPasswordValid = await _userManager.CheckPasswordAsync(user, loginRequest.Password);
+        if (!isPasswordValid) throw new BusinessException(""Password does not correct."", description: $""Requester email address: {loginRequest.Email}"");
+
+        IList<string> roles = await _userManager.GetRolesAsync(user);
+        IList<Claim> claims = await GetClaimsAsync(user, roles);
+        AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
+        RefreshToken refreshToken = _tokenService.GenerateRefreshToken(user);
+
+        string? ipAddress = _httpContextManager.GetClientIp();
+        if (string.IsNullOrEmpty(ipAddress)) throw new GeneralException(""Ip address could not found for login."", description: $""Requester email address: {loginRequest.Email}"");
+
+        await _unitOfWork.RefreshTokens.DeleteAndSaveAsync(where: f => f.UserId == user.Id && f.IpAddress.Trim() == ipAddress.Trim(), cancellationToken);
+        await _unitOfWork.RefreshTokens.AddAndSaveAsync(refreshToken, cancellationToken);
+
+        if (_httpContextManager.IsMobile())
+        {
+            return new LoginTrustedResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                User = _mapper.Map<UserBasicResponseDto>(user),
+                Roles = roles
+            };
+        }
+        else
+        {
+            _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
+            return new LoginResponse
+            {
+                AccessToken = accessToken,
+                User = _mapper.Map<UserBasicResponseDto>(user),
+                Roles = roles
+            };
+        }
+    }
+
+    [Validation(typeof(SignUpRequest))]
+    public async Task<SignUpResponse> SignUpAsync(SignUpRequest signUpRequest, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            bool isExistEmail = await _unitOfWork.Users.IsExistAsync(where: f => f.NormalizedEmail == signUpRequest.Email.ToUpperInvariant(), cancellationToken: cancellationToken);
+            if (isExistEmail) throw new BusinessException(""The email address is already in use."", description: $""Requester email address: {signUpRequest.Email}"");
+
+            User user = _mapper.Map<User>(signUpRequest);
+            user.UserName = $""{signUpRequest.Email}_{DateTime.UtcNow:yyyyMMddHHmmss}"";
+
+            var result = await _userManager.CreateAsync(user, signUpRequest.Password);
+            if (!result.Succeeded) throw new GeneralException(string.Join(""\n"", result.Errors.Select(e => e.Description)), description: $""User cannot be created. Requester email: {signUpRequest.Email}"");
+            
+            var roleResult = await _userManager.AddToRoleAsync(user, ""User"");
+            if (!roleResult.Succeeded) throw new GeneralException(""Failed to assign role."", description: $""Requester email address: {signUpRequest.Email}"");
+
+            IList<string> roles = await _userManager.GetRolesAsync(user);
+            IList<Claim> claims = await GetClaimsAsync(user, roles);
+            AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
+            RefreshToken refreshToken = _tokenService.GenerateRefreshToken(user);
+
+            await _unitOfWork.RefreshTokens.AddAndSaveAsync(refreshToken, cancellationToken);
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            if (_httpContextManager.IsMobile())
+            {
+                return new SignUpTrustedResponse
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token,
+                    User = _mapper.Map<UserBasicResponseDto>(user),
+                    Roles = roles
+                };
+            }
+            else
+            {
+                _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
+                return new SignUpResponse
+                {
+                    AccessToken = accessToken,
+                    User = _mapper.Map<UserBasicResponseDto>(user),
+                    Roles = roles
+                };
+            }
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
+
+    [ExceptionHandler]
+    [Validation(typeof(RefreshAuthRequest))]
+    public async Task<RefreshAuthResponse> RefreshAuthAsync(RefreshAuthRequest refreshAuthRequest, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            if (!_httpContextManager.IsMobile())
+            {
+                refreshAuthRequest.RefreshToken = _httpContextManager.GetRefreshTokenFromCookie();
+            }
+
+            User? user = await _unitOfWork.Users.GetAsync(where: f => f.Id == refreshAuthRequest.UserId, cancellationToken: cancellationToken);
+            if (user == null) throw new GeneralException(""User cannot found for refresh auth!"", description: $""Requester userId: {refreshAuthRequest.UserId}"");
+
+            string? ipAddress = _httpContextManager.GetClientIp();
+            if (string.IsNullOrEmpty(ipAddress)) throw new GeneralException(""Ip address could not readed for refresh auth."");
+
+            DateTime nowOnUtc = DateTime.UtcNow;
+            ICollection<RefreshToken>? refreshTokens = await _unitOfWork.RefreshTokens.GetAllAsync(where: f =>
+                f.UserId == refreshAuthRequest.UserId &&
+                f.TTL > 0 &&
+                f.ExpirationUtc > nowOnUtc &&
+                f.IpAddress.ToLowerInvariant().Trim() == ipAddress.ToLowerInvariant().Trim(),
+                cancellationToken: cancellationToken
+            );
+            if (refreshTokens == null) throw new GeneralException(""There is no available refresh token."");
+
+            RefreshToken? refreshToken = refreshTokens.FirstOrDefault(f => f.Token.Trim() == refreshAuthRequest.RefreshToken);
+            if (refreshToken == null) throw new GeneralException(""There is no available refresh token."");
+
+            refreshToken.Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            refreshToken.TTL -= 1;
+
+            await _unitOfWork.RefreshTokens.DeleteAndSaveAsync(where: f => f.Id != refreshToken.Id && f.UserId == user.Id && f.IpAddress.Trim() == ipAddress.Trim(), cancellationToken);
+            await _unitOfWork.RefreshTokens.UpdateAndSaveAsync(refreshToken, cancellationToken);
+
+            IList<string> roles = await _userManager.GetRolesAsync(user);
+            IList<Claim> claims = await GetClaimsAsync(user, roles);
+            AccessToken accessToken = _tokenService.GenerateAccessToken(claims);
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            if (_httpContextManager.IsMobile())
+            {
+                return new RefreshAuthTrustedResponse
+                {
+                    RefreshToken = refreshToken.Token,
+                    AccessToken = accessToken,
+                    User = _mapper.Map<UserBasicResponseDto>(user),
+                };
+            }
+            else
+            {
+                _httpContextManager.AddRefreshTokenToCookie(refreshToken.Token, refreshToken.ExpirationUtc);
+                return new RefreshAuthResponse
+                {
+                    AccessToken = accessToken,
+                    User = _mapper.Map<UserBasicResponseDto>(user),
+                };
+            }
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
+
+    #region Helpers
+    private async Task<IList<Claim>> GetClaimsAsync(User user, IList<string> roles)
+    {
+        List<Claim> claimList = new List<Claim>()
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, $""{user.Name} {user.LastName}"")
+        };
+
+        if (!string.IsNullOrEmpty(user.Email))
+            claimList.Add(new Claim(ClaimTypes.Email, user.Email));
+
+        IList<Claim>? persistentClaims = await _userManager.GetClaimsAsync(user);
+        claimList.AddRange(persistentClaims);
+
+        IEnumerable<Claim>? roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role));
+        claimList.AddRange(roleClaims);
+
+        return claimList;
+    }
+    #endregion
+}";
+
+            results.Add(AddFile(folderPathConcrete, "AuthService", code_AuthService));
         }
 
         return string.Join("\n", results);
@@ -1708,8 +1968,7 @@ public interface IAuthService
         sb.AppendLine("\t}");
         sb.AppendLine("}");
 
-        string code_ServiceRegistration = @"
-using Microsoft.Extensions.Configuration;
+        string code_ServiceRegistration = @"using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -1759,6 +2018,28 @@ public static class ServiceRegistration
         catch (Exception ex)
         {
             throw new Exception($"ERROR: An error occurred while adding file({fileName}) to Business project. \n Details:{ex.Message}");
+        }
+    }
+
+    private string RemoveFile(string folderPath, string fileName)
+    {
+        try
+        {
+            string filePath = Path.Combine(folderPath, fileName);
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                return $"OK: File {fileName} removed from Business project.";
+            }
+            else
+            {
+                return $"INFO: File {fileName} does not exist in Business project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from Business project. \n Details: {ex.Message}");
         }
     }
 
@@ -1905,7 +2186,7 @@ public static class ServiceRegistration
                 sb.AppendLine($"\t\t\t)");
             }
         }
-        sb.AppendLine("\t\t\t.ReverseMap();");
+        sb.AppendLine("\t\t\t.ForAllMembers(opt => opt.Condition((src, dest, srcMember, destMember) => !Equals(srcMember, destMember)));");
         sb.AppendLine();
     }
 
@@ -1930,6 +2211,7 @@ public static class ServiceRegistration
                 sb.AppendLine($"\t\t\t.ForMember(dest => dest.{dtoField.Name}, opt => opt.MapFrom(src => src))");
             }
         }
+        sb.AppendLine("\t\t\t.ForAllMembers(opt => opt.Condition((src, dest, srcMember, destMember) => !Equals(srcMember, destMember)));");
         sb.AppendLine();
     }
 }

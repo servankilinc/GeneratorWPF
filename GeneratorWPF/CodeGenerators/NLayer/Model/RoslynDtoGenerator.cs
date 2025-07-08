@@ -23,9 +23,6 @@ public partial class RoslynDtoGenerator
 
     public string GeneraterDto(Dto dto, AppSetting appSettings)
     {
-        // 1) Property List
-        var propertyList = new List<MemberDeclarationSyntax>();
-
         List<DtoField> dtoFieldList = _dtoFieldRepository.GetAll(
             filter: f => f.DtoId == dto.Id, 
             include: i => i
@@ -33,6 +30,13 @@ public partial class RoslynDtoGenerator
                     .ThenInclude(x => x.FieldType)
                 .Include(x => x.SourceField)
                     .ThenInclude(x => x.Entity));
+
+        var dtoFieldIdList = dtoFieldList.Select(x => x.Id);
+        bool isExistValidation = _validationRepository.IsExist(f => dtoFieldIdList.Contains(f.DtoFieldId));
+
+
+        // 1) Property List
+        var propertyList = new List<MemberDeclarationSyntax>();
 
         foreach (var dtoField in dtoFieldList)
         {
@@ -43,32 +47,12 @@ public partial class RoslynDtoGenerator
         if (dto.CrudTypeId == (int)CrudTypeEnums.Create && dto.RelatedEntityId == appSettings.UserEntityId)
             propertyList.Add(GeneratorPropertyByName("string", "Password", true));
 
-        // 2) Class
-        var classDeclaration = SyntaxFactory
-            .ClassDeclaration(dto.Name)
-            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-            .AddBaseListTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IDto")))
-            .AddMembers(propertyList.ToArray());
-
-        // 3) Namespace
-        var namespaceDeclaration = SyntaxFactory
-            .NamespaceDeclaration(SyntaxFactory.ParseName($"Model.Dtos.{dto.RelatedEntity.Name}_"))
-            .AddMembers(classDeclaration);
-
-        // 4) Usings
-        var dtoFieldIdList = dtoFieldList.Select(x => x.Id);
-        bool isExistValidation = _validationRepository.IsExist(f => dtoFieldIdList.Contains(f.DtoFieldId));
-
-        List<UsingDirectiveSyntax> usingsList = new(){
+         
+        // 2) Usings
+        List<UsingDirectiveSyntax> usingsList = new List<UsingDirectiveSyntax>(){
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Core.Model"))
         };
-
-        // Referance of FluentValidation
-        if (isExistValidation) {
-            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("FluentValidation")));
-        }
-
-        // Referance of Dtos
+        
         if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Dto))
         {
             List<int> addedSourceEntites = new() { dto.RelatedEntityId };
@@ -81,11 +65,44 @@ public partial class RoslynDtoGenerator
             }
         }
 
-        // Referance of Entities
+        if (isExistValidation) 
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("FluentValidation")));
+        
         if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Entity))
-        {
             usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Model.Entities")));
+        
+
+
+        List<ClassDeclarationSyntax> classes = new List<ClassDeclarationSyntax>();
+        
+        // 3) Class of Dto
+        classes.Add(SyntaxFactory
+            .ClassDeclaration(dto.Name)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .AddBaseListTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IDto")))
+            .AddMembers(propertyList.ToArray()));
+        
+        
+        // 4) Class of Validator
+        if (isExistValidation)
+        {
+            var dtoFieldsByValidation = _dtoFieldRepository.GetAll(
+                filter: f => f.DtoId == dto.Id && f.Validations != null,
+                include: i => i
+                    .Include(x => x.Validations)!
+                        .ThenInclude(x => x.ValidatorType)!
+                    .Include(x => x.Validations)!
+                        .ThenInclude(x => x.ValidationParams)!);
+
+            classes.Add(GenerateValidatorCode(dtoFieldsByValidation, dto, appSettings));
         }
+        
+        // 5) Namespace
+        var namespaceDeclaration = SyntaxFactory
+            .NamespaceDeclaration(SyntaxFactory.ParseName($"Model.Dtos.{dto.RelatedEntity.Name}_"))
+            .AddMembers(classes.ToArray());
+
+
 
         var compilationUnit = SyntaxFactory
             .CompilationUnit()
@@ -93,25 +110,13 @@ public partial class RoslynDtoGenerator
             .AddMembers(namespaceDeclaration)
             .NormalizeWhitespace();
 
-        if (!isExistValidation)
-            return compilationUnit.ToFullString();
+        return compilationUnit.ToFullString();
 
-        // 5) Validations
-        var dtoFieldsByValidation = _dtoFieldRepository.GetAll(
-            filter: f => f.DtoId == dto.Id && f.Validations != null,
-            include: i => i
-                .Include(x => x.Validations)!
-                    .ThenInclude(x => x.ValidatorType)!
-                .Include(x => x.Validations)!
-                    .ThenInclude(x => x.ValidationParams)!);
-
-        string validatorCode = GenerateValidatorCode(dtoFieldsByValidation, dto, appSettings);
-
-        string dtoCode = compilationUnit.ToFullString();
-
-        return dtoCode + "\n\n\n" + validatorCode;
     }
 
+
+
+    #region Helpers
     private MemberDeclarationSyntax GeneratorProperty(DtoField dtoField)
     {
         Field field = dtoField.SourceField;
@@ -198,14 +203,9 @@ public partial class RoslynDtoGenerator
         return property;
     }
 
-    private string GenerateValidatorCode(List<DtoField> dtoFields, Dto dto, AppSetting appSettings)
+    private ClassDeclarationSyntax GenerateValidatorCode(List<DtoField> dtoFields, Dto dto, AppSetting appSettings)
     {
-        var sb = new StringBuilder();
-
-        sb.AppendLine($"public class {dto.Name}Validator : AbstractValidator<{dto.Name}>");
-        sb.AppendLine("{");
-        sb.AppendLine($"\tpublic {dto.Name}Validator()");
-        sb.AppendLine("\t{");
+        var rules = new List<StatementSyntax>();
 
         foreach (var dtoField in dtoFields)
         {
@@ -214,22 +214,43 @@ public partial class RoslynDtoGenerator
             foreach (var validation in dtoField.Validations)
             {
                 string rule = CreateRule(validation, validation.ErrorMessage);
-                if (string.IsNullOrEmpty(rule)) continue;
+                if (string.IsNullOrWhiteSpace(rule)) continue;
 
-                sb.AppendLine($"\t\tRuleFor(v => v.{dtoField.Name}){rule};");
+                var expression = SyntaxFactory.ParseStatement(
+                    $"RuleFor(v => v.{dtoField.Name}){rule};"
+                );
+
+                rules.Add(expression);
             }
-            sb.Append("\n");
+
+            rules.Add(SyntaxFactory.ParseStatement(""));
         }
+
         if (dto.CrudTypeId == (int)CrudTypeEnums.Create && dto.RelatedEntityId == appSettings.UserEntityId)
         {
-            sb.AppendLine("\t\tRuleFor(v => v.Password).NotNull().WithMessage(\"Password cannot be null.\");");
-            sb.AppendLine("\t\tRuleFor(v => v.Password).MinimumLength(6).WithMessage(\"Password must be at least 6 characters long.\");");
+            rules.Add(SyntaxFactory.ParseStatement(@"RuleFor(v => v.Password).NotNull().WithMessage(""Password cannot be null."");"));
+            rules.Add(SyntaxFactory.ParseStatement(@"RuleFor(v => v.Password).MinimumLength(6).WithMessage(""Password must be at least 6 characters long."");"));
         }
 
-        sb.AppendLine("\t}");
-        sb.AppendLine("}");
+        var constructor = SyntaxFactory.ConstructorDeclaration($"{dto.Name}Validator")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .WithBody(SyntaxFactory.Block(rules));
 
-        return sb.ToString();
+        return SyntaxFactory.ClassDeclaration($"{dto.Name}Validator")
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .AddBaseListTypes(
+                SyntaxFactory.SimpleBaseType(
+                    SyntaxFactory.GenericName("AbstractValidator")
+                        .WithTypeArgumentList(
+                            SyntaxFactory.TypeArgumentList(
+                                SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                    SyntaxFactory.IdentifierName(dto.Name)
+                                )
+                            )
+                        )
+                )
+            )
+            .AddMembers(constructor);
     }
 
     private string CreateRule(Validation validation, string? message)
@@ -315,5 +336,6 @@ public partial class RoslynDtoGenerator
         }
 
         return rule;
-    }
+    } 
+    #endregion
 }

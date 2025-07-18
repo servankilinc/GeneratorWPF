@@ -14,6 +14,7 @@ namespace GeneratorWPF.CodeGenerators.NLayer.Business;
 public partial class RoslynBusinessServiceGenerator
 {
     private readonly AppSetting _appSetting;
+    private readonly DtoRepository _dtoRepository;
     private readonly DtoFieldRepository _dtoFieldRepository;
     private readonly EntityRepository _entityRepository;
     private readonly DtoFieldRelationsRepository _dtoFieldRelationsRepository;
@@ -21,6 +22,7 @@ public partial class RoslynBusinessServiceGenerator
     {
         _appSetting = appSetting;
         _entityRepository = new EntityRepository();
+        _dtoRepository = new DtoRepository();
         _dtoFieldRepository = new DtoFieldRepository();
         _dtoFieldRelationsRepository = new DtoFieldRelationsRepository();
     }
@@ -32,14 +34,36 @@ public partial class RoslynBusinessServiceGenerator
         // 1) Method List
         var methodList = new List<MethodDeclarationSyntax>();
 
+        #region Get Entity
+        methodList.Add(GeneratorGetEntityMethodOfAbstract(entity.Name));
+        methodList.Add(GeneratorGetEntityListMethodOfAbstract(entity.Name));
+        #endregion
+
+        #region Get Generic
+        methodList.Add(GeneratorGetGenericMethodOfAbstract(entity.Name));
+        methodList.Add(GeneratorGetGenericListMethodOfAbstract(entity.Name));
+        #endregion
+
+        #region Get Select List
+        Field? nameField = entity.Fields.FirstOrDefault(f => f.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base && f.Name.Trim().ToLowerInvariant() == "name");
+        if (nameField == default)
+        {
+            nameField = entity.Fields.FirstOrDefault(f => f.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base && f.Name.Trim().ToLowerInvariant().Contains("name"));
+        }
+        if (nameField != default)
+        {
+            methodList.Add(GeneratorGetSelectListMethodOfAbstract(entity.Name));
+        }
+        #endregion
+
         #region GetBasic
         var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
         bool isThereBasicResponseDto = basicResponseDto != null;
         if (isThereBasicResponseDto)
         {
-            methodList.Add(GeneratorGetMethodOfAbstract(basicResponseDto!.Name, "GetAsync", uniqueFields));
-            methodList.Add(GeneratorGetAllMethodOfAbstract(basicResponseDto.Name, "GetAllAsync"));
-            methodList.Add(GeneratorGetListMethodOfAbstract(basicResponseDto.Name, "GetListAsync"));
+            methodList.Add(GeneratorGetMethodOfAbstract(basicResponseDto!.Name, "GetByBasicAsync", uniqueFields));
+            methodList.Add(GeneratorGetAllMethodOfAbstract(basicResponseDto.Name, "GetAllByBasicAsync"));
+            methodList.Add(GeneratorGetListMethodOfAbstract(basicResponseDto.Name, "GetListByBasicAsync"));
         }
         #endregion
 
@@ -94,8 +118,14 @@ public partial class RoslynBusinessServiceGenerator
         #endregion
 
         #region Datatable Methods
+        Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId) : default;
         methodList.Add(GeneratorDatatableClientSideMethodOfAbstract(entity.Name));
         methodList.Add(GeneratorDatatableServerSideMethodOfAbstract(entity.Name));
+        if(reportDto != default)
+        {
+            methodList.Add(GeneratorDatatableClientSideByDtoOfAbstract(reportDto.Name, "DatatableClientSideByReportAsync"));
+            methodList.Add(GeneratorDatatableServerSideByDtoOfAbstract(reportDto.Name, "DatatableServerSideByReportAsync"));
+        }
         #endregion
 
         // 2) Interface
@@ -856,6 +886,133 @@ public partial class RoslynBusinessServiceGenerator
 
 
     #region Helpers Abstract
+    // Entity Get Methods
+    private MethodDeclarationSyntax GeneratorGetEntityMethodOfAbstract(string entityName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("where"))
+                .WithType(SyntaxFactory.IdentifierName($"Expression<Func<{entityName}, bool>>")),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))
+                )
+            )
+        };
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<{entityName}?>"), SyntaxFactory.Identifier("GetAsync"))
+            .AddParameterListParameters(paramList.ToArray())
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private MethodDeclarationSyntax GeneratorGetEntityListMethodOfAbstract(string entityName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("where"))
+                .WithType(SyntaxFactory.IdentifierName($"Expression<Func<{entityName}, bool>>?"))
+                .WithDefault(
+                    SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword)))),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
+        };
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<ICollection<{entityName}>?>"), SyntaxFactory.Identifier("GetListAsync"))
+            .AddParameterListParameters(paramList.ToArray())
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+
+    // Generic Get Methods
+    private MethodDeclarationSyntax GeneratorGetGenericMethodOfAbstract(string entityName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("where"))
+                .WithType(SyntaxFactory.IdentifierName($"Expression<Func<{entityName}, bool>>")),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
+        };
+        
+        var typeParameterList = SyntaxFactory.TypeParameterList(
+            SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.TypeParameter("TResponse")));
+
+        var constraintClause = SyntaxFactory.TypeParameterConstraintClause("TResponse")
+            .WithConstraints(
+                SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(
+                    SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("IDto"))));
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<TResponse?>"), "GetAsync")
+            .WithTypeParameterList(typeParameterList)
+            .AddParameterListParameters(paramList.ToArray())
+            .AddConstraintClauses(constraintClause)
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private MethodDeclarationSyntax GeneratorGetGenericListMethodOfAbstract(string entityName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("where"))
+                .WithType(SyntaxFactory.IdentifierName($"Expression<Func<{entityName}, bool>>"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword)))),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
+        };
+
+        var typeParameterList = SyntaxFactory.TypeParameterList(
+            SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.TypeParameter("TResponse")));
+
+        var constraintClause = SyntaxFactory.TypeParameterConstraintClause("TResponse")
+            .WithConstraints(
+                SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(
+                    SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("IDto"))));
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<ICollection<TResponse>?>"),"GetListAsync")
+            .WithTypeParameterList(typeParameterList)
+            .AddParameterListParameters(paramList.ToArray())
+            .AddConstraintClauses(constraintClause)
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+
+    // Get Select List Method
+    private MethodDeclarationSyntax GeneratorGetSelectListMethodOfAbstract(string entityName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("where"))
+                .WithType(SyntaxFactory.IdentifierName($"Expression<Func<{entityName}, bool>>?"))
+                .WithDefault(
+                    SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword)))),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
+        };
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<SelectList>"), SyntaxFactory.Identifier("GetSelectListAsync"))
+            .AddParameterListParameters(paramList.ToArray())
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+
+    // Dto Get Methods
     private MethodDeclarationSyntax GeneratorGetMethodOfAbstract(string dtoName, string name, List<Field> uniqueFields)
     {
         var paramList = new List<ParameterSyntax>();
@@ -924,7 +1081,7 @@ public partial class RoslynBusinessServiceGenerator
             .AddParameterListParameters(paramList.ToArray())
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
     }
-
+    
 
     private MethodDeclarationSyntax GeneratorCreateMethodOfAbstract(string retrunName, string argName)
     {
@@ -1042,6 +1199,45 @@ public partial class RoslynBusinessServiceGenerator
 
         return SyntaxFactory
             .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<DatatableResponseServerSide<{entityName}>>"), SyntaxFactory.Identifier("DatatableServerSideAsync"))
+            .AddParameterListParameters(paramList.ToArray())
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private MethodDeclarationSyntax GeneratorDatatableClientSideByDtoOfAbstract(string dtoName, string methodName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("request"))
+                .WithType(SyntaxFactory.IdentifierName("DynamicRequest")
+            ),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))
+                )
+            )
+        };
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<DatatableResponseClientSide<{dtoName}>>"), SyntaxFactory.Identifier(methodName))
+            .AddParameterListParameters(paramList.ToArray())
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private MethodDeclarationSyntax GeneratorDatatableServerSideByDtoOfAbstract(string entityName, string methodName)
+    {
+        var paramList = new List<ParameterSyntax>()
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("request"))
+                .WithType(SyntaxFactory.IdentifierName("DynamicDatatableServerSideRequest")),
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                .WithType(SyntaxFactory.IdentifierName("CancellationToken"))
+                .WithDefault(SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
+        };
+
+        return SyntaxFactory
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<DatatableResponseServerSide<{entityName}>>"), SyntaxFactory.Identifier(methodName))
             .AddParameterListParameters(paramList.ToArray())
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
     }

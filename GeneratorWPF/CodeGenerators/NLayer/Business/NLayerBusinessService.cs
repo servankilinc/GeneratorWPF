@@ -1643,7 +1643,7 @@ public class TokenService : ITokenService
         string folderPathAbstract = Path.Combine(solutionPath, "Business", "Abstract");
         string folderPathConcrete = Path.Combine(solutionPath, "Business", "Concrete");
 
-        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
+        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields).ThenInclude(y => y.FieldType));
 
         foreach (var entity in entities)
         {

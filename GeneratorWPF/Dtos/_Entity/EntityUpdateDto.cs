@@ -14,6 +14,7 @@
         public int? CreateDtoId { get; set; }
         public int? UpdateDtoId { get; set; }
         public int? DeleteDtoId { get; set; }
+        public int? ReportDtoId { get; set; }
         public int? BasicResponseDtoId { get; set; }
         public int? DetailResponseDtoId { get; set; }
     }

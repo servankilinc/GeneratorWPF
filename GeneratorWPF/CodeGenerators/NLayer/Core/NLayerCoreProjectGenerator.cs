@@ -93,9 +93,8 @@ public class DynamicPaginationRequest
     public IEnumerable<Sort>? Sorts { get; set; }
 }
 
-public class DynamicDatatableServerSideRequest
+public class DynamicDatatableServerSideRequest : DatatableRequest
 {
-    public DatatableRequest DatatableRequest { get; set; } = null!;
     public Filter? Filter { get; set; }
 }";
 
@@ -489,104 +488,110 @@ namespace Core.Utils.CrossCuttingConcerns.Helpers;
 
 public static class Extensions
 {
-public static TAttribute? GetAttribute<TAttribute>(this IInvocation invocation) where TAttribute : Attribute
-{
-    var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
-
-    return methodInfo.GetCustomAttributes<TAttribute>(true).FirstOrDefault();
-}
-
-public static bool HasAttribute<TAttribute>(this IInvocation invocation) where TAttribute : Attribute
-{
-    var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
-
-    var methodAttribute = methodInfo.GetCustomAttributes<TAttribute>(true);
-    var classAttribute = invocation.TargetType.GetCustomAttributes<TAttribute>(true);
-
-    return methodAttribute.Any() || classAttribute.Any();
-}
-
-public static bool IsAsync(this MethodInfo methodInfo)
-{
-    return typeof(Task).IsAssignableFrom(methodInfo.ReturnType);
-}
-
-public static bool IsGenericAsync(this MethodInfo methodInfo)
-{
-    var isWithResult =
-        methodInfo.ReturnType.IsGenericType &&
-        methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) &&
-        methodInfo.ReturnType.GetGenericArguments().Any();
-
-    return isWithResult;
-}
-
-public static bool IsVoid(this MethodInfo methodInfo)
-{
-    return methodInfo.ReturnType == typeof(void);
-}
-
-public static string GetLocation(this IInvocation invocation)
-{
-    var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
-
-    var className = methodInfo.DeclaringType?.FullName ?? ""<UnknownClass>"";
-    var methodName = methodInfo.Name;
-    return $""{className}.{methodName}"";
-}
-
-public static string GetParameters(this IInvocation invocation)
-{
-    var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
-
-    var parameters = methodInfo.GetParameters();
-    var arguments = invocation.Arguments;
-        
-    if (parameters.Length == 0) return ""not found any parameter."";
-
-    var paramsByArgs = parameters.Select((p, i) =>
+    public static TAttribute? GetAttribute<TAttribute>(this IInvocation invocation) where TAttribute : Attribute
     {
-        var arg = arguments[i];
-        if (arg == null) return ""null"";
+        var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
 
-        Type type = arg.GetType();
-            
-        if (type == typeof(CancellationToken)) return $""CancellationToken = ..."";
+        return methodInfo.GetCustomAttributes<TAttribute>(true).FirstOrDefault();
+    }
 
-        if (type.IsSimpleType()) return $""{p.Name} = {arg.ToString()}"";
+    public static bool HasAttribute<TAttribute>(this IInvocation invocation) where TAttribute : Attribute
+    {
+        var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
 
-        string serialized = JsonConvert.SerializeObject(arg, new JsonSerializerSettings
+        var methodAttribute = methodInfo.GetCustomAttributes<TAttribute>(true);
+        var classAttribute = invocation.TargetType.GetCustomAttributes<TAttribute>(true);
+
+        return methodAttribute.Any() || classAttribute.Any();
+    }
+
+    public static bool IsAsync(this MethodInfo methodInfo)
+    {
+        return typeof(Task).IsAssignableFrom(methodInfo.ReturnType);
+    }
+
+    public static bool IsGenericAsync(this MethodInfo methodInfo)
+    {
+        var isWithResult =
+            methodInfo.ReturnType.IsGenericType &&
+            methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) &&
+            methodInfo.ReturnType.GetGenericArguments().Any();
+
+        return isWithResult;
+    }
+
+    public static bool IsVoid(this MethodInfo methodInfo)
+    {
+        return methodInfo.ReturnType == typeof(void);
+    }
+
+    public static string GetLocation(this IInvocation invocation)
+    {
+        var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
+
+        var className = methodInfo.DeclaringType?.FullName ?? ""<UnknownClass>"";
+        var methodName = methodInfo.Name;
+        return $""{className}.{methodName}"";
+    }
+
+    public static string GetParameters(this IInvocation invocation)
+    {
+        var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
+
+        var parameters = methodInfo.GetParameters();
+        var arguments = invocation.Arguments;
+
+        if (parameters.Length == 0) return ""not found any parameter."";
+
+        var paramDict = new Dictionary<string, object?>();
+
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            string parameterName = parameters[i].Name ?? $""param{i}"";
+            if (string.IsNullOrEmpty(parameterName)) continue;
+            var value = i < arguments.Length ? arguments[i] : null;
+            if (value == null)
+            {
+                paramDict[parameterName] = ""null"";
+                continue;
+            }
+            if (value.GetType() == typeof(CancellationToken))
+            {
+                paramDict[parameterName] = ""..."";
+                continue;
+            }
+            paramDict[parameterName] = value;
+        }
+        ;
+
+        return JsonConvert.SerializeObject(paramDict, new JsonSerializerSettings
         {
             Formatting = Formatting.Indented,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             MaxDepth = 7,
             ContractResolver = new IgnoreCriticalDataResolver()
         });
-        return $""{p.Name} = {serialized}"";
-    }).ToArray();
+    }
 
-    return ""\n"" + string.Join("", \n\t"", paramsByArgs);
-}
+    public static bool IsSimpleType(this Type type)
+    {
+        if (type.IsPrimitive || type.IsEnum) return true;
 
-public static bool IsSimpleType(this Type type)
-{
-    if (type.IsPrimitive || type.IsEnum) return true;
+        Type[] simpleTypes =
+        [
+            typeof(string),
+            typeof(decimal),
+            typeof(DateTime),
+            typeof(DateTimeOffset),
+            typeof(TimeSpan),
+            typeof(Guid),
+            typeof(Uri),
+            typeof(DateOnly),
+            typeof(TimeOnly)
+        ];
 
-    Type[] simpleTypes =
-    [
-        typeof(string),
-        typeof(decimal),
-        typeof(DateTime),
-        typeof(DateTimeOffset),
-        typeof(TimeSpan),
-        typeof(Guid),
-        typeof(Uri),
-        typeof(DateOnly),
-        typeof(TimeOnly)
-    ];
-
-    return simpleTypes.Contains(type);
-}
+        return simpleTypes.Contains(type);
+    }
 }";
 
         string code_CacheInterceptor = @"using Castle.DynamicProxy;
@@ -1326,7 +1331,7 @@ public static class QueryableDatatableExtension
 
         // 2. Filter by search parameter
         string? searchPredicate = GenerateSearchPredicate<TData>(dataTableRequest);
-        if (searchPredicate != null) query = query.Where(searchPredicate, dataTableRequest.Search!.Value!.ToLower());
+        if (!string.IsNullOrWhiteSpace(searchPredicate)) query = query.Where(searchPredicate, dataTableRequest.Search!.Value!.ToLower());
 
         // 3. Count of Filtered Records
         int recordsFiltered = query.Count();
@@ -1357,7 +1362,7 @@ public static class QueryableDatatableExtension
 
         // 2. Filter by search parameter
         string? searchPredicate = GenerateSearchPredicate<TData>(dataTableRequest);
-        if (searchPredicate != null) query = query.Where(searchPredicate, dataTableRequest.Search!.Value!.ToLower());
+        if (!string.IsNullOrWhiteSpace(searchPredicate)) query = query.Where(searchPredicate, dataTableRequest.Search!.Value!.ToLower());
 
         // 3. Count of Filtered Records
         int recordsFiltered = await query.CountAsync();
@@ -1409,9 +1414,13 @@ public static class QueryableDatatableExtension
     {
         if (dataTableRequest.Search == null || string.IsNullOrEmpty(dataTableRequest.Search.Value) || dataTableRequest.Columns == null) return null;
 
-        var props = typeof(TData).GetProperties().Select(p => p.Name).ToDictionary(p => p.ToLower(), p => p);
+        IEnumerable<Column>? searchableColumns = dataTableRequest.Columns!.Where(c => c.Searchable && !string.IsNullOrEmpty(c.Data)).ToList();
 
-        IEnumerable<Column>? searchableColumns = dataTableRequest.Columns!.Where(c => c.Searchable && !string.IsNullOrEmpty(c.Data));
+        var props = typeof(TData)
+            .GetProperties()
+            .Where(p => p.PropertyType == typeof(string))
+            .Select(p => p.Name)
+            .ToDictionary(p => p.ToLower(), p => p);
 
         foreach (var column in searchableColumns) // c.Data is column name
         {
@@ -1420,8 +1429,13 @@ public static class QueryableDatatableExtension
             {
                 column.Data = actualPropName;
             }
+            else
+            {
+                column.Searchable = false;
+            }
         }
-        var filters = searchableColumns.Select(c => $""{c.Data}.Contains(@0)"");
+        var filters = searchableColumns.Where(f => f.Searchable)
+            .Select(c => $""({c.Data}.ToLower().StartsWith(@0) OR {c.Data}.ToLower().EndsWith(@0) OR {c.Data}.ToLower().Contains(@0))"");
 
         var searchPredicate = string.Join("" OR "", filters);
         return searchPredicate;
@@ -1430,7 +1444,7 @@ public static class QueryableDatatableExtension
     private static string? GenerateOrderPredicate<TData>(DatatableRequest dataTableRequest)
     {
         if (dataTableRequest.Order == null || dataTableRequest.Columns == null) return null;
-        
+
         var props = typeof(TData).GetProperties().Select(p => p.Name).ToDictionary(p => p.ToLower(), p => p);
 
         List<string> orderList = new List<string>();
@@ -1531,6 +1545,8 @@ public static class QueryableFilterExtension
 
     private static void GetFilters(IList<Filter> filterList, Filter filter)
     {
+        if (filter.Operator != ""base"" && string.IsNullOrEmpty(filter.Value)) return;
+
         filterList.Add(filter);
         if (filter.Filters is not null && filter.Filters.Any())
             foreach (Filter item in filter.Filters)
@@ -1593,7 +1609,7 @@ public static class QueryableFilterExtension
         if (filter.Logic is not null && filter.Filters is not null && filter.Filters.Any())
         {
             string baseLogic = filter.Operator == ""base"" ? """" : filter.Logic;
-            return $""({where} {baseLogic} {string.Join(separator: $"" {filter.Logic} "", value: filter.Filters.Select(f => Transform(f, filters)).ToArray())})"";
+            return $""({where} {baseLogic} {string.Join(separator: $"" {filter.Logic} "", value: filter.Filters.Where(f => f.Operator == ""base"" || !string.IsNullOrEmpty(f.Value)).Select(f => Transform(f, filters)).ToArray())})"";
         }
 
         return where.ToString();
@@ -1849,7 +1865,7 @@ public class HttpContextManager
             Secure = true,
             HttpOnly = true,
             Expires = expirationUtc,
-            SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.Lax,
             //Path = ""/Account/RefreshAuth""
         });
     }

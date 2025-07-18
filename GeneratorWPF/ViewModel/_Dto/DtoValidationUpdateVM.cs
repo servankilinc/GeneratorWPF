@@ -52,8 +52,7 @@ namespace GeneratorWPF.ViewModel._Dto
                 {
                     if (
                         ValidationModel.ValidatorTypeId == default ||
-                        ValidationModel.DtoFieldId == default ||
-                        string.IsNullOrEmpty(ValidationModel.ErrorMessage)
+                        ValidationModel.DtoFieldId == default
                     )
                     {
                         MessageBox.Show("Check The Fields!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);

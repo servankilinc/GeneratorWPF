@@ -1,4 +1,5 @@
-﻿using GeneratorWPF.Models;
+﻿using GeneratorWPF.Extensions;
+using GeneratorWPF.Models;
 using GeneratorWPF.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -11,6 +12,7 @@ namespace GeneratorWPF.CodeGenerators.NLayer.API;
 public class NLayerAPIService
 {
     private readonly EntityRepository _entityRepository;
+    private readonly FieldRepository _fieldRepository;
     private readonly RelationRepository _relationRepository;
     private readonly DtoRepository _dtoRepository;
     private readonly AppSetting _appSetting;
@@ -18,6 +20,7 @@ public class NLayerAPIService
     {
         _appSetting = appSetting;
         _entityRepository = new();
+        _fieldRepository = new();
         _dtoRepository = new();
         _relationRepository = new();
     }
@@ -93,8 +96,7 @@ public class NLayerAPIService
     #region Static Files
     public string GenerateExceptionHandler(string solutionPath)
     {
-        string code = @"
-using Core.Enums;
+        string code = @"using Core.Enums;
 using Core.Utils.ExceptionHandle.Exceptions;
 using Core.Utils.ExceptionHandle.ProblemDetailModels;
 using FluentValidation.Results;
@@ -137,7 +139,7 @@ public class ExceptionHandleMiddleware
 
     private Task HandleValidationException(HttpResponse response, ValidationRuleException exception)
     {
-        Log.ForContext(""Target"", ""Validation"").Error(exception,
+        Log.ForContext(""Target"", ""Validation"").Error(
             $""\n\n------- ------- ------- Start ------- ------- ------- \n"" +
             $""Type(Validation) \n"" +
             $""Location: {exception.LocationName} \n"" +
@@ -161,13 +163,14 @@ public class ExceptionHandleMiddleware
 
     private Task HandleBusinessException(HttpResponse response, BusinessException exception)
     {
-        Log.ForContext(""Target"", ""Business"").Error(exception,
+        Log.ForContext(""Target"", ""Business"").Error(
             $""\n\n------- ------- ------- Start ------- ------- ------- \n"" +
             $""Type(Business) \n"" +
             $""Location: {exception.LocationName} \n"" +
             $""Detail: {exception.Message} \n"" +
             $""Description:{exception.Description} \n"" +
             $""Parameters: {exception.Parameters} \n"" +
+            $""Exception Raw: \n\n{exception.ToString()} \n"" +
             $""------- ------- ------- FINISH ------- ------- -------\n\n"");
 
         response.StatusCode = StatusCodes.Status409Conflict;
@@ -183,13 +186,14 @@ public class ExceptionHandleMiddleware
 
     private Task HandleDataAccessException(HttpResponse response, DataAccessException exception)
     {
-        Log.ForContext(""Target"", ""DataAccess"").Error(exception,
+        Log.ForContext(""Target"", ""DataAccess"").Error(
             $""\n\n------- ------- ------- Start ------- ------- ------- \n"" +
             $""Type(DataAccess) \n"" +
             $""Location: {exception.LocationName} \n"" +
             $""Detail: {exception.Message} \n"" +
             $""Description:{exception.Description} \n"" +
             $""Parameters: {exception.Parameters} \n"" +
+            $""Exception Raw: \n\n{exception.ToString()} \n"" +
             $""------- ------- ------- FINISH ------- ------- -------\n\n"");
 
         response.StatusCode = StatusCodes.Status500InternalServerError;
@@ -205,13 +209,14 @@ public class ExceptionHandleMiddleware
 
     private Task HandleGeneralException(HttpResponse response, GeneralException exception)
     {
-        Log.ForContext(""Target"", ""Application"").Error(exception,
+        Log.ForContext(""Target"", ""Application"").Error(
             $""\n\n------- ------- ------- Start ------- ------- ------- \n"" +
             $""Type(General) \n"" +
             $""Location: {exception.LocationName} \n"" +
             $""Detail: {exception.Message} \n"" +
             $""Description:{exception.Description} \n"" +
             $""Parameters: {exception.Parameters} \n"" +
+            $""Exception Raw: \n\n{exception.ToString()} \n"" +
             $""------- ------- ------- FINISH ------- ------- -------\n\n"");
 
         response.StatusCode = StatusCodes.Status500InternalServerError; // 500
@@ -227,10 +232,11 @@ public class ExceptionHandleMiddleware
 
     private Task HandleOtherException(HttpResponse response, Exception exception)
     {
-        Log.Error(exception,
+        Log.Error(
             $""\n\n------- ------- ------- Start ------- ------- ------- \n"" +
             $""Type(Others) \n"" +
             $""Detail: {exception.Message} \n"" +
+            $""Exception Raw: \n\n{exception.ToString()} \n"" +
             $""------- ------- ------- FINISH ------- ------- -------\n\n"");
 
         response.StatusCode = StatusCodes.Status500InternalServerError; // 500
@@ -308,6 +314,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         sb.AppendLine("using DataAccess;");
         sb.AppendLine("using Model;");
         sb.AppendLine("using Serilog;");
+        sb.AppendLine("using Serilog.Filters;");
         sb.AppendLine("using Scalar.AspNetCore;");
         sb.AppendLine("using System.Threading.RateLimiting;");
         if (_appSetting.IsThereIdentiy)
@@ -336,7 +343,37 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         AddAutofacModules(ref sb);
         if (_appSetting.IsThereIdentiy)
         {
-            AddIdentityImplemantation(ref sb);
+            // IDENTITY SETTINGS
+            Entity? roleEntity = null;
+            Entity? userEntity = null;
+            string IdentityKeyType = "int";
+            if (_appSetting.RoleEntityId != null)
+            {
+                roleEntity = _entityRepository.Get(f => f.Id == _appSetting.RoleEntityId);
+
+                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
+                if (uniqueFields != null)
+                {
+                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+                }
+            }
+            if (_appSetting.UserEntityId != null)
+            {
+                userEntity = _entityRepository.Get(f => f.Id == _appSetting.UserEntityId);
+
+                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
+                if (uniqueFields != null)
+                {
+                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+                }
+            }
+            string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
+            string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
+            if (userEntity != null) IdentityUserType = userEntity.Name;
+            if (roleEntity != null) IdentityRoleType = roleEntity.Name;
+            // IDENTITY SETTINGS 
+             
+            AddIdentityImplemantation(ref sb, IdentityUserType, IdentityRoleType);
             AddJWTImplemantation(ref sb);
         }
         sb.AppendLine("");
@@ -390,129 +427,8 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
       ""Microsoft.AspNetCore"": ""Warning""
     }
   },
-  ""Serilog"": {
-    ""Using"": [ ""Serilog.Sinks.File"" ],
-    ""MinimumLevel"": {
-      ""Default"": ""Information"",
-      ""Override"": {
-        ""Microsoft"": ""Warning"",
-        ""System"": ""Warning""
-      }
-    },
-    ""WriteTo"": [
-      {
-        ""Name"": ""File"",
-        ""Args"": {
-          ""path"": ""Logs/Other/others.log"",
-          ""rollingInterval"": ""Day"",
-          ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""
-        }
-      },
-      {
-        ""Name"": ""Logger"",
-        ""Args"": {
-          ""configureLogger"": {
-            ""Filter"": [
-              {
-                ""Name"": ""ByIncludingOnly"",
-                ""Args"": {
-                  ""expression"": ""Target = 'Application'""
-                }
-              }
-            ],
-            ""WriteTo"": [
-              {
-                ""Name"": ""File"",
-                ""Args"": {
-                  ""path"": ""Logs/Application/application.log"",
-                  ""rollingInterval"": ""Day"",
-                  ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""
-                }
-              }
-            ]
-          }
-        }
-      },
-      {
-        ""Name"": ""Logger"",
-        ""Args"": {
-          ""configureLogger"": {
-            ""Filter"": [
-              {
-                ""Name"": ""ByIncludingOnly"",
-                ""Args"": {
-                  ""expression"": ""Target = 'Business'""
-                }
-              }
-            ],
-            ""WriteTo"": [
-              {
-                ""Name"": ""File"",
-                ""Args"": {
-                  ""path"": ""Logs/Business/business.log"",
-                  ""rollingInterval"": ""Day"",
-                  ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""
-                }
-              }
-            ]
-          }
-        }
-      },
-      {
-        ""Name"": ""Logger"",
-        ""Args"": {
-          ""configureLogger"": {
-            ""Filter"": [
-              {
-                ""Name"": ""ByIncludingOnly"",
-                ""Args"": {
-                  ""expression"": ""Target = 'DataAccess'""
-                }
-              }
-            ],
-            ""WriteTo"": [
-              {
-                ""Name"": ""File"",
-                ""Args"": {
-                  ""path"": ""Logs/DataAccess/dataAccess.log"",
-                  ""rollingInterval"": ""Day"",
-                  ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""
-                }
-              }
-            ]
-          }
-        }
-      },
-      {
-        ""Name"": ""Logger"",
-        ""Args"": {
-          ""configureLogger"": {
-            ""Filter"": [
-              {
-                ""Name"": ""ByIncludingOnly"",
-                ""Args"": {
-                  ""expression"": ""Target = 'Validation'""
-                }
-              }
-            ],
-            ""WriteTo"": [
-              {
-                ""Name"": ""File"",
-                ""Args"": {
-                  ""path"": ""Logs/Validation/validation.log"",
-                  ""rollingInterval"": ""Day"",
-                  ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""
-                }
-              }
-            ]
-          }
-        }
-      }
-    ],
-    ""Enrich"": [ ""FromLogContext"", ""WithMachineName"", ""WithThreadId"" ]
-  },
   ""ConnectionStrings"": {
-    ""Database"": ""Data Source=SERVAN; Initial Catalog=NLayerProjectBase; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
+    ""Database"": ""Data Source=.; Initial Catalog=GeneratedProjectDB; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
   },
   ""TokenSettings"": {
     ""Audience"": ""sporoutine.com"",
@@ -738,8 +654,8 @@ public class AccountController : ControllerBase
         sb.AppendLine("\toptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;");
         sb.AppendLine("\toptions.AddSlidingWindowLimiter(policyName: \"policy_rate_limiter\", slidingOptions =>");
         sb.AppendLine("\t{");
-        sb.AppendLine("\t\tslidingOptions.PermitLimit = 15;");
-        sb.AppendLine("\t\tslidingOptions.Window = TimeSpan.FromSeconds(10);");
+        sb.AppendLine("\t\tslidingOptions.PermitLimit = 30;");
+        sb.AppendLine("\t\tslidingOptions.Window = TimeSpan.FromSeconds(5);");
         sb.AppendLine("\t\tslidingOptions.SegmentsPerWindow = 4;");
         sb.AppendLine("\t\tslidingOptions.QueueLimit = 5;");
         sb.AppendLine("\t\tslidingOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;");
@@ -751,16 +667,37 @@ public class AccountController : ControllerBase
 
     private void AddLogImplemantation(ref StringBuilder sb)
     {
-        sb.AppendLine("");
-        sb.AppendLine("// ------- Logger Implementation -------");
-        sb.AppendLine("Log.Logger = new LoggerConfiguration()");
-        sb.AppendLine("\t.ReadFrom.Configuration(builder.Configuration)");
-        sb.AppendLine("\t.Enrich.FromLogContext()");
-        sb.AppendLine("\t.CreateLogger();");
-        sb.AppendLine("");
-        sb.AppendLine("builder.Host.UseSerilog();");
-        sb.AppendLine("// ------- Logger Implementation -------");
-        sb.AppendLine("");
+        sb.AppendLine(@"
+// ------- Logger Implementation -------
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override(""Microsoft"", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override(""System"", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.WithProperty(""Target"", (object p) => p.ToString() == ""Validation""))
+        .WriteTo.File(""Logs/Validation/validation.log"", rollingInterval: RollingInterval.Day,
+            outputTemplate: ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""))
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.WithProperty(""Target"", (object p) => p.ToString() == ""Application""))
+        .WriteTo.File(""Logs/Application/application.log"", rollingInterval: RollingInterval.Day,
+            outputTemplate: ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""))
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.WithProperty(""Target"", (object p) => p.ToString() == ""Business""))
+        .WriteTo.File(""Logs/Business/business.log"", rollingInterval: RollingInterval.Day,
+            outputTemplate: ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""))
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.WithProperty(""Target"", (object p) => p.ToString() == ""DataAccess""))
+        .WriteTo.File(""Logs/DataAccess/dataAccess.log"", rollingInterval: RollingInterval.Day,
+            outputTemplate: ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""))
+    .WriteTo.Logger(lc => lc
+        .Filter.ByExcluding(Matching.WithProperty<string>(""Target"", _ => true))
+        .WriteTo.File(""Logs/Other/others.log"", rollingInterval: RollingInterval.Day,
+            outputTemplate: ""{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}""))
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+// ------- Logger Implementation -------");
     }
 
     private void AddAutofacModules(ref StringBuilder sb)
@@ -778,14 +715,12 @@ public class AccountController : ControllerBase
         sb.AppendLine("");
     }
 
-    private void AddIdentityImplemantation(ref StringBuilder sb)
+    private void AddIdentityImplemantation(ref StringBuilder sb, string identityUserType, string identityRoleType)
     {
         sb.AppendLine("");
         sb.AppendLine("// ------- IDENTITY -------");
-        sb.AppendLine("builder.Services.AddAuthorization();");
-        sb.AppendLine("");
         sb.AppendLine("builder.Services");
-        sb.AppendLine("\t.AddIdentity<User, IdentityRole<Guid>>(options =>");
+        sb.AppendLine($"\t.AddIdentity<{identityUserType}, {identityRoleType}>(options =>");
         sb.AppendLine("\t{");
         sb.AppendLine("\t\t// Default Lockout settings.");
         sb.AppendLine("\t\toptions.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);");
@@ -805,6 +740,8 @@ public class AccountController : ControllerBase
         sb.AppendLine("\t})");
         sb.AppendLine("\t.AddEntityFrameworkStores<AppDbContext>()");
         sb.AppendLine("\t.AddDefaultTokenProviders();");
+        sb.AppendLine("");
+        sb.AppendLine("builder.Services.AddAuthorization();");
         sb.AppendLine("// ------- IDENTITY -------");
         sb.AppendLine("");
     }

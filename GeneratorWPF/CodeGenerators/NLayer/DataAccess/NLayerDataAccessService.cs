@@ -2366,60 +2366,67 @@ public static class EntityEntryExtension
         {
             if (!_appSetting.IsThereUser)
             {
-                sb.AppendLine("\t\tmodelBuilder.Entity<IdentityUser<Guid>>(entity => { entity.ToTable(\"Users\"); });");
+                sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityUser<{IdentityKeyType}>>(entity => {{ entity.ToTable(\\\"Users\\\"); }});");
             }
 
             if (!_appSetting.IsThereRole)
             {
-                sb.Append(@"
-        modelBuilder.Entity<IdentityRole<Guid>>(entity =>
-        {
-            entity.ToTable(""Roles"");
+                Dictionary<string, string> defaultRoles = new Dictionary<string, string>
+                {
+                    { 
+                        "User", 
+                        IdentityKeyType == "int" ? "1" :
+                            IdentityKeyType == "string" ? "b370875e-34cd-4b79-891c-93ae38f99d11" :
+                            "new Guid(\"b370875e-34cd-4b79-891c-93ae38f99d11\")"
+                    },
+                    { 
+                        "Manager", 
+                        IdentityKeyType == "int" ? "2" :
+                            IdentityKeyType == "string" ? "cd6040ef-dacc-4678-9a85-154f12581cff" :
+                                "new Guid(\"cd6040ef-dacc-4678-9a85-154f12581cff\")"
+                    },
+                    { 
+                        "Admin", 
+                        IdentityKeyType == "int" ? "3" :
+                            IdentityKeyType == "string" ? "7138ec51-4f9e-4afd-b61b-5a9a4584f5da" :
+                                "new Guid(\"7138ec51-4f9e-4afd-b61b-5a9a4584f5da\")"
+                    },
+                    { 
+                        "Owner", 
+                        IdentityKeyType == "int" ? "4" : 
+                            IdentityKeyType == "string" ? "1f20c152-530e-4064-a39c-bbbed341fe84" :
+                                "new Guid(\"1f20c152-530e-4064-a39c-bbbed341fe84\")"
+                    }
+                };
+                sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityRole<{IdentityKeyType}>>(entity =>");
+                sb.AppendLine("\t\t{");
+                sb.AppendLine("\t\t\tentity.ToTable(\"Roles\");");
+                sb.AppendLine();
+                sb.AppendLine("\t\t\tentity.HasData(");
+                var _indexOfRole = 1;
+                foreach (var roleData in defaultRoles)
+                {
+                    sb.AppendLine("\t\t\t\tnew");
+                    sb.AppendLine("\t\t\t\t{");
+                    sb.AppendLine($"\t\t\t\t\tId = {roleData.Value}," );
+                    sb.AppendLine($"\t\t\t\t\tName = \"{roleData.Key}\"," );
+                    sb.AppendLine($"\t\t\t\t\tNormalizedName = \"{roleData.Key.ToUpperInvariant()}\"," );
+                    sb.AppendLine($"\t\t\t\t\tConcurrencyStamp= \"{roleData.Value}\"" );
+                    if (_indexOfRole == defaultRoles.Count) 
+                        sb.AppendLine("\t\t\t\t}");
+                    else 
+                        sb.AppendLine("\t\t\t\t},");
+                    _indexOfRole++;
+                } 
+                sb.AppendLine("\t\t\t);");
+                sb.AppendLine("\t\t});"); 
 
-            entity.HasData(
-                new
-                {
-                    Id = new Guid(""b370875e-34cd-4b79-891c-93ae38f99d11""),
-                    Name = ""User"",
-                    NormalizedName = ""USER"",
-                    ConcurrencyStamp = new Guid(""b370875e-34cd-4b79-891c-93ae38f99d11"").ToString()
-                },
-                new
-                {
-                    Id = new Guid(""cd6040ef-dacc-4678-9a85-154f12581cff""),
-                    Name = ""Manager"",
-                    NormalizedName = ""MANAGER"",
-                    ConcurrencyStamp = new Guid(""cd6040ef-dacc-4678-9a85-154f12581cff"").ToString()
-                },
-                new
-                {
-                    Id = new Guid(""7138ec51-4f9e-4afd-b61b-5a9a4584f5da""),
-                    Name = ""Admin"",
-                    NormalizedName = ""ADMIN"",
-                    ConcurrencyStamp = new Guid(""7138ec51-4f9e-4afd-b61b-5a9a4584f5da"").ToString()
-                },
-                new
-                {
-                    Id = new Guid(""1f20c152-530e-4064-a39c-bbbed341fe84""),
-                    Name = ""Owner"",
-                    NormalizedName = ""OWNER"",
-                    ConcurrencyStamp = new Guid(""1f20c152-530e-4064-a39c-bbbed341fe84"").ToString()
-                }
-            );
-        });");
             }
-
-            sb.Append(@"
-        modelBuilder.Entity<IdentityUserClaim<Guid>>(entity => { entity.ToTable(""UserClaims""); });
-
-        modelBuilder.Entity<IdentityUserLogin<Guid>>(entity => { entity.ToTable(""UserLogins""); });
-
-        modelBuilder.Entity<IdentityRoleClaim<Guid>>(entity => { entity.ToTable(""RoleClaims""); });
-
-        modelBuilder.Entity<IdentityUserRole<Guid>>(entity => { entity.ToTable(""UserRoles""); });
-
-        modelBuilder.Entity<IdentityUserToken<Guid>>(entity => { entity.ToTable(""UserTokens""); });
-");
+            sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityUserClaim<{IdentityKeyType}>>(entity => {{ entity.ToTable(\"UserClaims\"); }});\n");
+            sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityUserLogin<{IdentityKeyType}>>(entity => {{ entity.ToTable(\"UserLogins\"); }});\n");
+            sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityRoleClaim<{IdentityKeyType}>>(entity => {{ entity.ToTable(\"RoleClaims\"); }});\n");
+            sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityUserRole<{IdentityKeyType}>>(entity => {{ entity.ToTable(\"UserRoles\"); }});\n");
+            sb.AppendLine($"\t\tmodelBuilder.Entity<IdentityUserToken<{IdentityKeyType}>>(entity => {{ entity.ToTable(\"UserTokens\"); }});\n");
         }
 
         #endregion

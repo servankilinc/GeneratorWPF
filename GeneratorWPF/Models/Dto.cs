@@ -15,6 +15,7 @@ namespace GeneratorWPF.Models
         public virtual ICollection<Entity> CreateEntities { get; set; } = null!;
         public virtual ICollection<Entity> UpdateEntities { get; set; } = null!;
         public virtual ICollection<Entity> DeleteEntities { get; set; } = null!;
+        public virtual ICollection<Entity> ReportEntities { get; set; } = null!;
         public virtual ICollection<Entity> BasicResponseEntities { get; set; } = null!;
         public virtual ICollection<Entity> DetailResponseEntities { get; set; } = null!;
     }

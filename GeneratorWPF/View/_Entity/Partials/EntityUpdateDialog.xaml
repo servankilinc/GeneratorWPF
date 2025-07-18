@@ -62,6 +62,13 @@
                 SelectedValue="{Binding EntityUpdateModel.DetailResponseDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 SelectedValuePath="Id"
                 DisplayMemberPath="Name"/>
+
+            <Label>Report Dto:</Label>
+            <ComboBox 
+                ItemsSource="{Binding ReadDtoList, Mode=TwoWay}"
+                SelectedValue="{Binding EntityUpdateModel.ReportDtoId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                SelectedValuePath="Id"
+                DisplayMemberPath="Name"/>
         </StackPanel>
 
         <DockPanel Grid.Row="2" Margin="10">

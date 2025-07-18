@@ -181,9 +181,12 @@ public class Log: IEntity, IProjectEntity
 
         var roslynDtoGenerator = new RoslynDtoGenerator();
 
+        // Report Dto
         foreach (var dto in dtos)
         {
-            string code = roslynDtoGenerator.GeneraterDto(dto, _appSetting);
+            string code = dto.RelatedEntity.ReportDtoId == dto.Id ? 
+                roslynDtoGenerator.GeneraterReportDto(dto, _appSetting) :
+                roslynDtoGenerator.GeneraterDto(dto, _appSetting);
             string folderPath = Path.Combine(solutionPath, "Model", "Dtos", $"{dto.RelatedEntity.Name}_");
 
             results.Add(AddFile(folderPath, dto.Name, code));

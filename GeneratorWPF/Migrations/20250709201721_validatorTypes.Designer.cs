@@ -4,6 +4,7 @@ using GeneratorWPF.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GeneratorWPF.Migrations
 {
     [DbContext(typeof(LocalContext))]
-    partial class LocalContextModelSnapshot : ModelSnapshot
+    [Migration("20250709201721_validatorTypes")]
+    partial class validatorTypes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -980,7 +983,7 @@ namespace GeneratorWPF.Migrations
                         {
                             Id = 17,
                             Control = false,
-                            Description = "Field must have a exact number of characters\", \"Length",
+                            Description = "Field must have a exact number of characters",
                             Name = "Length"
                         });
                 });
@@ -1068,7 +1071,7 @@ namespace GeneratorWPF.Migrations
                         },
                         new
                         {
-                            Id = 9,
+                            Id = 10,
                             Control = false,
                             Key = "Value",
                             ValidatorTypeId = 17

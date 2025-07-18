@@ -108,6 +108,7 @@ namespace GeneratorWPF.Repository
             existData.CreateDtoId = updateDto.CreateDtoId;
             existData.UpdateDtoId = updateDto.UpdateDtoId;
             existData.DeleteDtoId = updateDto.DeleteDtoId;
+            existData.ReportDtoId = updateDto.ReportDtoId;
             existData.BasicResponseDtoId = updateDto.BasicResponseDtoId;
             existData.DetailResponseDtoId = updateDto.DetailResponseDtoId;
             

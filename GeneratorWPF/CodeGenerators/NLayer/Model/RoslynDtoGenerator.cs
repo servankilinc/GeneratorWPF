@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace GeneratorWPF.CodeGenerators.NLayer.Model;
 
@@ -24,7 +23,7 @@ public partial class RoslynDtoGenerator
     public string GeneraterDto(Dto dto, AppSetting appSettings)
     {
         List<DtoField> dtoFieldList = _dtoFieldRepository.GetAll(
-            filter: f => f.DtoId == dto.Id, 
+            filter: f => f.DtoId == dto.Id,
             include: i => i
                 .Include(x => x.SourceField)
                     .ThenInclude(x => x.FieldType)
@@ -47,12 +46,12 @@ public partial class RoslynDtoGenerator
         if (dto.CrudTypeId == (int)CrudTypeEnums.Create && dto.RelatedEntityId == appSettings.UserEntityId)
             propertyList.Add(GeneratorPropertyByName("string", "Password", true));
 
-         
+
         // 2) Usings
         List<UsingDirectiveSyntax> usingsList = new List<UsingDirectiveSyntax>(){
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Core.Model"))
         };
-        
+
         if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Dto))
         {
             List<int> addedSourceEntites = new() { dto.RelatedEntityId };
@@ -65,24 +64,24 @@ public partial class RoslynDtoGenerator
             }
         }
 
-        if (isExistValidation) 
+        if (isExistValidation)
             usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("FluentValidation")));
-        
+
         if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Entity))
             usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Model.Entities")));
-        
+
 
 
         List<ClassDeclarationSyntax> classes = new List<ClassDeclarationSyntax>();
-        
+
         // 3) Class of Dto
         classes.Add(SyntaxFactory
             .ClassDeclaration(dto.Name)
             .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
             .AddBaseListTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IDto")))
             .AddMembers(propertyList.ToArray()));
-        
-        
+
+
         // 4) Class of Validator
         if (isExistValidation)
         {
@@ -96,7 +95,7 @@ public partial class RoslynDtoGenerator
 
             classes.Add(GenerateValidatorCode(dtoFieldsByValidation, dto, appSettings));
         }
-        
+
         // 5) Namespace
         var namespaceDeclaration = SyntaxFactory
             .NamespaceDeclaration(SyntaxFactory.ParseName($"Model.Dtos.{dto.RelatedEntity.Name}_"))
@@ -112,6 +111,85 @@ public partial class RoslynDtoGenerator
 
         return compilationUnit.ToFullString();
 
+    }
+
+    public string GeneraterReportDto(Dto dto, AppSetting appSettings)
+    {
+        List<DtoField> dtoFieldList = _dtoFieldRepository.GetAll(
+            filter: f => f.DtoId == dto.Id,
+            include: i => i
+                .Include(x => x.SourceField)
+                    .ThenInclude(x => x.FieldType)
+                .Include(x => x.SourceField)
+                    .ThenInclude(x => x.Entity));
+
+
+        // 1) Property List
+        var propertyList = new List<MemberDeclarationSyntax>();
+
+        foreach (var dtoField in dtoFieldList)
+        {
+            var propertyDeclaration = GeneratorProperty(dtoField);
+            propertyList.Add(propertyDeclaration);
+        }
+
+        if (dto.RelatedEntity.Auditable)
+        {
+            propertyList.Add(GeneratorPropertyByName("string", "CreatedBy", false));
+            propertyList.Add(GeneratorPropertyByName("string", "UpdatedBy", false));
+            propertyList.Add(GeneratorPropertyByName("DateTime", "CreateDateUtc", false));
+            propertyList.Add(GeneratorPropertyByName("DateTime", "UpdateDateUtc", false));
+        }
+        if (dto.RelatedEntity.SoftDeletable)
+        {
+            propertyList.Add(GeneratorPropertyByName("string", "DeletedBy", false));
+            propertyList.Add(GeneratorPropertyByName("bool", "IsDeleted", true));
+            propertyList.Add(GeneratorPropertyByName("DateTime", "DeletedDateUtc", false));
+        }
+
+
+        // 2) Usings
+        List<UsingDirectiveSyntax> usingsList = new List<UsingDirectiveSyntax>(){
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Core.Model"))
+        };
+
+        if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Dto))
+        {
+            List<int> addedSourceEntites = new() { dto.RelatedEntityId };
+            foreach (var dtoField in dtoFieldList.Where(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Dto))
+            {
+                if (addedSourceEntites.Any(f => f == dtoField.SourceField.EntityId)) continue;
+
+                addedSourceEntites.Add(dtoField.SourceField.EntityId);
+                usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Dtos.{dtoField.SourceField.Entity.Name}_")));
+            }
+        }
+
+        if (dtoFieldList.Any(f => f.SourceField.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Entity))
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Model.Entities")));
+
+
+
+        // 3) Class of Dto
+        var classDecleration = SyntaxFactory
+            .ClassDeclaration(dto.Name)
+            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            .AddBaseListTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IDto")))
+            .AddMembers(propertyList.ToArray());
+
+
+        // 5) Namespace
+        var namespaceDeclaration = SyntaxFactory
+            .NamespaceDeclaration(SyntaxFactory.ParseName($"Model.Dtos.{dto.RelatedEntity.Name}_"))
+            .AddMembers(classDecleration);
+
+        var compilationUnit = SyntaxFactory
+            .CompilationUnit()
+            .AddUsings(usingsList.ToArray())
+            .AddMembers(namespaceDeclaration)
+            .NormalizeWhitespace();
+
+        return compilationUnit.ToFullString();
     }
 
 
@@ -331,11 +409,16 @@ public partial class RoslynDtoGenerator
                 if (string.IsNullOrEmpty(message)) message = "Field must be a valid guid value";
                 rule = $".NotEqual(Guid.Empty).WithMessage(\"{message}\")";
                 break;
+            case (int)ValidatorTypes.Length:
+                var lengthValue = validation.ValidationParams != null ? validation.ValidationParams.FirstOrDefault(f => f.ValidatorTypeParamId == (int)ValidatorTypeParams.Length_Value)?.Value : "?";
+                if (string.IsNullOrEmpty(message)) message = $"This field must be {lengthValue ?? "?"} characters long.";
+                rule = $".Length({lengthValue}).WithMessage(\"{message}\")";
+                break;
             default:
                 break;
         }
 
         return rule;
-    } 
+    }
     #endregion
 }

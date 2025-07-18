@@ -432,6 +432,8 @@ public partial class RoslynAuthModelsGenerator
                 typeOfUser = userEntity.Name; 
             }
         }
+        string IdentityUserType = $"IdentityUser<{typeOfUserKey}>";
+        if (userEntity != null) IdentityUserType = userEntity.Name;
 
         // 1) Property List
         var propertyList = new List<MemberDeclarationSyntax>()
@@ -443,7 +445,7 @@ public partial class RoslynAuthModelsGenerator
             GenerateProperty("DateTime", "ExpirationUtc", true),
             GenerateProperty("DateTime", "CreateDateUtc", true),
             GenerateProperty("int", "TTL", true),
-            GenerateProperty($"virtual {typeOfUser}?", "User", false),
+            GenerateProperty($"virtual {IdentityUserType}?", "User", false),
         };
 
         // 3) Class-1 RefreshToken

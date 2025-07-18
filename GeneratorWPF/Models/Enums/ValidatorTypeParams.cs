@@ -9,6 +9,7 @@
         MinLength_Min = 5,
         Regex_Pattern = 6,
         GreaterThan_Value = 7,
-        LessThan_Value = 8
+        LessThan_Value = 8,
+        Length_Value = 9
     }
 }

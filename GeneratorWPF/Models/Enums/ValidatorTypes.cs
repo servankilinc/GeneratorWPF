@@ -18,5 +18,6 @@
         Date = 14,
         Number = 15,
         GuidNotEmpty = 16,
+        Length = 17,
     }
 }

@@ -51,6 +51,7 @@ public class EntityUpdateVM : BaseViewModel
             CreateDtoId = entity.CreateDtoId,
             UpdateDtoId = entity.UpdateDtoId,
             DeleteDtoId = entity.DeleteDtoId,
+            ReportDtoId = entity.ReportDtoId,
             BasicResponseDtoId = entity.BasicResponseDtoId,
             DetailResponseDtoId = entity.DetailResponseDtoId
         };

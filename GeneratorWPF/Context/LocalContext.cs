@@ -99,6 +99,11 @@ namespace GeneratorWPF.Context
                     .HasForeignKey(e => e.DeleteDtoId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                e.HasOne(e => e.ReportDto)
+                    .WithMany(cd => cd.ReportEntities)
+                    .HasForeignKey(e => e.ReportDtoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 e.HasOne(e => e.BasicResponseDto)
                     .WithMany(cd => cd.BasicResponseEntities)
                     .HasForeignKey(e => e.BasicResponseDtoId)
@@ -248,7 +253,7 @@ namespace GeneratorWPF.Context
                     .WithMany(rt => rt.Relations)
                     .HasForeignKey(r => r.RelationTypeId);
                 //.OnDelete(DeleteBehavior.Restrict); // Cascade yerine Restrict kullanıldı.
-                
+
                 r.HasMany(r => r.DtoFieldRelations)
                   .WithOne(df => df.Relation)
                   .HasForeignKey(r => r.RelationId);
@@ -323,6 +328,10 @@ namespace GeneratorWPF.Context
                 d.HasMany(e => e.DeleteEntities)
                     .WithOne(cd => cd.DeleteDto)
                     .HasForeignKey(e => e.DeleteDtoId);
+
+                d.HasMany(e => e.ReportEntities)
+                    .WithOne(cd => cd.ReportDto)
+                    .HasForeignKey(e => e.ReportDtoId);
 
                 d.HasMany(e => e.BasicResponseEntities)
                     .WithOne(cd => cd.BasicResponseDto)
@@ -423,22 +432,23 @@ namespace GeneratorWPF.Context
 
 
                 vt.HasData(
-                    new ValidatorType { Id = 1, Name = "NotEmpty", Description = "Field cannot be empty" },
-                    new ValidatorType { Id = 2, Name = "NotNull", Description = "Field cannot be null" },
-                    new ValidatorType { Id = 3, Name = "NotEqual", Description = "Field cannot be ..." },
-                    new ValidatorType { Id = 4, Name = "MaxLength", Description = "Field cannot exceed maximum length" },
-                    new ValidatorType { Id = 5, Name = "Range", Description = "Value must be within a specific range" },
-                    new ValidatorType { Id = 6, Name = "MinLength", Description = "Field must have a minimum number of characters" },
-                    new ValidatorType { Id = 7, Name = "Regex", Description = "Field must match a regular expression" },
-                    new ValidatorType { Id = 8, Name = "GreaterThan", Description = "Value must be greater than a specific number" },
-                    new ValidatorType { Id = 9, Name = "LessThan", Description = "Value must be less than a specific number" },
-                    new ValidatorType { Id = 10, Name = "EmailAddress", Description = "Field must be a valid email address" },
-                    new ValidatorType { Id = 11, Name = "CreditCard", Description = "Field must be a valid credit card number" },
-                    new ValidatorType { Id = 12, Name = "Phone", Description = "Field must be a valid phone number" },
-                    new ValidatorType { Id = 13, Name = "Url", Description = "Field must be a valid URL" },
-                    new ValidatorType { Id = 14, Name = "Date", Description = "Field must be a valid date" },
-                    new ValidatorType { Id = 15, Name = "Number", Description = "Field must be a valid number" },
-                    new ValidatorType { Id = 16, Name = "GuidNotEmpty", Description = "Field mus be a valid guid value" }
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.NotEmpty, Name = "NotEmpty", Description = "Field cannot be empty" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.NotNull, Name = "NotNull", Description = "Field cannot be null" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.NotEqual, Name = "NotEqual", Description = "Field cannot be ..." },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.MaxLength, Name = "MaxLength", Description = "Field cannot exceed maximum length" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Range, Name = "Range", Description = "Value must be within a specific range" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.MinLength, Name = "MinLength", Description = "Field must have a minimum number of characters" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Regex, Name = "Regex", Description = "Field must match a regular expression" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.GreaterThan, Name = "GreaterThan", Description = "Value must be greater than a specific number" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.LessThan, Name = "LessThan", Description = "Value must be less than a specific number" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.EmailAddress, Name = "EmailAddress", Description = "Field must be a valid email address" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.CreditCard, Name = "CreditCard", Description = "Field must be a valid credit card number" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Phone, Name = "Phone", Description = "Field must be a valid phone number" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Url, Name = "Url", Description = "Field must be a valid URL" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Date, Name = "Date", Description = "Field must be a valid date" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Number, Name = "Number", Description = "Field must be a valid number" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.GuidNotEmpty, Name = "GuidNotEmpty", Description = "Field mus be a valid guid value" },
+                    new ValidatorType { Id = (int)Models.Enums.ValidatorTypes.Length, Name = "Length", Description = "Field must have a exact number of characters\", \"Length" }
                 );
             });
             #endregion
@@ -460,20 +470,20 @@ namespace GeneratorWPF.Context
                     // NotEmpty Validator (no additional params needed)
                     // NotNull Validator (no additional params needed)
                     // NotEqual Validator
-                    new ValidatorTypeParam { Id = 1, ValidatorTypeId = 3, Key = "Value" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.NotEqual_Value, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.NotEqual, Key = "Value" },
                     // MaxLength Validator max
-                    new ValidatorTypeParam { Id = 2, ValidatorTypeId = 4, Key = "Max" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.MaxLength_Max, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.MaxLength, Key = "Max" },
                     // Range Validator min, max
-                    new ValidatorTypeParam { Id = 3, ValidatorTypeId = 5, Key = "Min" },
-                    new ValidatorTypeParam { Id = 4, ValidatorTypeId = 5, Key = "Max" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.Range_Min, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.Range, Key = "Min" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.Range_Max, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.Range, Key = "Max" },
                     // MinLength Validator min
-                    new ValidatorTypeParam { Id = 5, ValidatorTypeId = 6, Key = "Min" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.MinLength_Min, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.MinLength, Key = "Min" },
                     // Regex Validator pattern
-                    new ValidatorTypeParam { Id = 6, ValidatorTypeId = 7, Key = "Pattern" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.Regex_Pattern, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.Regex, Key = "Pattern" },
                     // GreaterThan Validator
-                    new ValidatorTypeParam { Id = 7, ValidatorTypeId = 8, Key = "Value" },
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.GreaterThan_Value, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.GreaterThan, Key = "Value" },
                     // LessThan Validator
-                    new ValidatorTypeParam { Id = 8, ValidatorTypeId = 9, Key = "Value" }
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.LessThan_Value, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.LessThan, Key = "Value" },
                     // EmailAddress Validator (no additional params needed)
                     // CreditCard Validator (no additional params needed)
                     // Phone Validator (no additional params needed)
@@ -481,6 +491,8 @@ namespace GeneratorWPF.Context
                     // Date Validator (no additional params needed)
                     // Number Validator (no additional params needed)
                     // GuidNotEmpty Validator (no additional params needed)
+                    // LessThan Validator
+                    new ValidatorTypeParam { Id = (int)Models.Enums.ValidatorTypeParams.Length_Value, ValidatorTypeId = (int)Models.Enums.ValidatorTypes.Length, Key = "Value" }
                 );
             });
             #endregion

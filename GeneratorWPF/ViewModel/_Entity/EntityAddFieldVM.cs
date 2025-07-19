@@ -38,6 +38,7 @@ namespace GeneratorWPF.ViewModel._Entity
                 IsList = false,
                 IsUnique = false,
                 IsRequired = false,
+                Filterable = false,
                 Name = "New Field",
             };
 

@@ -19,6 +19,7 @@ namespace GeneratorWPF.Repository
             existData.IsRequired = updateDto.IsRequired;
             existData.IsUnique = updateDto.IsUnique;
             existData.IsList = updateDto.IsList;
+            existData.Filterable = updateDto.Filterable;
 
             context.Fields.Update(existData);
             context.SaveChanges();
@@ -37,6 +38,7 @@ namespace GeneratorWPF.Repository
                 IsRequired = fieldCreateDto.IsRequired,
                 IsUnique = fieldCreateDto.IsUnique,
                 IsList = fieldCreateDto.IsList,
+                Filterable = fieldCreateDto.Filterable
             };
             context.Set<Field>().Add(data);
             context.SaveChanges();

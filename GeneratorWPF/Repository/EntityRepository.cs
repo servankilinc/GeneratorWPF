@@ -38,6 +38,7 @@ namespace GeneratorWPF.Repository
                         IsRequired = fieldCreateDto.IsRequired,
                         IsUnique = fieldCreateDto.IsUnique,
                         IsList = fieldCreateDto.IsList,
+                        Filterable = fieldCreateDto.Filterable
                     });
                 }
                 _context.SaveChanges();
@@ -87,6 +88,7 @@ namespace GeneratorWPF.Repository
                 .Include(e => e.CreateDto)
                 .Include(e => e.UpdateDto)
                 .Include(e => e.DeleteDto)
+                .Include(e => e.ReportDto)
                 .Include(e => e.BasicResponseDto)
                 .Include(e => e.DetailResponseDto)
                 .Include(e => e.Fields.Where(f => f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))

@@ -72,6 +72,7 @@
                         <DataGridCheckBoxColumn Header="Is Required" Binding="{Binding IsRequired}" Width="*" />
                         <DataGridCheckBoxColumn Header="Is Unique" Binding="{Binding IsUnique}" Width="*" />
                         <DataGridCheckBoxColumn Header="Is List" Binding="{Binding IsList}" Width="*" />
+                        <DataGridCheckBoxColumn Header="Filterable" Binding="{Binding Filterable}" Width="*" />
                         <DataGridTemplateColumn Header="Remove" Width="90">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

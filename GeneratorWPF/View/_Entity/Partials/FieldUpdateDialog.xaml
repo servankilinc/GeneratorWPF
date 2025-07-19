@@ -41,6 +41,7 @@
             <CheckBox IsChecked="{Binding FieldUpdateModel.IsUnique, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Is Unique" Margin="20, 10"/>
             <CheckBox IsChecked="{Binding FieldUpdateModel.IsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Is Required" Margin="20, 10"/>
             <CheckBox IsChecked="{Binding FieldUpdateModel.IsList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Is List" Margin="20, 10"/>
+            <CheckBox IsChecked="{Binding FieldUpdateModel.Filterable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="Filterable" Margin="20, 10"/>
         </StackPanel>
 
         <!-- Save/Cancel Butonları -->

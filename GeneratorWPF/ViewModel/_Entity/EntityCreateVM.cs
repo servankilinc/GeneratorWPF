@@ -42,7 +42,8 @@ public class EntityCreateVM : BaseViewModel
                 FieldTypeId = 1,
                 IsRequired = true,
                 IsUnique = false,
-                IsList = false
+                IsList = false,
+                Filterable = false
             });
         });
 

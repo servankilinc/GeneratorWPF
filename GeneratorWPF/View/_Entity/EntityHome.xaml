@@ -41,6 +41,7 @@
                     <DataGridTextColumn Header="Create Model" Binding="{Binding CreateDto.Name}" Width="*" />
                     <DataGridTextColumn Header="Update Model" Binding="{Binding UpdateDto.Name}" Width="*" />
                     <DataGridTextColumn Header="Delete Model" Binding="{Binding DeleteDto.Name}" Width="*" />
+                    <DataGridTextColumn Header="Report Model" Binding="{Binding ReportDto.Name}" Width="*" />
                     <DataGridTextColumn Header="Basic Model" Binding="{Binding BasicResponseDto.Name}" Width="*" />
                     <DataGridTextColumn Header="Detail Model" Binding="{Binding DetailResponseDto.Name}" Width="*" />
                     

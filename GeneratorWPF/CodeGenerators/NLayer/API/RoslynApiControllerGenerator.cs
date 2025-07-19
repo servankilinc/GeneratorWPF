@@ -78,14 +78,20 @@ public partial class RoslynApiControllerGenerator
         // 4) Method List
         var methodList = new List<MethodDeclarationSyntax>();
 
+        #region Get
+        methodList.Add(GeneratorGetMethod("Get", serviceName, "GetAsync", uniqueFields));
+        methodList.Add(GeneratorGetAllMethod("GetAll", serviceName, "GetAllAsync"));
+        methodList.Add(GeneratorGetListMethod("GetList", serviceName, "GetListAsync"));
+        #endregion
+
         #region GetBasic
         var basicResponseDto = dtos.FirstOrDefault(f => f.Id == entity.BasicResponseDtoId);
         bool isThereBasicResponseDto = basicResponseDto != null;
         if (isThereBasicResponseDto)
         {
-            methodList.Add(GeneratorGetMethod("Get", serviceName, "GetAsync", uniqueFields));
-            methodList.Add(GeneratorGetAllMethod("GetAll", serviceName, "GetAllAsync"));
-            methodList.Add(GeneratorGetListMethod("GetList", serviceName, "GetListAsync"));
+            methodList.Add(GeneratorGetMethod("GetByBasic", serviceName, "GetByBasicAsync", uniqueFields));
+            methodList.Add(GeneratorGetAllMethod("GetAllByBasic", serviceName, "GetAllByBasicAsync"));
+            methodList.Add(GeneratorGetListMethod("GetListByBasic", serviceName, "GetListByBasicAsync"));
         }
         #endregion
 
@@ -129,6 +135,13 @@ public partial class RoslynApiControllerGenerator
         #region Datatable Methods
         methodList.Add(GenerateDatatableClientSideMethod("DatatableClientSide", serviceName, "DatatableClientSideAsync"));
         methodList.Add(GenerateDatatableServerSideMethod("DatatableServerSide", serviceName, "DatatableServerSideAsync"));
+
+        Dto? reportDto = entity.ReportDtoId != default ? dtos.FirstOrDefault(f => f.Id == entity.ReportDtoId) : default;
+        if (reportDto != default)
+        {
+            methodList.Add(GenerateDatatableClientSideMethod("DatatableClientSideReport", serviceName, "DatatableClientSideByReportAsync"));
+            methodList.Add(GenerateDatatableServerSideMethod("DatatableServerSideReport", serviceName, "DatatableServerSideByReportAsync"));
+        }
         #endregion
 
 

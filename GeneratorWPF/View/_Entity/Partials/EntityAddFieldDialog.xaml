@@ -44,6 +44,10 @@
                     <Label>Is List:</Label>
                     <CheckBox IsChecked="{Binding FieldModel.IsList, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <Label>Filterable:</Label>
+                    <CheckBox IsChecked="{Binding FieldModel.Filterable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  VerticalAlignment="Center" />
+                </StackPanel>
             </DockPanel>
         </StackPanel>
 

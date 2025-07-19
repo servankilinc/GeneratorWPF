@@ -40,7 +40,8 @@ namespace GeneratorWPF.ViewModel._Entity
                 Name = field.Name,
                 IsRequired = field.IsRequired,
                 IsUnique = field.IsUnique,
-                IsList = field.IsList
+                IsList = field.IsList,
+                Filterable = field.Filterable
             };
             
             SaveCommand = new RellayCommand(obj =>

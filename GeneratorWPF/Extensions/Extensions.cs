@@ -20,7 +20,7 @@ namespace GeneratorWPF.Extensions
                 (int)FieldTypeEnums.DateTime => "DateTime",
                 (int)FieldTypeEnums.DateOnly => "DateOnly",
                 (int)FieldTypeEnums.Guid => "Guid",
-                _ => "dynamic"
+                _ => field.FieldType != null ? field.FieldType.Name : "dynmaic"
             };
         }
 

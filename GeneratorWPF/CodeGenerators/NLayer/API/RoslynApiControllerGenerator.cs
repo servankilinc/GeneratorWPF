@@ -11,13 +11,9 @@ namespace GeneratorWPF.CodeGenerators.NLayer.API;
 public partial class RoslynApiControllerGenerator
 {
     private readonly AppSetting _appSetting;
-    private readonly DtoFieldRepository _dtoFieldRepository;
-    private readonly DtoFieldRelationsRepository _dtoFieldRelationsRepository;
     public RoslynApiControllerGenerator(AppSetting appSetting)
     {
         _appSetting = appSetting;
-        _dtoFieldRepository = new DtoFieldRepository();
-        _dtoFieldRelationsRepository = new DtoFieldRelationsRepository();
     }
 
     public string GeneraterController(Entity entity, List<Dto> dtos)
@@ -146,7 +142,7 @@ public partial class RoslynApiControllerGenerator
 
 
 
-        // 4) Class
+        // 5) Class
         var classDeclaration = SyntaxFactory
             .ClassDeclaration(controllerName)
             .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
@@ -156,12 +152,12 @@ public partial class RoslynApiControllerGenerator
             .AddMembers(constructor)
             .AddMembers(methodList.ToArray());
 
-        // 5) NameSpace
+        // 6) NameSpace
         var namespaceDeclaration = SyntaxFactory
-            .NamespaceDeclaration(SyntaxFactory.ParseName("API.Controllers"))
+            .NamespaceDeclaration(SyntaxFactory.ParseName("WebAPI.Controllers"))
             .AddMembers(classDeclaration);
 
-        // 6) Compilation Unit
+        // 7) Compilation Unit
         var usings = new List<UsingDirectiveSyntax>()
         {
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Business.Abstract")),

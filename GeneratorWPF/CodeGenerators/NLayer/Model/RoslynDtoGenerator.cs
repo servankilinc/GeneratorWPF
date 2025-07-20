@@ -110,7 +110,6 @@ public partial class RoslynDtoGenerator
             .NormalizeWhitespace();
 
         return compilationUnit.ToFullString();
-
     }
 
     public string GeneraterReportDto(Dto dto, AppSetting appSettings)

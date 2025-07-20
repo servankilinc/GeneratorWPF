@@ -13,7 +13,6 @@ public class NLayerAPIService
 {
     private readonly EntityRepository _entityRepository;
     private readonly FieldRepository _fieldRepository;
-    private readonly RelationRepository _relationRepository;
     private readonly DtoRepository _dtoRepository;
     private readonly AppSetting _appSetting;
     public NLayerAPIService(AppSetting appSetting)
@@ -22,31 +21,30 @@ public class NLayerAPIService
         _entityRepository = new();
         _fieldRepository = new();
         _dtoRepository = new();
-        _relationRepository = new();
     }
 
     public string CreateProject(string path, string solutionName)
     {
         try
         {
-            string projectPath = Path.Combine(path, "API");
-            string csprojPath = Path.Combine(projectPath, "API.csproj");
+            string projectPath = Path.Combine(path, "WebAPI");
+            string csprojPath = Path.Combine(projectPath, "WebAPI.csproj");
 
             if (Directory.Exists(projectPath) && File.Exists(csprojPath))
-                return "INFO: API layer project already exists.";
+                return "INFO: WebAPI layer project already exists.";
 
-            RunCommand(path, "dotnet", $"new webapi -n API");
-            RunCommand(path, "dotnet", $"sln {solutionName}.sln add API/API.csproj");
+            RunCommand(path, "dotnet", $"new webapi -n WebAPI");
+            RunCommand(path, "dotnet", $"sln {solutionName}.sln add WebAPI/WebAPI.csproj");
             RunCommand(projectPath, "dotnet", $"add reference ../Business/Business.csproj");
 
             RemoveFile(projectPath, "Program.cs");
             RemoveFile(projectPath, "appsettings.json");
 
-            return "OK: API Project Created Successfully";
+            return "OK: WebAPI Project Created Successfully";
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while creating the API project. \n\t Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while creating the WebAPI project. \n\t Details:{ex.Message}");
         }
     }
 
@@ -55,40 +53,40 @@ public class NLayerAPIService
     {
         try
         {
-            string projectPath = Path.Combine(path, "API");
-            string csprojPath = Path.Combine(projectPath, "API.csproj");
+            string projectPath = Path.Combine(path, "WebAPI");
+            string csprojPath = Path.Combine(projectPath, "WebAPI.csproj");
 
             if (!File.Exists(csprojPath))
-                throw new FileNotFoundException($"API.csproj not found for adding package({packageName}).");
+                throw new FileNotFoundException($"WebAPI.csproj not found for adding package({packageName}).");
 
             var doc = XDocument.Load(csprojPath);
 
             var packageAlreadyAdded = doc.Descendants("PackageReference").Any(p => p.Attribute("Include")?.Value == packageName);
 
             if (packageAlreadyAdded)
-                return $"INFO: Package {packageName} already exists in API project.";
+                return $"INFO: Package {packageName} already exists in WebAPI project.";
 
             RunCommand(projectPath, "dotnet", $"add package {packageName}");
 
-            return $"OK: Package {packageName} added to API project.";
+            return $"OK: Package {packageName} added to WebAPI project.";
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding pacgace to API project. \n\t Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding pacgace to WebAPI project. \n\t Details:{ex.Message}");
         }
     }
     public string Restore(string path)
     {
         try
         {
-            string projectPath = Path.Combine(path, "API");
+            string projectPath = Path.Combine(path, "WebAPI");
 
             RunCommand(projectPath, "dotnet", "restore");
-            return "OK: Restored API project.";
+            return "OK: Restored WebAPI project.";
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while restoring API project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while restoring WebAPI project. \n Details:{ex.Message}");
         }
     }
     #endregion
@@ -103,7 +101,7 @@ using FluentValidation.Results;
 using Newtonsoft.Json;
 using Serilog;
 
-namespace API.ExceptionHandler;
+namespace WebAPI.ExceptionHandler;
 
 public class ExceptionHandleMiddleware
 {
@@ -251,7 +249,7 @@ public class ExceptionHandleMiddleware
     }
 }";
 
-        string folderPath = Path.Combine(solutionPath, "API", "ExceptionHandler");
+        string folderPath = Path.Combine(solutionPath, "WebAPI", "ExceptionHandler");
         return AddFile(folderPath, "ExceptionHandleMiddleware", code);
     }
 
@@ -262,7 +260,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
-namespace API.Utils;
+namespace WebAPI.Utils;
 
 public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiDocumentTransformer
 {
@@ -295,7 +293,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
     }
 }";
 
-        string folderPath = Path.Combine(solutionPath, "API", "Utils");
+        string folderPath = Path.Combine(solutionPath, "WebAPI", "Utils");
 
         return AddFile(folderPath, "ScalarSecuritySchemeTransformer", code);
     }
@@ -304,8 +302,8 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
     public string GenerateProgramCs(string solutionPath)
     {
         StringBuilder sb = new();
-        sb.AppendLine("using API.ExceptionHandler;");
-        sb.AppendLine("using API.Utils;");
+        sb.AppendLine("using WebAPI.ExceptionHandler;");
+        sb.AppendLine("using WebAPI.Utils;");
         sb.AppendLine("using Autofac.Extensions.DependencyInjection;");
         sb.AppendLine("using Microsoft.AspNetCore.RateLimiting;");
         sb.AppendLine("using Autofac;");
@@ -332,14 +330,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         AddCORS(ref sb);
         AddRateLimiter(ref sb);
         AddLogImplemantation(ref sb);
-        sb.AppendLine("");
-        sb.AppendLine("// ------- Layer Registrations -------");
-        sb.AppendLine("builder.Services.AddModelServices();");
-        sb.AppendLine("builder.Services.AddCoreServices(builder.Configuration);");
-        sb.AppendLine("builder.Services.AddDataAccessServices(builder.Configuration);");
-        sb.AppendLine("builder.Services.AddBusinessServices(builder.Configuration);");
-        sb.AppendLine("// ------- Layer Registrations -------");
-        sb.AppendLine("");
+        AddLayerRegistrations(ref sb);
         AddAutofacModules(ref sb);
         if (_appSetting.IsThereIdentiy)
         {
@@ -372,7 +363,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
             if (userEntity != null) IdentityUserType = userEntity.Name;
             if (roleEntity != null) IdentityRoleType = roleEntity.Name;
             // IDENTITY SETTINGS 
-             
+
             AddIdentityImplemantation(ref sb, IdentityUserType, IdentityRoleType);
             AddJWTImplemantation(ref sb);
         }
@@ -413,7 +404,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         sb.AppendLine("");
         sb.AppendLine("app.Run();");
 
-        string folderPath = Path.Combine(solutionPath, "API");
+        string folderPath = Path.Combine(solutionPath, "WebAPI");
 
         return AddFile(folderPath, "Program", sb.ToString());
     }
@@ -442,7 +433,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
 }
 ";
 
-        string folderPath = Path.Combine(solutionPath, "API");
+        string folderPath = Path.Combine(solutionPath, "WebAPI");
         try
         {
             if (!Directory.Exists(folderPath))
@@ -455,16 +446,16 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, code);
-                return $"OK: File appsettings.json added to API project.";
+                return $"OK: File appsettings.json added to WebAPI project.";
             }
             else
             {
-                return $"INFO: File appsettings.json already exists in API project.";
+                return $"INFO: File appsettings.json already exists in WebAPI project.";
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding file(appsettings.json) to API project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding file(appsettings.json) to WebAPI project. \n Details:{ex.Message}");
         }
 
     }
@@ -473,7 +464,7 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
     {
         var results = new List<string>();
 
-        string folderPath = Path.Combine(solutionPath, "API", "Controllers");
+        string folderPath = Path.Combine(solutionPath, "WebAPI", "Controllers");
 
         RoslynApiControllerGenerator roslynApiControllerGenerator = new RoslynApiControllerGenerator(_appSetting);
 
@@ -500,7 +491,7 @@ using Model.Auth.Login;
 using Model.Auth.RefreshAuth;
 using Model.Auth.SignUp;
 
-namespace API.Controllers;
+namespace WebAPI.Controllers;
 
 [ApiController]
 [Route(""api/[controller]"")]
@@ -557,16 +548,16 @@ public class AccountController : ControllerBase
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, code);
-                return $"OK: File {fileName} added to API project.";
+                return $"OK: File {fileName} added to WebAPI project.";
             }
             else
             {
-                return $"INFO: File {fileName} already exists in API project.";
+                return $"INFO: File {fileName} already exists in WebAPI project.";
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to API project. \n Details:{ex.Message}");
+            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to WebAPI project. \n Details:{ex.Message}");
         }
     }
 
@@ -579,16 +570,16 @@ public class AccountController : ControllerBase
             if (File.Exists(filePath))
             {
                 File.Delete(filePath);
-                return $"OK: File {fileName} removed from API project.";
+                return $"OK: File {fileName} removed from WebAPI project.";
             }
             else
             {
-                return $"INFO: File {fileName} does not exist in API project.";
+                return $"INFO: File {fileName} does not exist in WebAPI project.";
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from API project. \n Details: {ex.Message}");
+            throw new Exception($"ERROR: An error occurred while removing file ({fileName}) from WebAPI project. \n Details: {ex.Message}");
         }
     }
 
@@ -697,7 +688,20 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-// ------- Logger Implementation -------");
+// ------- Logger Implementation -------
+");
+    }
+
+    private void AddLayerRegistrations(ref StringBuilder sb)
+    {
+        sb.AppendLine("");
+        sb.AppendLine("// ------- Layer Registrations -------");
+        sb.AppendLine("builder.Services.AddModelServices();");
+        sb.AppendLine("builder.Services.AddCoreServices(builder.Configuration);");
+        sb.AppendLine("builder.Services.AddDataAccessServices(builder.Configuration);");
+        sb.AppendLine("builder.Services.AddBusinessServices(builder.Configuration);");
+        sb.AppendLine("// ------- Layer Registrations -------");
+        sb.AppendLine("");
     }
 
     private void AddAutofacModules(ref StringBuilder sb)
@@ -729,7 +733,7 @@ builder.Host.UseSerilog();
         sb.AppendLine("");
         sb.AppendLine("\t\toptions.SignIn.RequireConfirmedEmail = false;");
         sb.AppendLine("");
-        sb.AppendLine("\t\toptions.Password.RequiredLength = 6;");
+        sb.AppendLine("\t\toptions.Password.RequiredLength = 4;");
         sb.AppendLine("\t\toptions.Password.RequireDigit = false;");
         sb.AppendLine("\t\toptions.Password.RequireNonAlphanumeric = false;");
         sb.AppendLine("\t\toptions.Password.RequireLowercase = false;");

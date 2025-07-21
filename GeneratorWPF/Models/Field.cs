@@ -1,5 +1,6 @@
 ﻿using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Models.Signature;
+using System.Linq;
 
 namespace GeneratorWPF.Models
 {
@@ -37,6 +38,86 @@ namespace GeneratorWPF.Models
                 (int)FieldTypeEnums.Guid => "Guid",
                 _ => this.Name
             };
+        }
+
+        /// <summary>
+        /// 1: Select
+        /// 2: Number
+        /// 3: Text
+        /// 4: CheckBox
+        /// 5: DateTime
+        /// 6: Undefined
+        /// </summary>
+        /// <returns></returns>
+        public int GetVariableGroup(Dictionary<string, string> selectableRelations) // key: fieldName, value: entityName
+        {
+            if (selectableRelations.Any(f => f.Key.Trim().ToLower() == this.Name.Trim().ToLower())) // || this.FieldTypeId == (byte)FieldTypeEnums.Int || this.FieldTypeId == (byte)FieldTypeEnums.Guid
+            {
+                return 1;
+            }
+            else if (
+                this.FieldTypeId == (byte)FieldTypeEnums.Int ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Double ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Float ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Byte ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Long)
+            {
+                return 2;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.String && this.FieldTypeId == (byte)FieldTypeEnums.Char)
+            {
+                return 3;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.Bool)
+            {
+                return 4;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.DateOnly || this.FieldTypeId == (byte)FieldTypeEnums.DateTime)
+            {
+                return 5;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 1: Select
+        /// 2: Number
+        /// 3: Text
+        /// 4: CheckBox
+        /// 5: DateTime
+        /// 6: Undefined
+        /// </summary>
+        /// <returns></returns>
+        public int GetVariableGroup() // key: fieldName, value: entityName
+        {
+            if (this.FieldTypeId == (byte)FieldTypeEnums.Int || this.FieldTypeId == (byte)FieldTypeEnums.Guid)
+            {
+                return 1;
+            }
+            else if (
+                this.FieldTypeId == (byte)FieldTypeEnums.Int ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Double ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Float ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Byte ||
+                this.FieldTypeId == (byte)FieldTypeEnums.Long)
+            {
+                return 2;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.String && this.FieldTypeId == (byte)FieldTypeEnums.Char)
+            {
+                return 3;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.Bool)
+            {
+                return 4;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.DateOnly || this.FieldTypeId == (byte)FieldTypeEnums.DateTime)
+            {
+                return 5;
+            }
+
+            return 0;
         }
     }
 }

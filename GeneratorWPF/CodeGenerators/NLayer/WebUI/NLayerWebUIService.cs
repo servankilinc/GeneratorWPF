@@ -28,6 +28,7 @@ public class NLayerWebUIService
         try
         {
             string projectPath = Path.Combine(path, "WebUI");
+            string projectViewsPath = Path.Combine(path, "WebUI", "Views", "Shared");
             string csprojPath = Path.Combine(projectPath, "WebUI.csproj");
 
             if (Directory.Exists(projectPath) && File.Exists(csprojPath))
@@ -39,6 +40,7 @@ public class NLayerWebUIService
 
             RemoveFile(projectPath, "Program.cs");
             RemoveFile(projectPath, "appsettings.json");
+            RemoveFile(projectViewsPath, "_Layout.cshtml");
 
             return "OK: WebUI Project Created Successfully";
         }
@@ -955,6 +957,813 @@ app.MapControllerRoute(
     }
 
 
+    public string GenerateViews(string solutionPath)
+    {
+        var results = new List<string>();
+
+        string folderPath = Path.Combine(solutionPath, "WebUI", "Views");
+
+        RoslynWebUIControllerGenerator roslynWebUIControllerGenerator = new RoslynWebUIControllerGenerator(_appSetting);
+
+        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
+
+        foreach (var entity in entities)
+        {
+            var dtos = _dtoRepository.GetAll(
+                filter: f => f.RelatedEntityId == entity.Id,
+                include: i => i
+                    .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
+                    .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
+
+            string code_controller = roslynWebUIControllerGenerator.GeneraterController(entity, dtos);
+
+            results.Add(AddFile(folderPath, $"{entity.Name}Controller", code_controller));
+        }
+
+        #region Account Views
+        if (_appSetting.IsThereIdentiy)
+        {
+            string code_Login = @"@using Model.Auth.Login
+@model LoginRequest
+@{
+    Layout = ""_LayoutBase"";
+    ViewData[""Title""] = ""Login"";
+}
+
+<div class=""row justify-content-center"">
+    <div class=""col-lg-4 mt-12"">
+        <div class=""card"">
+            <div class=""card-header border-bottom mb-6"">
+                <div class=""app-brand justify-content-center"">
+                    <a asp-controller=""Home"" asp-action=""Index"" class=""d-flex gap-2"">
+                        <h4 class=""text-primary m-0"">
+                            Login
+                        </h4>
+                    </a>
+                </div>
+            </div>
+            <div class=""card-body"">
+                <form asp-controller=""Account"" asp-action=""Login"" method=""post"" class=""mb-6"">
+
+                    <div class=""mb-6"">
+                        <label asp-for=""Email"" class=""form-label"">Email</label>
+                        <input asp-for=""Email"" class=""form-control"" autofocus />
+                        <span asp-validation-for=""Email""></span>
+                    </div>
+                    <div class=""mb-6"">
+                        <label asp-for=""Password"" class=""form-label"">Password</label>
+                        <div class=""input-group"">
+                            <input asp-for=""Password"" class=""form-control"" placeholder=""&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"" />
+                            <span asp-validation-for=""Password""></span>
+                        </div>
+                    </div>
+                    <div class=""mb-8"">
+                        <div class=""d-flex justify-content-between"">
+                            <div class=""form-check mb-0"">
+                                <input class=""form-check-input"" type=""checkbox"" id=""remember-me"" />
+                                <label class=""form-check-label"" for=""remember-me""> Remember Me </label>
+                            </div>
+                            <a asp-controller=""Error"" asp-action=""NotFound"">
+                                <span>Forgot Password?</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div asp-validation-summary=""All"" class=""text-danger mb-3""></div>
+                    <div class=""mb-6"">
+                        <button type=""submit"" class=""btn btn-primary d-grid w-100"">Login</button>
+                    </div>
+                </form>
+                <p class=""text-center"">
+                    <span>New on our platform?</span>
+                    <a asp-controller=""Account"" asp-action=""SignUp"">
+                        <span>Create an account</span>
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>";
+
+            string code_Signup = @"@using Model.Auth.SignUp
+@model SignUpRequest
+@{
+    Layout = ""_LayoutBase"";
+    ViewData[""Title""] = ""SignUp"";
+}
+
+<div class=""row justify-content-center"">
+    <div class=""col-lg-4 mt-12"">
+        <div class=""card"">
+            <div class=""card-header border-bottom mb-6"">
+                <div class=""app-brand justify-content-center"">
+                    <a asp-controller=""Home"" asp-action=""Index"" class=""d-flex gap-2"">
+                        <h4 class=""text-primary m-0"">
+                            Create New Account
+                        </h4>
+                    </a>
+                </div>
+            </div>
+            <div class=""card-body"">
+                <form asp-controller=""Account"" asp-action=""SignUp"" method=""post"" class=""mb-6"">
+                    <div class=""mb-6"">
+                        <label asp-for=""FirstName"" class=""form-label"">First Name</label>
+                        <input asp-for=""FirstName"" class=""form-control"" autofocus />
+                        <span asp-validation-for=""FirstName""></span>
+                    </div>
+                    <div class=""mb-6"">
+                        <label asp-for=""LastName"" class=""form-label"">Last Name</label>
+                        <input asp-for=""LastName"" class=""form-control"" autofocus />
+                        <span asp-validation-for=""LastName""></span>
+                    </div>
+                    <div class=""mb-6"">
+                        <label asp-for=""Email"" class=""form-label"">Email</label>
+                        <input asp-for=""Email"" class=""form-control"" autofocus />
+                        <span asp-validation-for=""Email""></span>
+                    </div>
+                    <div>
+                        <label asp-for=""Password"" class=""form-label"">Password</label>
+                        <div class=""input-group"">
+                            <input asp-for=""Password"" type=""password"" class=""form-control"" placeholder=""&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"" /> 
+                            <span asp-validation-for=""Password""></span>
+                        </div>
+                    </div>
+                    <div class=""my-7"">
+                        <div class=""form-check mb-0"">
+                            <input class=""form-check-input"" type=""checkbox"" id=""terms-conditions"" name=""terms"" />
+                            <label class=""form-check-label"" for=""terms-conditions"">
+                                I agree to
+                                <a href=""javascript:void(0);"">privacy policy & terms</a>
+                            </label>
+                        </div>
+                    </div>
+                    <button type=""submit"" class=""btn btn-primary d-grid w-100"">Sign up</button>
+                </form>
+
+                <p class=""text-center"">
+                    <span>Already have an account?</span>
+                    <a asp-controller=""Account"" asp-action=""Login"">
+                        <span>Login instead</span>
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>";
+
+            string accountViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Account");
+            results.Add(AddFileByExt(accountViewsPath, "Login.cshtml", code_Login));
+            results.Add(AddFileByExt(accountViewsPath, "SignUp.cshtml", code_Signup));
+        } 
+        #endregion
+
+
+        #region Error Views
+        string code_Forbidden = @"@{
+    ViewData[""Title""] = ""Forbiden Error"";
+    Layout = ""_LayoutBase"";
+}
+
+<div class=""misc-wrapper"">
+    <h1 class=""mb-2 mx-2"" style=""line-height: 6rem;font-size: 6rem;"">401</h1>
+    <h4 class=""mb-2 mx-2"">You are not authorized! 🔐</h4>
+    <p class=""mb-6 mx-2"">You don’t have permission to access this page. Go Home!</p>
+    <a href=""index.html"" class=""btn btn-primary"">Back to home</a>
+    <div class=""mt-6"">
+        <img src=""~/assets/img/illustrations/girl-with-laptop-light.png"" alt=""page-misc-not-authorized-light"" width=""500"" class=""img-fluid"" >
+    </div>
+</div>";
+        string code_InternalServer = @"@{
+    ViewData[""Title""] = ""Server Error"";
+    Layout = ""_LayoutBase"";
+}
+
+<div class=""container-xxl container-p-y"">
+    <div class=""misc-wrapper"">
+        <h1 class=""mb-2 mx-2"" style=""line-height: 6rem;font-size: 6rem;"">500</h1>
+        <h4 class=""mb-2 mx-2"">Internal Servver Error ⚠️</h4>
+        <p class=""mb-6 mx-2"">we couldn't handle the process you are doing for</p>
+        <a href=""/"" class=""btn btn-primary"">Back to home</a>
+        <div class=""mt-6"">
+            <img src=""~/assets/img/illustrations/girl-doing-yoga-light.png"" alt=""page-misc-error-light"" width=""500"" class=""img-fluid"">
+        </div>
+    </div>
+</div>";
+        string code_InvalidProcess = @"@{
+    ViewData[""Title""] = ""Invalid Process"";
+    Layout = ""_LayoutBase"";
+}
+
+<div class=""container-xxl container-p-y"">
+    <div class=""misc-wrapper"">
+        <h1 class=""mb-2 mx-2"" style=""line-height: 6rem;font-size: 6rem;"">500</h1>
+        <h4 class=""mb-2 mx-2"">Invalid Process Error ⚠️</h4>
+        <p class=""mb-6 mx-2"">İşlem Sırasında Bir Sorun Oluştu</p>
+        <a href=""/"" class=""btn btn-primary"">Back to home</a>
+        <div class=""mt-6"">
+            <img src=""~/assets/img/illustrations/girl-doing-yoga-light.png"" alt=""page-misc-error-light"" width=""500"" class=""img-fluid"">
+        </div>
+    </div>
+</div>";
+        string code_NotFound = @"@{
+    ViewData[""Title""] = ""Not Found"";
+    Layout = ""_LayoutBase"";
+}
+<div class=""container-xxl container-p-y"">
+    <div class=""misc-wrapper"">
+        <h1 class=""mb-2 mx-2"" style=""line-height: 6rem;font-size: 6rem;"">404</h1>
+        <h4 class=""mb-2 mx-2"">Page Not Found️ ⚠️</h4>
+        <p class=""mb-6 mx-2"">we couldn't find the page you are looking for</p>
+        <a href=""/"" class=""btn btn-primary"">Back to home</a>
+        <div class=""mt-6"">
+            <img src=""~/assets/img/illustrations/page-misc-error-light.png"" alt=""page-misc-error-light"" width=""500"" class=""img-fluid"">
+        </div>
+    </div>
+</div>";
+
+        string errorViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Error");
+        results.Add(AddFile(errorViewsPath, "Forbidden.cshtml", code_Forbidden));
+        results.Add(AddFile(errorViewsPath, "InternalServer.cshtml", code_InternalServer));
+        results.Add(AddFile(errorViewsPath, "InvalidProcess.cshtml", code_InvalidProcess));
+        results.Add(AddFile(errorViewsPath, "NotFound.cshtml", code_NotFound));
+        #endregion
+         
+        #region Layout 
+        string code_Layout = @"@{
+    var currentUrl = Context.GetUrl();
+    var lightMode = Context.GetLightMode();
+}
+<!DOCTYPE html>
+<html class=""@(lightMode == ""dark"" ? ""dark-style"" : ""light-style"") layout-menu-fixed layout-menu-expanded overflow-x-hidden""
+      dir=""ltr""
+      data-theme=""theme-default""
+      data-style=""light""
+      lang=""en"">
+<head>
+    <meta charset=""utf-8"" />
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+    <title>@ViewData[""Title""] - MyApp</title>
+    <link rel=""icon"" type=""image/x-icon"" href=""~/assets/img/favicon/favicon.ico"" />
+
+    <partial name=""_LayoutHeader"" />
+</head>
+<body>
+    <!-- Layout wrapper -->
+    <div class=""layout-wrapper layout-content-navbar"">
+        <div class=""layout-container"">
+
+            @await Component.InvokeAsync(""SideMenu"")
+
+            <!-- Layout container -->
+            <div class=""layout-page"">
+
+                <!-- Navbar -->
+                <nav class=""layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"" id=""layout-navbar"">
+                    <div class=""layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none"">
+                        <a class=""nav-item nav-link px-0 me-xl-4"" href=""javascript:void(0)"">
+                            <i class=""fa-solid fa-bars""></i>
+                        </a>
+                    </div>
+
+                    <div class=""navbar-nav-right d-flex align-items-center"" id=""navbar-collapse"">
+                        <!-- Search -->
+                        <div class=""navbar-nav align-items-center"">
+                            <div class=""nav-item d-flex align-items-center"">
+                                <i class=""bx bx-search fs-4 lh-0""></i>
+                                <input type=""text"" class=""form-control border-0 shadow-none"" placeholder=""Search...""
+                                       aria-label=""Search..."" />
+                            </div>
+                        </div>
+                        <!-- /Search -->
+
+                        <ul class=""navbar-nav flex-row align-items-center ms-auto"">
+
+                            <!-- Light Mode -->
+                            <li class=""nav-item dropdown-style-switcher dropdown me-2 me-xl-0"">
+                                <a class=""nav-link dropdown-toggle hide-arrow"" href=""javascript:void(0);"" data-bs-toggle=""dropdown"">
+                                    <i class=""fa-solid fa-sun fa-xl text-warning""></i>
+                                </a>
+                                <ul class=""dropdown-menu dropdown-menu-end dropdown-styles"">
+                                    <li>
+                                        <a class=""dropdown-item  "" asp-controller=""UI"" asp-action=""SetLightMode"" asp-route-mode=""light""
+                                           asp-route-returnUrl=""@currentUrl"">
+                                            <span><i class=""fa-solid fa-lightbulb fa-lg me-4""></i> Light</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class=""dropdown-item "" asp-controller=""UI"" asp-action=""SetLightMode"" asp-route-mode=""dark""
+                                           asp-route-returnUrl=""@currentUrl"">
+                                            <span><i class=""fa-solid fa-moon fa-lg me-4""></i> Dark</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class=""dropdown-item "" asp-controller=""UI"" asp-action=""SetLightMode"" asp-route-mode=""system""
+                                           asp-route-returnUrl=""@currentUrl"">
+                                            <span><i class=""fa-solid fa-display me-2 fa-lg me-3""></i> System</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- ShortCuts -->
+                            <li class=""nav-item dropdown-shortcuts navbar-dropdown dropdown me-2 me-xl-0"">
+                                <a class=""nav-link dropdown-toggle hide-arrow"" href=""javascript:void(0);"" data-bs-toggle=""dropdown""
+                                   data-bs-auto-close=""outside"" aria-expanded=""false"">
+                                    <i class='fa-brands fa-windows fa-xl'></i>
+                                </a>
+                                <div class=""dropdown-menu dropdown-menu-end p-0"">
+                                    <div class=""dropdown-menu-header border-bottom"">
+                                        <div class=""dropdown-header d-flex align-items-center py-3"">
+                                            <h6 class=""mb-0 me-auto"">Shortcuts</h6>
+                                            <a href=""javascript:void(0)"" class=""dropdown-shortcuts-add py-2"" data-bs-toggle=""tooltip""
+                                               data-bs-placement=""top"" title=""Add shortcuts""><i class=""bx bx-plus-circle text-heading""></i></a>
+                                        </div>
+                                    </div>
+                                    <div id=""dropdownshortcutslist"" class=""dropdown-shortcuts-list scrollable-container"">
+                                        <div class=""row row-bordered overflow-visible g-0"">
+                                            <div class=""dropdown-shortcuts-item col"">
+                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
+                                                    <i class=""bx bx-calendar bx-26px text-heading""></i>
+                                                </span>
+                                                <a href=""app-calendar.html"" class=""stretched-link"">Calendar</a>
+                                                <small>Appointments</small>
+                                            </div>
+                                            <div class=""dropdown-shortcuts-item col"">
+                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
+                                                    <i class=""bx bx-food-menu bx-26px text-heading""></i>
+                                                </span>
+                                                <a href=""app-invoice-list.html"" class=""stretched-link"">Invoice App</a>
+                                                <small>Manage Accounts</small>
+                                            </div>
+                                        </div>
+                                        <div class=""row row-bordered overflow-visible g-0"">
+                                            <div class=""dropdown-shortcuts-item col"">
+                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
+                                                    <i class=""bx bx-user bx-26px text-heading""></i>
+                                                </span>
+                                                <a href=""app-user-list.html"" class=""stretched-link"">User App</a>
+                                                <small>Manage Users</small>
+                                            </div>
+                                            <div class=""dropdown-shortcuts-item col"">
+                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
+                                                    <i class=""bx bx-check-shield bx-26px text-heading""></i>
+                                                </span>
+                                                <a href=""app-access-roles.html"" class=""stretched-link"">Role Management</a>
+                                                <small>Permission</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Quick links -->
+                            <!-- User -->
+                            <li class=""nav-item navbar-dropdown dropdown-user dropdown"">
+                                <a class=""nav-link dropdown-toggle hide-arrow"" href=""javascript:void(0);"" data-bs-toggle=""dropdown"">
+                                    <div class=""avatar avatar-online"">
+                                        <img src=""../assets/img/avatars/1.png"" alt class=""w-px-40 h-auto rounded-circle"" />
+                                    </div>
+                                </a>
+                                <ul class=""dropdown-menu dropdown-menu-end"">
+                                    <li>
+                                        <a class=""dropdown-item"" href=""#"">
+                                            <div class=""d-flex"">
+                                                <div class=""flex-shrink-0 me-3"">
+                                                    <div class=""avatar avatar-online"">
+                                                        <img src=""../assets/img/avatars/1.png"" alt class=""w-px-40 h-auto rounded-circle"" />
+                                                    </div>
+                                                </div>
+                                                <div class=""flex-grow-1"">
+                                                    <span class=""fw-semibold d-block"">John Doe</span>
+                                                    <small class=""text-muted"">Admin</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class=""dropdown-divider""></div>
+                                    </li>
+                                    <li>
+                                        <a class=""dropdown-item"" href=""#"">
+                                            <i class=""bx bx-user me-2""></i>
+                                            <span class=""align-middle"">My Profile</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class=""dropdown-item"" href=""#"">
+                                            <i class=""bx bx-cog me-2""></i>
+                                            <span class=""align-middle"">Settings</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class=""dropdown-item"" href=""#"">
+                                            <span class=""d-flex align-items-center align-middle"">
+                                                <i class=""flex-shrink-0 bx bx-credit-card me-2""></i>
+                                                <span class=""flex-grow-1 align-middle"">Billing</span>
+                                                <span class=""flex-shrink-0 badge badge-center rounded-pill bg-danger w-px-20 h-px-20"">4</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class=""dropdown-divider""></div>
+                                    </li>
+                                    <li>
+                                        <a asp-controller=""Account"" asp-action=""LogOut"" class=""dropdown-item"">
+                                            <i class=""bx bx-power-off me-2""></i>
+                                            <span class=""align-middle"">Log Out</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <!--/ User -->
+                        </ul>
+
+                    </div>
+                </nav>
+                <!-- / Navbar -->
+                <!-- Content wrapper -->
+                <div class=""content-wrapper"">
+                    <!-- Content -->
+
+                    <div class=""container-xxl flex-grow-1 container-p-y"">
+                        @RenderBody()
+                    </div>
+                    <!-- / Content -->
+                    <!-- Footer -->
+                    <footer class=""content-footer footer bg-light"">
+                        <div class=""container-fluid d-flex flex-md-row flex-column justify-content-between align-items-md-center gap-1 container-p-x py-4"">
+                            <div>
+                                <a href=""/"" target=""_blank"" class=""footer-brand fw-bold"">My App</a> ©
+                            </div>
+                            <div>
+                                <a href=""/"" class=""footer-link me-6"" target=""_blank"">License</a>
+                            </div>
+                        </div>
+                    </footer>
+                    <!-- / Footer -->
+
+                    <div class=""content-backdrop fade""></div>
+                </div>
+                <!-- Content wrapper -->
+            </div>
+            <!-- / Layout page -->
+        </div>
+
+        <!-- Overlay -->
+        <div class=""layout-overlay layout-menu-toggle""></div>
+    </div>
+    <partial name=""_LayoutScripts"" />
+
+    @await RenderSectionAsync(""Scripts"", required: false)
+</body>
+</html>
+";
+
+        string code_LayoutBase = @"@{
+    var currentUrl = Context.GetUrl();
+    var lightMode = Context.GetLightMode();
+}
+<!DOCTYPE html>
+<html class=""@(lightMode == ""light"" ? ""light-style"" : ""dark-style"") layout-menu-fixed layout-menu-expanded overflow-x-hidden""
+      dir=""ltr""
+      data-theme=""theme-default""
+      data-style=""light""
+      lang=""en"">
+<head>
+    <meta charset=""utf-8"" />
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+    <title>@ViewData[""Title""]</title>
+    <link rel=""icon"" type=""image/x-icon"" href=""~/assets/img/favicon/favicon.ico"" />
+
+    <partial name=""_LayoutHeader"" />
+</head>
+<body>
+    <!-- Layout wrapper -->
+    <div class=""layout-wrapper layout-content-navbar"">
+        <div class=""layout-container""> 
+            <!-- Layout container --> 
+                <!-- Content wrapper -->
+                <div class=""content-wrapper"">
+                    <!-- Content -->
+
+                    <div class=""container-sm flex-grow-1 container-p-y"">
+                        @RenderBody()
+                    </div>
+                    <!-- / Content --> 
+                </div>
+                <!-- Content wrapper --> 
+            <!-- / Layout page -->
+        </div> 
+    </div>
+    <partial name=""_LayoutScripts"" />
+
+    @await RenderSectionAsync(""Scripts"", required: false)
+</body>
+</html>";
+
+        string code_LayoutHeader = @"@{
+    var lightMode = Context.GetLightMode();
+}
+
+<!-- LIBS -->
+<link rel=""stylesheet"" href=""~/lib/bootstrap/dist/css/bootstrap.min.css"" />
+<link rel=""stylesheet"" href=""~/lib/fontawesome-free-6.7.2-web/css/all.min.css"" />
+<link rel=""stylesheet"" href=""~/lib/perfect-scrollbar/perfect-scrollbar.min.css"" />
+<link rel=""stylesheet"" href=""~/lib/apex-charts/apex-charts.css"" />
+<link rel=""stylesheet"" href=""~/lib/select2/select2.css"" />
+<link rel=""stylesheet"" href=""~/lib/tagify/tagify.css"" />
+<link rel=""stylesheet"" href=""~/lib/typeahead-js/typeahead.css"" />
+<link rel=""stylesheet"" href=""~/lib/bs-stepper/bs-stepper.css"" />
+<link rel=""stylesheet"" href=""~/lib/flatpickr/flatpickr.css"" />
+<link rel=""stylesheet"" href=""~/lib/pickr/pickr-themes.css"" />
+<link rel=""stylesheet"" href=""~/lib/jquery-timepicker/jquery-timepicker.css"" />
+<link rel=""stylesheet"" href=""~/lib/simple-notify/simple-notify.min.css"" />
+<link rel=""stylesheet"" href=""~/lib/pace/pace-theme-minimal.css"" />
+<link rel=""stylesheet"" href=""~/lib/bootstrap-daterangepicker/bootstrap-daterangepicker.css"" />
+<link rel=""stylesheet"" href=""~/lib/bootstrap-datepicker/bootstrap-datepicker.css"" />
+
+<link rel=""stylesheet"" href=""~/lib/datatables-bs5/datatables.bootstrap5.css"" />
+<link rel=""stylesheet"" href=""~/lib/datatables-buttons-bs5/buttons.bootstrap5.css"" />
+<link rel=""stylesheet"" href=""~/lib/datatables-responsive-bs5/responsive.bootstrap5.css"" />
+<!-- LIBS -->
+@if (lightMode == ""dark"")
+{
+    <link rel=""stylesheet"" href=""~/css/core-dark.css"" class=""template-customizer-core-css"" />
+    <link rel=""stylesheet"" href=""~/css/theme-default-dark.css"" class=""template-customizer-theme-css"" />
+}
+else
+{
+    <link rel=""stylesheet"" href=""~/css/core.css"" class=""template-customizer-core-css"" />
+    <link rel=""stylesheet"" href=""~/css/theme-default.css"" class=""template-customizer-theme-css"" />
+}
+<link rel=""stylesheet"" href=""~/css/site.css"" asp-append-version=""true"" />
+
+<script src=""~/js/config.js""></script>
+<script src=""~/js/helpers.js""></script>";
+
+        string code_LayoutScripts = @"<script src=""~/lib/jquery/dist/jquery.min.js""></script>
+<script src=""~/lib/jquery-validation/dist/jquery.validate.min.js""></script>
+<script src=""~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js""></script>
+<script src=""~/lib/bootstrap/dist/js/bootstrap.bundle.min.js""></script>
+
+<!-- LIBS -->
+<script src=""~/lib/fontawesome-free-6.7.2-web/js/all.min.js""></script>
+<script src=""~/lib/popper/popper.js""></script>
+<script src=""~/lib/perfect-scrollbar/perfect-scrollbar.min.js""></script>
+<script src=""~/lib/highlight/highlight.js""></script>
+<script src=""~/lib/clipboard/clipboard.js""></script>
+<script src=""~/lib/@@algolia/autocomplete-js.js""></script>
+<script src=""~/lib/hammer/hammer.js""></script>
+<script src=""~/lib/i18n/i18n.js""></script>
+<script src=""~/lib/bloodhound/bloodhound.js""></script>
+<script src=""~/lib/apex-charts/apexcharts.js""></script>
+<script src=""~/lib/select2/select2.js""></script>
+<script src=""~/lib/tagify/tagify.js""></script>
+<script src=""~/lib/typeahead-js/typeahead.js""></script>
+<script src=""~/lib/bs-stepper/bs-stepper.js""></script>
+<script src=""~/lib/bootstrap-select/bootstrap-select.js""></script>
+<script src=""~/lib/moment/moment.js""></script>
+<script src=""~/lib/flatpickr/flatpickr.js""></script>
+<script src=""~/lib/pickr/pickr.js""></script>
+<script src=""~/lib/bootstrap-daterangepicker/bootstrap-daterangepicker.js""></script>
+<script src=""~/lib/jquery-timepicker/jquery-timepicker.js""></script>
+<script src=""~/lib/simple-notify/simple-notify.min.js""></script>
+<script src=""~/lib/pace/pace.min.js""></script>
+
+<script src=""~/lib/bootstrap-datepicker-1.9.0/js/bootstrap-datepicker.min.js""></script>
+<script src=""~/lib/bootstrap-datepicker-1.9.0/locales/bootstrap-datepicker.tr.min.js""></script>
+<script src=""~/lib/datatables-bs5/datatables-bootstrap5.js""></script>
+<!-- LIBS -->
+
+<script src=""~/js/menu.js""></script>
+<script src=""~/js/main.js""></script>
+
+<script src=""~/js/utils/requestManager.js""></script>
+<script src=""~/js/utils/alertManager.js""></script>
+<script src=""~/js/utils/datatableManager.js""></script>
+<script src=""~/js/utils/modalManager.js""></script>
+
+<script>
+	window.paceOptions = {
+		ajax: {
+			trackMethods: ['GET', 'POST', 'DELETE', 'PACH'],
+			ignoreURLs: [
+				""/heartbeat"",
+				""/keepalive"",
+				""signalr"",
+				""__browserLink"",
+				""browserLinkSignalR""
+			],
+			trackWebSockets: false,
+		},
+		document: true,
+		eventLag: false,
+		restartOnRequestAfter: false
+	};
+	// jquery pace.js handle
+	$(document).ajaxStart(function () { Pace.restart(); });
+
+	// fetch pace.js handle
+	const _fetch = window.fetch;
+	window.fetch = function (...args) {
+		Pace.restart();
+		return _fetch.apply(this, args);
+	};
+</script>";
+
+        string sharedViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Account");
+
+        results.Add(AddFileByExt(sharedViewsPath, "_Layout.cshtml", code_Layout)); 
+        results.Add(AddFileByExt(sharedViewsPath, "_LayoutBase.cshtml", code_LayoutBase)); 
+        results.Add(AddFileByExt(sharedViewsPath, "_LayoutHeader.cshtml", code_LayoutHeader));
+        results.Add(AddFileByExt(sharedViewsPath, "_LayoutScripts.cshtml", code_LayoutScripts));
+        #endregion
+
+        #region SideMenu
+        string code_SideMenuDefault = @"@using WebUI.Models.UI
+@model List<MenuItem>
+@{
+	string _path_ = Context.GetPath();
+	string _basePath_ = Context.GetBasePath();
+}
+
+
+<aside id=""layout-menu"" class=""layout-menu menu-vertical menu bg-menu-theme"">
+	<div class=""app-brand demo"">
+		<a href=""/"" class=""app-brand-link"">
+			<span class=""app-brand-logo demo"">
+				<svg width=""25""
+					 viewBox=""0 0 25 42""
+					 version=""1.1""
+					 xmlns=""http://www.w3.org/2000/svg""
+					 xmlns:xlink=""http://www.w3.org/1999/xlink"">
+					<defs>
+						<path d=""M13.7918663,0.358365126 L3.39788168,7.44174259 C0.566865006,9.69408886 -0.379795268,12.4788597 0.557900856,15.7960551 C0.68998853,16.2305145 1.09562888,17.7872135 3.12357076,19.2293357 C3.8146334,19.7207684 5.32369333,20.3834223 7.65075054,21.2172976 L7.59773219,21.2525164 L2.63468769,24.5493413 C0.445452254,26.3002124 0.0884951797,28.5083815 1.56381646,31.1738486 C2.83770406,32.8170431 5.20850219,33.2640127 7.09180128,32.5391577 C8.347334,32.0559211 11.4559176,30.0011079 16.4175519,26.3747182 C18.0338572,24.4997857 18.6973423,22.4544883 18.4080071,20.2388261 C17.963753,17.5346866 16.1776345,15.5799961 13.0496516,14.3747546 L10.9194936,13.4715819 L18.6192054,7.984237 L13.7918663,0.358365126 Z""
+							  id=""path-1""></path>
+						<path d=""M5.47320593,6.00457225 C4.05321814,8.216144 4.36334763,10.0722806 6.40359441,11.5729822 C8.61520715,12.571656 10.0999176,13.2171421 10.8577257,13.5094407 L15.5088241,14.433041 L18.6192054,7.984237 C15.5364148,3.11535317 13.9273018,0.573395879 13.7918663,0.358365126 C13.5790555,0.511491653 10.8061687,2.3935607 5.47320593,6.00457225 Z""
+							  id=""path-3""></path>
+						<path d=""M7.50063644,21.2294429 L12.3234468,23.3159332 C14.1688022,24.7579751 14.397098,26.4880487 13.008334,28.506154 C11.6195701,30.5242593 10.3099883,31.790241 9.07958868,32.3040991 C5.78142938,33.4346997 4.13234973,34 4.13234973,34 C4.13234973,34 2.75489982,33.0538207 2.37032616e-14,31.1614621 C-0.55822714,27.8186216 -0.55822714,26.0572515 -4.05231404e-15,25.8773518 C0.83734071,25.6075023 2.77988457,22.8248993 3.3049379,22.52991 C3.65497346,22.3332504 5.05353963,21.8997614 7.50063644,21.2294429 Z""
+							  id=""path-4""></path>
+						<path d=""M20.6,7.13333333 L25.6,13.8 C26.2627417,14.6836556 26.0836556,15.9372583 25.2,16.6 C24.8538077,16.8596443 24.4327404,17 24,17 L14,17 C12.8954305,17 12,16.1045695 12,15 C12,14.5672596 12.1403557,14.1461923 12.4,13.8 L17.4,7.13333333 C18.0627417,6.24967773 19.3163444,6.07059163 20.2,6.73333333 C20.3516113,6.84704183 20.4862915,6.981722 20.6,7.13333333 Z""
+							  id=""path-5""></path>
+					</defs>
+					<g id=""g-app-brand"" stroke=""none"" stroke-width=""1"" fill=""none"" fill-rule=""evenodd"">
+						<g id=""Brand-Logo"" transform=""translate(-27.000000, -15.000000)"">
+							<g id=""Icon"" transform=""translate(27.000000, 15.000000)"">
+								<g id=""Mask"" transform=""translate(0.000000, 8.000000)"">
+									<mask id=""mask-2"" fill=""white"">
+										<use xlink:href=""#path-1""></use>
+									</mask>
+									<use fill=""#248ef0"" xlink:href=""#path-1""></use>
+									<g id=""Path-3"" mask=""url(#mask-2)"">
+										<use fill=""#248ef0"" xlink:href=""#path-3""></use>
+										<use fill-opacity=""0.2"" fill=""#FFFFFF"" xlink:href=""#path-3""></use>
+									</g>
+									<g id=""Path-4"" mask=""url(#mask-2)"">
+										<use fill=""#248ef0"" xlink:href=""#path-4""></use>
+										<use fill-opacity=""0.2"" fill=""#FFFFFF"" xlink:href=""#path-4""></use>
+									</g>
+								</g>
+								<g id=""Triangle""
+								   transform=""translate(19.000000, 11.000000) rotate(-300.000000) translate(-19.000000, -11.000000) "">
+									<use fill=""#248ef0"" xlink:href=""#path-5""></use>
+									<use fill-opacity=""0.2"" fill=""#FFFFFF"" xlink:href=""#path-5""></use>
+								</g>
+							</g>
+						</g>
+					</g>
+				</svg>
+			</span>
+			<span class=""app-brand-text demo menu-text fw-bolder ms-2"">Sneat</span>
+		</a>
+
+		<span role=""button"" class=""layout-menu-toggle menu-link text-large ms-auto d-flex align-items-center justify-content-center"" style=""width:35px; height:35px;"">
+			<i class=""fas fa-chevron-left fa-sm""></i>
+		</span>
+	</div>
+
+	<hr />
+
+	<div class=""menu-inner-shadow""></div>
+
+	<ul class=""menu-inner py-1"">
+		<!-- Dashboard -->
+		@* <li class=""menu-item active"">
+		<a href=""index.html"" class=""menu-link"">
+		<i class=""menu-icon tf-icons bx bx-home-circle""></i>
+		<div data-i18n=""Analytics"">Dashboard</div>
+		</a>
+		</li> *@
+
+		@foreach (var item in Model)
+		{
+			if (!string.IsNullOrEmpty(item.GroupName))
+			{
+				<li class=""menu-header small text-uppercase"">
+					<span class=""menu-header-text"">
+						@item.GroupName
+					</span>
+				</li>
+			}
+
+			bool isThereSubs = false;
+			bool isActive = false;
+			if (item.Type == 0)
+			{
+				isThereSubs = item.SubMenuItems != null && item.SubMenuItems.Any();
+				isActive = isThereSubs && item.SubMenuItems!.Any(f => f.Path == _basePath_);
+
+				<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
+					<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+						<i class=""menu-icon @item.Icon""></i>
+						<div>@item.Title</div>
+					</span>
+					@if (isThereSubs)
+					{
+						<partial name=""./_subMenu.cshtml"" model=""@item.SubMenuItems"" />
+					}
+				</li>
+			}
+			else if (item.Type == 1)
+			{
+				isActive = item.Path == _basePath_;
+
+				<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
+					<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+						<i class=""menu-icon @item.Icon""></i>
+						<div>@item.Title</div>
+					</a>
+					@if (isThereSubs)
+					{
+						<partial name=""./_subMenu.cshtml"" model=""@item.SubMenuItems"" />
+					}
+				</li>
+			}
+		}
+	</ul>
+</aside>";
+        
+        string code_SideMenuSubMenu = @"@using WebUI.Models.UI
+@model List<MenuItem>
+@{
+	string _path_ = Context.GetPath();
+	string _basePath_ = Context.GetBasePath();
+}
+
+<ul class=""menu-sub"">
+	@foreach (var item in Model)
+	{
+		if (!string.IsNullOrEmpty(item.GroupName))
+		{
+			<li class=""menu-header small text-uppercase"">
+				<span class=""menu-header-text"">
+					@item.GroupName
+				</span>
+			</li>
+		}
+
+		bool isThereSubs = false;
+		bool isActive = false;
+		if (item.Type == 0)
+		{
+			isThereSubs = item.SubMenuItems != null && item.SubMenuItems.Any();
+			isActive = isThereSubs && item.SubMenuItems!.Any(f => f.Path == _basePath_);
+
+			<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
+				<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+					<i class=""menu-icon @item.Icon""></i>
+					<div>@item.Title</div>
+				</span>
+				@if (isThereSubs)
+				{
+					<partial name=""./_subMenu.cshtml"" model=""@item.SubMenuItems"" />
+				}
+			</li>
+		}
+		else if (item.Type == 1)
+		{
+			isActive = item.Path == _basePath_;
+
+			<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
+				<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+					<i class=""menu-icon @item.Icon""></i>
+					<div>@item.Title</div>
+				</a>
+				@if (isThereSubs)
+				{
+					<partial name=""./_subMenu.cshtml"" model=""@item.SubMenuItems"" />
+				}
+			</li>
+		}
+	}
+</ul>";
+
+        string sideMenuViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Shared", "Components", "SideMenu");
+        results.Add(AddFileByExt(sideMenuViewsPath, "Default.cshtml", code_SideMenuDefault));
+        results.Add(AddFileByExt(sideMenuViewsPath, "_subMenu.cshtml", code_SideMenuSubMenu));
+        #endregion
+
+        return string.Join("\n", results);
+    }
+
     // **************** HEPLERS ****************
     private string AddFile(string folderPath, string fileName, string code)
     {
@@ -966,6 +1775,33 @@ app.MapControllerRoute(
             }
 
             string filePath = Path.Combine(folderPath, $"{fileName}.cs");
+
+            if (!File.Exists(filePath))
+            {
+                File.WriteAllText(filePath, code);
+                return $"OK: File {fileName} added to WebUI project.";
+            }
+            else
+            {
+                return $"INFO: File {fileName} already exists in WebUI project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"ERROR: An error occurred while adding file({fileName}) to WebUI project. \n Details:{ex.Message}");
+        }
+    }
+
+    private string AddFileByExt(string folderPath, string fileName, string code)
+    {
+        try
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            string filePath = Path.Combine(folderPath, $"{fileName}");
 
             if (!File.Exists(filePath))
             {

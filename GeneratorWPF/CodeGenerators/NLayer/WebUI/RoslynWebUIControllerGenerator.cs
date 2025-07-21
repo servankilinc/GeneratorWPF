@@ -135,8 +135,6 @@ public class RoslynWebUIControllerGenerator
             GenerateActionDatatableServerSide(entity)
         };
 
-        // ************ ... Metodlar Eksik Kaldı
-
 
         // 7) Class
         var classDeclaration = SyntaxFactory

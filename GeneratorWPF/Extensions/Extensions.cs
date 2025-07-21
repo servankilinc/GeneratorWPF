@@ -1,5 +1,6 @@
 ﻿using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
+using Humanizer;
 
 namespace GeneratorWPF.Extensions
 {
@@ -53,6 +54,26 @@ namespace GeneratorWPF.Extensions
             {
                 return $"{entityName}List";
             }
+        }
+
+
+        public static string DivideToLabelName(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            input = input.Trim();
+
+            // Eğer sonu "id" ile bitiyorsa kaldır (case-insensitive)
+            if (input.EndsWith("id", StringComparison.OrdinalIgnoreCase))
+            {
+                input = input.Substring(0, input.Length - 2);
+            }
+
+            // Humanizer ile camelCase’i "Customer Order" gibi yap
+            var result = input.Humanize(LetterCasing.Title);
+
+            return result;
         }
     }
 }

@@ -126,6 +126,16 @@ public partial class RoslynDtoGenerator
         // 1) Property List
         var propertyList = new List<MemberDeclarationSyntax>();
 
+        List<Field> uniqueFields = dto.RelatedEntity.Fields.Where(f => f.IsUnique).ToList();
+        foreach (var unqField in uniqueFields)
+        {
+            // if there is no unique field with same name in dto
+            if (dtoFieldList.Any(f => f.SourceFieldId == unqField.Id && f.Name.Trim() == unqField.Name.Trim()) == false)
+            {
+                propertyList.Add(GeneratorPropertyByName(unqField.MapFieldTypeName(), unqField.Name, true));
+            }
+        }
+
         foreach (var dtoField in dtoFieldList)
         {
             var propertyDeclaration = GeneratorProperty(dtoField);

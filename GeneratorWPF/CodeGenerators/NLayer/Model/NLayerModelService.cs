@@ -177,7 +177,7 @@ public class Log: IEntity, IProjectEntity
     {
         var results = new List<string>();
 
-        var dtos = _dtoRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.RelatedEntity));
+        var dtos = _dtoRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.RelatedEntity).ThenInclude(x => x.Fields));
 
         var roslynDtoGenerator = new RoslynDtoGenerator();
 

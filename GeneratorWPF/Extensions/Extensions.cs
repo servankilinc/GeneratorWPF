@@ -35,5 +35,24 @@ namespace GeneratorWPF.Extensions
 
             return char.ToLowerInvariant(input[0]) + input.Substring(1);
         }
+
+        public static string ToForeignFieldSlectListName(this string input, string entityName)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+
+            if (input.Length < 2)
+                return input.ToLowerInvariant();
+
+            if (input.Trim().ToLowerInvariant().EndsWith("id"))
+            {
+                return input.Trim().Substring(0, input.Length - 2) + "List";
+            }
+            else
+            {
+                return $"{entityName}List";
+            }
+        }
     }
 }

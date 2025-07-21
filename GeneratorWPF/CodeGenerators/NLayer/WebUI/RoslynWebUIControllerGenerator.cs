@@ -6,12 +6,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GeneratorWPF.CodeGenerators.NLayer.WebUI;
 
@@ -35,6 +29,10 @@ public class RoslynWebUIControllerGenerator
         string serviceTypeName = $"I{entity.Name}Service";
         string serviceArgName = $"{entity.Name.ToCamelCase()}Service";
         string serviceName = $"_{entity.Name.ToCamelCase()}Service";
+
+
+        List<Field> uniqueFields = entity.Fields.Where(f => f.IsUnique).ToList();
+
 
         Dictionary<string, string> selectableRelations = new Dictionary<string, string>();  // fieldName, primaryRelationEntityName
         List<Entity> entitiesToInjection = new List<Entity>();
@@ -116,11 +114,26 @@ public class RoslynWebUIControllerGenerator
 
 
         // 6) Method List
-        var methodList = new List<MethodDeclarationSyntax>();
+        var methodList = new List<MethodDeclarationSyntax>
+        {
+            // Index
+            GenerateActionIndex(entity, selectableRelations),
 
-        methodList.Add(GenerateActionIndex(entity, selectableRelations));
-        methodList.Add(GenerateActionCreateGet(entity, selectableRelations));
-        methodList.Add(GenerateActionCreateForm(entity));
+            // Create
+            GenerateActionCreateGet(entity, selectableRelations),
+            GenerateActionCreateForm(entity, selectableRelations),
+            GenerateActionCreatePost(entity),
+            
+            // Update
+            GenerateActionUpdateForm(entity, selectableRelations, uniqueFields),
+            GenerateActionUpdatePost(entity),
+
+            // Delete
+            GenerateActionDeletePost(entity, uniqueFields),
+
+            // Datatable
+            GenerateActionDatatableServerSide(entity)
+        };
 
         // ************ ... Metodlar Eksik Kaldı
 
@@ -167,6 +180,7 @@ public class RoslynWebUIControllerGenerator
     }
 
 
+    #region Index Method
     private MethodDeclarationSyntax GenerateActionIndex(Entity entity, Dictionary<string, string> selectableRelations)
     {
         // 1) Attribute List
@@ -181,17 +195,8 @@ public class RoslynWebUIControllerGenerator
 
         foreach (var relation in selectableRelations)
         {
-            string fieldName = relation.Key;
             string entityName = relation.Value;
-
-            if (fieldName.Trim().ToLowerInvariant().EndsWith("id"))
-            {
-                fieldName = fieldName.Trim().Substring(0, fieldName.Length - 2) + "List";
-            }
-            else
-            {
-                fieldName = $"{entityName}List";
-            }
+            string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
             selectListCallings.Append(
                 SyntaxFactory.AssignmentExpression(
@@ -260,7 +265,9 @@ public class RoslynWebUIControllerGenerator
                 )
             );
     }
+    #endregion
 
+    #region Create Methods
     private MethodDeclarationSyntax GenerateActionCreateGet(Entity entity, Dictionary<string, string> selectableRelations)
     {
         Dto? createDto = entity.CreateDto != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
@@ -278,21 +285,13 @@ public class RoslynWebUIControllerGenerator
 
         foreach (var relation in selectableRelations)
         {
-            string fieldName = relation.Key;
             string entityName = relation.Value;
+            string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
             // dto içerisnde yoksa boşuna eklenmemeli
-            if (isThereCreateDto && !createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()))
+            if (isThereCreateDto && !createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
                 continue;
 
-            if (fieldName.Trim().ToLowerInvariant().EndsWith("id"))
-            {
-                fieldName = fieldName.Trim().Substring(0, fieldName.Length - 2) + "List";
-            }
-            else
-            {
-                fieldName = $"{entityName}List";
-            }
 
             selectListCallings.Append(
                 SyntaxFactory.AssignmentExpression(
@@ -362,17 +361,110 @@ public class RoslynWebUIControllerGenerator
             );
     }
 
-    private MethodDeclarationSyntax GenerateActionCreateForm(Entity entity)
+    private MethodDeclarationSyntax GenerateActionCreateForm(Entity entity, Dictionary<string, string> selectableRelations)
     {
         Dto? createDto = entity.CreateDto != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
         bool isThereCreateDto = createDto != default;
-
-        string requstModelType = isThereCreateDto ? createDto!.Name : entity.Name;
 
         // 1) Attribute List
         List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
         {
             SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpGet"))
+        };
+
+        // 2) Selecting Call List
+        var selectListCallings = new SyntaxNodeOrToken[] { };
+
+        foreach (var relation in selectableRelations)
+        {
+            string entityName = relation.Value;
+            string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
+
+            // dto içerisnde yoksa boşuna eklenmemeli
+            if (isThereCreateDto && createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
+                continue;
+
+            selectListCallings.Append(
+                SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    SyntaxFactory.IdentifierName(fieldName),
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName($"_{entityName.Trim().ToCamelCase()}Service"),
+                                SyntaxFactory.IdentifierName("GetSelectListAsync")
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // 3) Instance Decleration
+        var objectCreationExpression =
+            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName($"{entity.Name}CreateViewModel"))
+                .WithInitializer(
+                    SyntaxFactory.InitializerExpression(
+                        SyntaxKind.ObjectInitializerExpression,
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(selectListCallings)
+                    )
+                );
+
+        // 4) ViewModel Instance Decleration by Result
+        var viewModelInstanceDecleration =
+            SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                    .WithVariables(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("viewModel"))
+                                .WithInitializer(SyntaxFactory.EqualsValueClause(objectCreationExpression))
+                        )
+                    )
+            );
+
+        // 5) Return Statement
+        var returnViewStatement =
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("PartialView"))
+                    .AddArgumentListArguments(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("./Partials/CreateForm")),
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("viewModel"))
+                    )
+            );
+
+
+        // 6) Method Decleration
+        return SyntaxFactory
+            .MethodDeclaration(
+                SyntaxFactory.ParseTypeName("Task<IActionResult>"),
+                SyntaxFactory.Identifier("CreateForm")
+            )
+            .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            )
+            .WithBody(
+                SyntaxFactory.Block(
+                    viewModelInstanceDecleration,
+                    returnViewStatement
+                )
+            );
+    }
+
+    private MethodDeclarationSyntax GenerateActionCreatePost(Entity entity)
+    {
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereCreateDto = createDto != default;
+
+        string requstModelType = isThereCreateDto ? createDto!.Name : entity.Name;
+        string serviceName = $"_{entity.Name.ToCamelCase()}Service";
+
+        // 1) Attribute List
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
+        {
+            SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
         };
 
         if (isThereCreateDto) attributeList.Add(
@@ -382,7 +474,7 @@ public class RoslynWebUIControllerGenerator
                     SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.AttributeArgument(
                             SyntaxFactory.TypeOfExpression(
-                                SyntaxFactory.IdentifierName($"ValidationFilter<{createDto!.Name}>")
+                                SyntaxFactory.IdentifierName($"ValidationFilter<{requstModelType}>")
                             )
                         )
                     )
@@ -390,7 +482,7 @@ public class RoslynWebUIControllerGenerator
             )
         );
 
-        // 2) Parameters
+        // 2) Parameters of Action
         var paramList = new List<ParameterSyntax>
         {
             SyntaxFactory.Parameter(SyntaxFactory.Identifier("createModel"))
@@ -402,13 +494,13 @@ public class RoslynWebUIControllerGenerator
         {
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName("createModel"))
         };
-        
+
 
         // 4) Method Call
         var awaitInvocation =
             SyntaxFactory.AwaitExpression(
                 SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.IdentifierName($"|{entity.Name.ToCamelCase()}Service.CreateAsync")
+                    SyntaxFactory.IdentifierName($"{serviceName}.CreateAsync")
                 )
                 .AddArgumentListArguments(argumentsOfMethod.ToArray())
             );
@@ -445,6 +537,7 @@ public class RoslynWebUIControllerGenerator
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                 SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
             )
+            .AddParameterListParameters(paramList.ToArray())
             .WithBody(
                 SyntaxFactory.Block(
                     methodCallDecleration,
@@ -452,12 +545,445 @@ public class RoslynWebUIControllerGenerator
                 )
             );
     }
+    #endregion
+
+    #region Update Methods
+    private MethodDeclarationSyntax GenerateActionUpdateForm(Entity entity, Dictionary<string, string> selectableRelations, List<Field> uniqueFields)
+    {
+        Dto? updateDto = entity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereUpdateDto = updateDto != default;
+
+        string serviceName = $"_{entity.Name.Trim().ToCamelCase()}Service"; 
+
+        // 1) Attribute List
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
+        {
+            SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpGet"))
+        };
+
+        // 2) Parameters of Action
+        var paramList = new List<ParameterSyntax>();
+        foreach (var field in uniqueFields)
+        {
+            paramList.Add(
+                SyntaxFactory.Parameter(SyntaxFactory.Identifier(field.Name.ToCamelCase()))
+                    .WithType(SyntaxFactory.IdentifierName(field.GetMapedTypeName()))
+            );
+        }
+
+        // 3) Arguments of get original method call
+        var arguments = new List<ArgumentSyntax>
+        {
+            CreateWhereRule(uniqueFields)
+        };
+
+        // 4) Method get original Call
+        var awaitInvocation =
+            SyntaxFactory.AwaitExpression(
+                SyntaxFactory.InvocationExpression(
+                    isThereUpdateDto ?
+                        SyntaxFactory.GenericName(SyntaxFactory.Identifier($"{serviceName}.GetAsync"))
+                            .AddTypeArgumentListArguments(SyntaxFactory.IdentifierName(updateDto!.Name))
+                        :
+                        SyntaxFactory.IdentifierName($"{serviceName}.GetAsync")
+                )
+                .AddArgumentListArguments(arguments.ToArray())
+            );
+
+        // 5) Method Call get original Decleration by Result
+        var methodCallDecleration = SyntaxFactory.LocalDeclarationStatement(
+            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                .WithVariables(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("data"))
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(awaitInvocation))
+                    )
+                )
+            );
+
+        // 6) NotFound original data
+        IfStatementSyntax ifDataNotFoundStatement = CreateNotFoundReturn("data");
 
 
+        // 7) ViewModel Prop List
+        var viewModelProps = new SyntaxNodeOrToken[] {};
+        viewModelProps.Append(
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxFactory.IdentifierName("UpdateModel"), 
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("data"))
+            )
+        );
+
+        foreach (var relation in selectableRelations)
+        {
+            string entityName = relation.Value;
+            string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
+
+            // dto içerisnde yoksa boşuna eklenmemeli
+            if (isThereUpdateDto && updateDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
+                continue;
+
+            viewModelProps.Append(
+                SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    SyntaxFactory.IdentifierName(fieldName),
+                    SyntaxFactory.AwaitExpression(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName($"_{entityName.Trim().ToCamelCase()}Service"),
+                                SyntaxFactory.IdentifierName("GetSelectListAsync")
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // 8) Instance Decleration
+        var objectCreationExpression =
+            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName($"{entity.Name}UpdateViewModel"))
+                .WithInitializer(
+                    SyntaxFactory.InitializerExpression(
+                        SyntaxKind.ObjectInitializerExpression,
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(viewModelProps)
+                    )
+                );
+
+        // 9) ViewModel Instance Decleration by Result
+        var viewModelInstanceDecleration =
+            SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                    .WithVariables(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("viewModel"))
+                                .WithInitializer(SyntaxFactory.EqualsValueClause(objectCreationExpression))
+                        )
+                    )
+            );
+
+        // 10) Return Statement
+        var returnViewStatement =
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("PartialView"))
+                    .AddArgumentListArguments(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("./Partials/UpdateForm")),
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("viewModel"))
+                    )
+            );
 
 
+        // 11) Method Decleration
+        return SyntaxFactory
+            .MethodDeclaration(
+                SyntaxFactory.ParseTypeName("Task<IActionResult>"),
+                SyntaxFactory.Identifier("UpdateForm")
+            )
+            .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            )
+            .AddParameterListParameters(paramList.ToArray())
+            .WithBody(
+                SyntaxFactory.Block(
+                    methodCallDecleration,
+                    ifDataNotFoundStatement,
+                    viewModelInstanceDecleration,
+                    returnViewStatement
+                )
+            );
+    }
+
+    private MethodDeclarationSyntax GenerateActionUpdatePost(Entity entity)
+    {
+        Dto? updateDto = entity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereUpdateDto = updateDto != default;
+
+        string requstModelType = isThereUpdateDto? updateDto!.Name : entity.Name;
+        string serviceName = $"_{entity.Name.ToCamelCase()}Service";
+
+        // 1) Attribute List
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
+        {
+            SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
+        };
+
+        if (isThereUpdateDto) attributeList.Add(
+            SyntaxFactory.Attribute(
+                SyntaxFactory.IdentifierName("ServiceFilter"),
+                SyntaxFactory.AttributeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.AttributeArgument(
+                            SyntaxFactory.TypeOfExpression(
+                                SyntaxFactory.IdentifierName($"ValidationFilter<{requstModelType}>")
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+        // 2) Parameters of Action
+        var paramList = new List<ParameterSyntax>
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("updateModel"))
+                .WithType(SyntaxFactory.IdentifierName(requstModelType))
+        };
+
+        // 3) Arguments of method call
+        var argumentsOfMethod = new List<ArgumentSyntax>()
+        {
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("updateModel"))
+        };
 
 
+        // 4) Method Call
+        var awaitInvocation =
+            SyntaxFactory.AwaitExpression(
+                SyntaxFactory.InvocationExpression(
+                    SyntaxFactory.IdentifierName($"{serviceName}.UpdateAsync")
+                )
+                .AddArgumentListArguments(argumentsOfMethod.ToArray())
+            );
+
+        // 5) Method Call Decleration by Result
+        var methodCallDecleration = SyntaxFactory.LocalDeclarationStatement(
+            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                .WithVariables(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("result"))
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(awaitInvocation))
+                    )
+                )
+            );
+
+        // 5) Return Statement
+        var returnViewStatement =
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("Ok"))
+                    .AddArgumentListArguments(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("result"))
+                    )
+            );
+
+
+        // 6) Method Decleration
+        return SyntaxFactory
+            .MethodDeclaration(
+                SyntaxFactory.ParseTypeName("Task<IActionResult>"),
+                SyntaxFactory.Identifier("Update")
+            )
+            .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            )
+            .WithBody(
+                SyntaxFactory.Block(
+                    methodCallDecleration,
+                    returnViewStatement
+                )
+            );
+    }
+    #endregion
+
+    #region Delete Methods
+    private MethodDeclarationSyntax GenerateActionDeletePost(Entity entity, List<Field> uniqueFields)
+    {
+        Dto? deleteDto = entity.DeleteDtoId != default ? _dtoRepository.Get(f => f.Id == entity.DeleteDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereDeleteDto = deleteDto != default;
+
+        string requstModelType = isThereDeleteDto ? deleteDto!.Name : entity.Name;
+        string serviceName = $"_{entity.Name.ToCamelCase()}Service";
+
+        // 1) Attribute List
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
+        {
+            SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpDelete"))
+        };
+
+        if (isThereDeleteDto) attributeList.Add(
+            SyntaxFactory.Attribute(
+                SyntaxFactory.IdentifierName("ServiceFilter"),
+                SyntaxFactory.AttributeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.AttributeArgument(
+                            SyntaxFactory.TypeOfExpression(
+                                SyntaxFactory.IdentifierName($"ValidationFilter<{requstModelType}>")
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+        // 2) Parameters of Action
+        var paramList = new List<ParameterSyntax>();
+
+        if (isThereDeleteDto)
+        {
+            paramList.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("deleteModel")).WithType(SyntaxFactory.IdentifierName(requstModelType)));
+        }
+        else
+        {
+            foreach (var field in uniqueFields)
+            {
+                paramList.Add(
+                    SyntaxFactory.Parameter(SyntaxFactory.Identifier(field.Name.ToCamelCase()))
+                        .WithType(SyntaxFactory.IdentifierName(field.GetMapedTypeName()))
+                );
+            }
+        }
+
+        // 3) If Null Statements
+        List<IfStatementSyntax> ifStatements = new();
+        if (!isThereDeleteDto)
+        {
+            foreach (var field in uniqueFields)
+            {
+                ifStatements.Add(CreateIfDefaultCheckCondition(field.Name.ToCamelCase()));
+            }
+        }
+
+        // 4) Arguments of method call
+        var argumentsOfMethod = new List<ArgumentSyntax>();
+        if (isThereDeleteDto)
+        {
+            argumentsOfMethod.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("deleteModel")));
+        }
+        else
+        {
+            foreach (var field in uniqueFields)
+            {
+                argumentsOfMethod.Add(
+                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName(field.Name.ToCamelCase()))
+                );
+            }
+        }
+        
+        // 4) Method Call
+        var awaitInvocation =
+                SyntaxFactory.AwaitExpression(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.IdentifierName($"{serviceName}.DeleteAsync")
+                    )
+                    .AddArgumentListArguments(argumentsOfMethod.ToArray())
+                );
+
+        // 5) Method Call Decleration by Result
+        var methodCallDecleration = SyntaxFactory.ExpressionStatement(awaitInvocation);
+
+        // 5) Return Statement
+        var returnViewStatement =
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("Ok"))
+                    .AddArgumentListArguments(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("result"))
+                    )
+            );
+
+
+        // 6) Method Decleration
+        var bodyStatements = new List<StatementSyntax>();
+        bodyStatements.AddRange(ifStatements);
+        bodyStatements.Add(methodCallDecleration);
+        bodyStatements.Add(returnViewStatement);
+
+        return SyntaxFactory
+            .MethodDeclaration(
+                SyntaxFactory.ParseTypeName("Task<IActionResult>"),
+                SyntaxFactory.Identifier("Delete")
+            )
+            .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            )
+            .WithBody(SyntaxFactory.Block(bodyStatements));
+    }
+    #endregion
+
+    #region Datatable Methods
+    private MethodDeclarationSyntax GenerateActionDatatableServerSide(Entity entity)
+    {
+        Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereReportDto = reportDto != default;
+         
+        string serviceName = $"_{entity.Name.ToCamelCase()}Service";
+
+        // 1) Attribute List
+        List<AttributeSyntax> attributeList = new List<AttributeSyntax>()
+        {
+            SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
+        };
+
+        // 2) Parameters of Action
+        var paramList = new List<ParameterSyntax>
+        {
+            SyntaxFactory.Parameter(SyntaxFactory.Identifier("request"))
+                .WithType(SyntaxFactory.IdentifierName("DynamicDatatableServerSideRequest"))
+        }; 
+
+        // 3) Arguments of method call
+        var argumentsOfMethod = new List<ArgumentSyntax>
+        {
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request"))
+        };        
+
+        // 4) Method Call
+        var awaitInvocation =
+                SyntaxFactory.AwaitExpression(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.IdentifierName(
+                            isThereReportDto ? 
+                                $"{serviceName}.DatatableServerSideByReportAsync" : 
+                                $"{serviceName}.DatatableServerSideAsync"
+                        )
+                    )
+                    .AddArgumentListArguments(argumentsOfMethod.ToArray())
+                );
+
+        // 5) Method Call Decleration by Result 
+        var methodCallDecleration = SyntaxFactory.LocalDeclarationStatement(
+            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                .WithVariables(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("result"))
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(awaitInvocation))
+                    )
+                )
+            );
+
+        // 5) Return Statement
+        var returnViewStatement =
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("Ok"))
+                    .AddArgumentListArguments(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("result"))
+                    )
+            );
+
+
+        // 6) Method Decleration
+        return SyntaxFactory
+            .MethodDeclaration(
+                SyntaxFactory.ParseTypeName("Task<IActionResult>"),
+                SyntaxFactory.Identifier("DatatableServerSide")
+            )
+            .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributeList)))
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
+            )
+            .WithBody(SyntaxFactory.Block(
+                methodCallDecleration,
+                returnViewStatement
+                )
+            );
+    }
+    #endregion
 
 
     #region Helpers
@@ -472,6 +998,80 @@ public class RoslynWebUIControllerGenerator
                 SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
                 SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)
             );
+    }
+
+    private ArgumentSyntax CreateWhereRule(List<Field> uniqueFields, string? sourceName = null)
+    {
+        bool isThereSource = !(string.IsNullOrEmpty(sourceName) || string.IsNullOrWhiteSpace(sourceName));
+        if (isThereSource) sourceName = sourceName!.Trim();
+        else sourceName = "";
+
+        var firstField = uniqueFields.First();
+
+        BinaryExpressionSyntax combined = SyntaxFactory.BinaryExpression(
+            SyntaxKind.EqualsExpression,
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("f"), SyntaxFactory.IdentifierName(firstField.Name)),
+            SyntaxFactory.IdentifierName(isThereSource ? $"{sourceName}.{firstField.Name}" : firstField.Name.ToCamelCase())
+        );
+
+        for (int i = 1; i < uniqueFields.Count; i++)
+        {
+            var nextField = uniqueFields[i];
+            var next = SyntaxFactory.BinaryExpression(
+                SyntaxKind.EqualsExpression,
+                SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("f"), SyntaxFactory.IdentifierName(nextField.Name)),
+                SyntaxFactory.IdentifierName(isThereSource ? $"{sourceName}.{nextField.Name}" : nextField.Name.ToCamelCase())
+            );
+            combined = SyntaxFactory.BinaryExpression(SyntaxKind.LogicalAndExpression, combined, next);
+        }
+
+        return SyntaxFactory.Argument(SyntaxFactory.ParenthesizedLambdaExpression(combined)
+            .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("f"))))
+            .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("where")));
+    }
+
+    private IfStatementSyntax CreateNotFoundReturn(string dataName = "data")
+    {
+        return SyntaxFactory.IfStatement(
+            SyntaxFactory.BinaryExpression(
+                SyntaxKind.EqualsExpression,
+                SyntaxFactory.IdentifierName(dataName),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+            ),
+            SyntaxFactory.ReturnStatement(
+                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("NotFound"))
+                .WithArgumentList(
+                    SyntaxFactory.ArgumentList(
+                        SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("data"))
+                        )
+                    )
+                )
+            )
+        );
+    }
+
+    private IfStatementSyntax CreateIfDefaultCheckCondition(string argName)
+    {
+        var condition = SyntaxFactory.BinaryExpression(
+            SyntaxKind.EqualsExpression,
+            SyntaxFactory.IdentifierName(argName),
+            SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))
+        );
+
+        var argumentNullException = SyntaxFactory.ThrowStatement(
+            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName("ArgumentNullException"))
+                .AddArgumentListArguments(
+                    SyntaxFactory.Argument(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("nameof"))
+                        .AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(argName)))
+                    )
+                )
+            );
+
+        return SyntaxFactory.IfStatement(
+            condition,
+            argumentNullException
+        );
     }
     #endregion
 }

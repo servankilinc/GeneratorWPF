@@ -4,6 +4,7 @@ using GeneratorWPF.CodeGenerators.NLayer.Business;
 using GeneratorWPF.CodeGenerators.NLayer.Core;
 using GeneratorWPF.CodeGenerators.NLayer.DataAccess;
 using GeneratorWPF.CodeGenerators.NLayer.Model;
+using GeneratorWPF.CodeGenerators.NLayer.WebUI;
 using GeneratorWPF.Models;
 using GeneratorWPF.Repository;
 using System.IO;
@@ -263,6 +264,59 @@ public class NLayerGeneratorService
 
             // 7. Controllers
             log(nLayerAPIService.GenerateControllers(solutionPath));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log(ex.Message);
+            return false;
+        }
+    }
+
+
+    public bool GenerateWebUIILayer(Action<string> log)
+    {
+        try
+        {
+            if (_appSetting == null || string.IsNullOrEmpty(_appSetting.Path) || string.IsNullOrEmpty(_appSetting.SolutionName))
+                throw new Exception("App Settings Not Completted To Generate!");
+
+            var nLayerWebUIService = new NLayerWebUIService(_appSetting);
+
+            string solutionPath = Path.Combine(_appSetting.Path, _appSetting.SolutionName);
+
+            // 1. Create Project if not exists
+            log(nLayerWebUIService.CreateProject(solutionPath, _appSetting.SolutionName));
+
+            // 2. Add Packages
+            log(nLayerWebUIService.AddPackage(solutionPath, "FluentValidation.AspNetCore"));
+            log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation"));
+            log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.VisualStudio.Web.CodeGeneration.Design"));
+            
+            // 3. Utils
+            log(nLayerWebUIService.GenerateUtils(solutionPath));
+
+            // 4. Exception Handler
+            log(nLayerWebUIService.GenerateExceptionHandler(solutionPath));
+
+            // 5. Side Menu ViewComponent
+            log(nLayerWebUIService.GenerateSideMenuViewComponent(solutionPath));
+
+            // 6. wwwroot
+            log(nLayerWebUIService.Generate_wwwroot(solutionPath));
+
+            // 7. ViewModels
+            log(nLayerWebUIService.GenerateViewModels(solutionPath));
+
+            // 8. Program.cs
+            log(nLayerWebUIService.GenerateProgramCs(solutionPath));
+
+            // 9. AppSettings.json
+            log(nLayerWebUIService.GenerateAppSettings(solutionPath));
+
+            // 10. Controllers
+            log(nLayerWebUIService.GenerateControllers(solutionPath));
 
             return true;
         }

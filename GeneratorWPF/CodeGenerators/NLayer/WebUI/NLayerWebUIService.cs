@@ -571,7 +571,6 @@ public class SideMenuViewComponent : ViewComponent
         return "wwwroot generated";
     }
 
-
     public string GenerateViewModels(string solutionPath)
     {
         var results = new List<string>();
@@ -614,7 +613,6 @@ public class MenuItem
 
         return string.Join("\n", results);
     }
-
 
     public string GenerateControllers(string solutionPath)
     {

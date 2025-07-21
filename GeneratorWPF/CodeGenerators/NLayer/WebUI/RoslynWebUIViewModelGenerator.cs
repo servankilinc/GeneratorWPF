@@ -37,16 +37,8 @@ public class RoslynWebUIViewModelGenerator
 
             if (relation == null) continue;
 
-            if (field.Name.Trim().ToLowerInvariant().EndsWith("id"))
-            {
-                string selectPropName = field.Name;
-                selectPropName = selectPropName.Trim().Substring(0, selectPropName.Length - 2) + "List";
-                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
-            }
-            else
-            {
-                propertyList.Add(GeneratorProperty("SelectList?", $"{relation.PrimaryField.Entity.Name}List"));
-            }
+            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+            propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
         }
 
         // b) FilterModel Prop
@@ -102,16 +94,9 @@ public class RoslynWebUIViewModelGenerator
 
             if (relation == null) continue;
 
-            if (field.Name.Trim().ToLowerInvariant().EndsWith("id"))
-            {
-                string selectPropName = field.Name;
-                selectPropName = selectPropName.Trim().Substring(0, selectPropName.Length - 2) + "List";
-                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
-            }
-            else
-            {
-                propertyList.Add(GeneratorProperty("SelectList?", $"{relation.PrimaryField.Entity.Name}List"));
-            }
+            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);          
+            propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+
         }
 
         // 2) Class List
@@ -166,16 +151,8 @@ public class RoslynWebUIViewModelGenerator
 
             if (relation == null) continue;
 
-            if (field.Name.Trim().ToLowerInvariant().EndsWith("id"))
-            {
-                string selectPropName = field.Name;
-                selectPropName = selectPropName.Trim().Substring(0, selectPropName.Length - 2) + "List";
-                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
-            }
-            else
-            {
-                propertyList.Add(GeneratorProperty("SelectList?", $"{relation.PrimaryField.Entity.Name}List"));
-            }
+            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+            propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
         }
 
         // 2) Class List

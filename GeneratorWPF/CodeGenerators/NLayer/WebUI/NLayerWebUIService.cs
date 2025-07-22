@@ -2,6 +2,7 @@
 using GeneratorWPF.Models;
 using GeneratorWPF.Repository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -587,7 +588,7 @@ public class SideMenuViewComponent : ViewComponent
             string code_VMCreate = roslynWebUIControllerGenerator.GenerateViewModelCreate(entity);
             string code_VMUpdate = roslynWebUIControllerGenerator.GenerateViewModelUpdate(entity);
 
-            string folderPath = Path.Combine(solutionPath, "WebUI", "Models", "ViewModels", entity.Name);
+            string folderPath = Path.Combine(solutionPath, "WebUI", "Models", "ViewModels", $"{entity.Name}_");
 
             results.Add(AddFile(folderPath, $"{entity.Name}ViewModel", code_VMIndex));
             results.Add(AddFile(folderPath, $"{entity.Name}CreateViewModel", code_VMCreate));
@@ -908,7 +909,7 @@ app.MapControllerRoute(
         sb.AppendLine("");
         sb.AppendLine("app.Run();");
 
-        string folderPath = Path.Combine(solutionPath, "WebAPI");
+        string folderPath = Path.Combine(solutionPath, "WebUI");
 
         return AddFile(folderPath, "Program", sb.ToString());
     }
@@ -923,7 +924,7 @@ app.MapControllerRoute(
     }
   },
   ""ConnectionStrings"": {
-    ""Database"": ""Data Source=SERVAN; Initial Catalog=GeneratedProjectDB; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
+    ""Database"": ""Data Source=.; Initial Catalog=GeneratedProjectDB; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
   },
   ""AllowedHosts"": ""*""
 }
@@ -963,21 +964,22 @@ app.MapControllerRoute(
 
         string folderPath = Path.Combine(solutionPath, "WebUI", "Views");
 
-        RoslynWebUIControllerGenerator roslynWebUIControllerGenerator = new RoslynWebUIControllerGenerator(_appSetting);
+        ViewGenerator viewGenerator = new ViewGenerator(_appSetting);
 
         var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
         foreach (var entity in entities)
         {
-            var dtos = _dtoRepository.GetAll(
-                filter: f => f.RelatedEntityId == entity.Id,
-                include: i => i
-                    .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
-                    .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
+            //var dtos = _dtoRepository.GetAll(
+            //    filter: f => f.RelatedEntityId == entity.Id,
+            //    include: i => i
+            //        .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
+            //        .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
 
-            string code_controller = roslynWebUIControllerGenerator.GeneraterController(entity, dtos);
+            string code_indexView= viewGenerator.GenerateIndex(entity);
 
-            results.Add(AddFile(folderPath, $"{entity.Name}Controller", code_controller));
+            string viewFolderPath = Path.Combine(solutionPath, "WebUI", "Views", entity.Name);
+            results.Add(AddFileByExt(viewFolderPath, $"{entity.Name}.cshtml", code_indexView));
         }
 
         #region Account Views
@@ -1569,7 +1571,7 @@ else
 	};
 </script>";
 
-        string sharedViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Account");
+        string sharedViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Shared");
 
         results.Add(AddFileByExt(sharedViewsPath, "_Layout.cshtml", code_Layout)); 
         results.Add(AddFileByExt(sharedViewsPath, "_LayoutBase.cshtml", code_LayoutBase)); 

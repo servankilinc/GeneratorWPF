@@ -318,6 +318,9 @@ public class NLayerGeneratorService
             // 10. Controllers
             log(nLayerWebUIService.GenerateControllers(solutionPath));
 
+            // 11. Views
+            log(nLayerWebUIService.GenerateViews(solutionPath));
+
             return true;
         }
         catch (Exception ex)

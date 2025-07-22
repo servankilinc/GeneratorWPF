@@ -161,7 +161,9 @@ public class RoslynWebUIControllerGenerator
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Core.Utils.Datatable")),
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")),
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("WebUI.Utils.ActionFilters")),
-            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}"))
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Model.Entities")),
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Authorization")),
+            SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}_"))
         };
         if (dtos != null && dtos.Any())
         {
@@ -426,7 +428,7 @@ public class RoslynWebUIControllerGenerator
             SyntaxFactory.ReturnStatement(
                 SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("PartialView"))
                     .AddArgumentListArguments(
-                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("./Partials/CreateForm")),
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("\"./Partials/CreateForm\"")),
                         SyntaxFactory.Argument(SyntaxFactory.IdentifierName("viewModel"))
                     )
             );
@@ -666,7 +668,7 @@ public class RoslynWebUIControllerGenerator
             SyntaxFactory.ReturnStatement(
                 SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("PartialView"))
                     .AddArgumentListArguments(
-                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("./Partials/UpdateForm")),
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("\"./Partials/UpdateForm\"")),
                         SyntaxFactory.Argument(SyntaxFactory.IdentifierName("viewModel"))
                     )
             );
@@ -778,6 +780,7 @@ public class RoslynWebUIControllerGenerator
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                 SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
             )
+            .AddParameterListParameters(paramList.ToArray())
             .WithBody(
                 SyntaxFactory.Block(
                     methodCallDecleration,
@@ -877,9 +880,6 @@ public class RoslynWebUIControllerGenerator
         var returnViewStatement =
             SyntaxFactory.ReturnStatement(
                 SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("Ok"))
-                    .AddArgumentListArguments(
-                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("result"))
-                    )
             );
 
 
@@ -899,6 +899,7 @@ public class RoslynWebUIControllerGenerator
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                 SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
             )
+            .AddParameterListParameters(paramList.ToArray())
             .WithBody(SyntaxFactory.Block(bodyStatements));
     }
     #endregion
@@ -975,6 +976,7 @@ public class RoslynWebUIControllerGenerator
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                 SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
             )
+            .AddParameterListParameters(paramList.ToArray())
             .WithBody(SyntaxFactory.Block(
                 methodCallDecleration,
                 returnViewStatement

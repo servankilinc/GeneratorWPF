@@ -32,6 +32,7 @@ public partial class RoslynDtoGenerator
 
         var dtoFieldIdList = dtoFieldList.Select(x => x.Id);
         bool isExistValidation = _validationRepository.IsExist(f => dtoFieldIdList.Contains(f.DtoFieldId));
+        // bool isExistValidation = _validationRepository.GetAll().Any(f => dtoFieldIdList.Contains(f.DtoFieldId));
 
 
         // 1) Property List

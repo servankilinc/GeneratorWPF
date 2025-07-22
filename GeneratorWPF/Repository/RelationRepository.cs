@@ -23,6 +23,18 @@ namespace GeneratorWPF.Repository
                         .ThenInclude(ti => ti.Entity)
                     .AsNoTracking()
                     .ToList();
+            /*
+             var query = _context.Relations
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking().ToList();
+
+            return query.Where(f =>
+                        fieldsOfEntities.Any(s => s == f.PrimaryFieldId) || fieldsOfEntities.Any(s => s == f.ForeignFieldId)).ToList();
+
+            */
         }
 
         public List<Relation> GetRelationsOnPrimary(int entityId)
@@ -37,6 +49,17 @@ namespace GeneratorWPF.Repository
                         .ThenInclude(ti => ti.Entity)
                     .AsNoTracking()
                     .ToList();
+
+            /*
+              var query = _context.Relations
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking().ToList();
+
+            return query.Where(f => fieldsOfEntities.Any(s => s == f.PrimaryFieldId)).ToList();
+            */
         }
 
         public List<Relation> GetRelationsOnForeign(int entityId)
@@ -51,6 +74,17 @@ namespace GeneratorWPF.Repository
                         .ThenInclude(ti => ti.Entity)
                     .AsNoTracking()
                     .ToList();
+
+            /*
+               var query = _context.Relations
+                    .Include(i => i.ForeignField)
+                        .ThenInclude(ti => ti.Entity)
+                    .Include(i => i.PrimaryField)
+                        .ThenInclude(ti => ti.Entity)
+                    .AsNoTracking().ToList();
+
+            return query.Where(f => fieldsOfEntities.Any(s => s == f.ForeignFieldId)).ToList();
+            */
         }
 
         public List<Relation> GetRelationsBehindEntities(int entityId_ofPrimaryField, int entityId_ofForeignField)

@@ -20,7 +20,7 @@ public class ViewGenerator
         _fieldRepository = new();
     }
 
-    public string CreateIndex(Entity entity)
+    public string GenerateIndex(Entity entity)
     {
         List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id, include: i => i.Include(x => x.FieldType));
 
@@ -35,7 +35,7 @@ public class ViewGenerator
         StringBuilder sb = new StringBuilder();
 
         sb.Append($@"
-@using WebUI.Models.ViewModels.{entity.Name}
+@using WebUI.Models.ViewModels.{entity.Name}_
 @model {entity.Name}ViewModel
 @{{
     ViewData[""Title""] = ""{entity.Name.Pluralize()}"";
@@ -67,12 +67,9 @@ public class ViewGenerator
         sb.AppendLine("\t</div>");
 
 
-        sb.AppendLine("</div>");
-        // ########## HTML ##########
+        sb.AppendLine("</div>"); 
 
-
-
-
+         
         // ########## SCRIPT ##########
         string datatableMethod = isThereReportDto ?
             CreateTableInitMethodByDto(entity, reportDto!, modelFilterFields) :
@@ -102,121 +99,10 @@ public class ViewGenerator
 
     #region Helpers
 
-    private List<ModelFilterFieldInput> CreateFilterInputsModel(Entity entity, List<Field> filterableFields)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
-        foreach (var field in filterableFields)
-        {
-            Relation? relation = _relationRepository.Get(
-              filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
-              include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
-
-            if (relation == null) continue;
-
-            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
-            selectableRelations.Add(field.Name, relation.PrimaryField.Entity.Name);
-        }
-
-        List<ModelFilterFieldInput> result = new List<ModelFilterFieldInput>();
-        foreach (var field in filterableFields)
-        {
-            ModelFilterFieldInput modelFilterFieldInput = new ModelFilterFieldInput();
-
-            int variableGroupType = field.GetVariableGroup(selectableRelations);
-
-            string labelText = field.Name.DivideToLabelName();
-            string inputName = field.Name;
-
-            modelFilterFieldInput.InputGroup = variableGroupType;
-            modelFilterFieldInput.InputName = inputName;
-            modelFilterFieldInput.InputName = inputName;
-
-            // ### SelectList ###
-            if (variableGroupType == 1)
-            {
-                var relation = selectableRelations.First(f => f.Key.Trim().ToLower() == field.Name.Trim().ToLower());
-                string entityName = relation.Value;
-                string listPropName = relation.Key.ToForeignFieldSlectListName(entityName);
-
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group d-flex flex-nowrap"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <select name=""{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
-                            <option></option>
-                        </select>
-                    </div>
-                </div>";
-            }
-            // ### Number ###
-            else if (variableGroupType == 2)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <input name=""{inputName}"" type=""number"" class=""form-control"" />
-                    </div>
-                </div>";
-            }
-            // ### Text ###
-            else if (variableGroupType == 3)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <input name=""{inputName}"" type=""text"" class=""form-control"" />
-                    </div>
-                </div>";
-            }
-            // ### Date ###
-            else if (variableGroupType == 4)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <input name=""{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
-                    </div>
-                </div>";
-            }
-            // ### CheckBox ###
-            else if (variableGroupType == 5)
-            {
-                modelFilterFieldInput.InputCode = $@"                
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <div class=""input-group-text"">
-                            <input name=""{inputName}"" type=""checkbox"" class=""form-check-input"" />
-                        </div>
-                    </div>
-                </div>";
-            }
-        }
-
-        return result;
-    }
-
-
     // Html Helpers
     private string CreateFilterForm(Entity entity, List<ModelFilterFieldInput> modelFilterFields)
     {
         StringBuilder sb = new StringBuilder();
-
 
         foreach (var modelFilterField in modelFilterFields)
         {
@@ -353,6 +239,7 @@ public class ViewGenerator
                 {CustomTableButtons(entity)}
             }})";
     }
+
 
     private string DynamicFilterObject(Entity entity, List<ModelFilterFieldInput> modelFilterFields)
     {
@@ -752,13 +639,123 @@ public class ViewGenerator
     }
 
 
+
+    // Helper UI Model
+    private List<ModelFilterFieldInput> CreateFilterInputsModel(Entity entity, List<Field> filterableFields)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
+        foreach (var field in filterableFields)
+        {
+            Relation? relation = _relationRepository.Get(
+              filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+              include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+
+            if (relation == null) continue;
+
+            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+            selectableRelations.Add(field.Name, relation.PrimaryField.Entity.Name);
+        }
+
+        List<ModelFilterFieldInput> result = new List<ModelFilterFieldInput>();
+        foreach (var field in filterableFields)
+        {
+            ModelFilterFieldInput modelFilterFieldInput = new ModelFilterFieldInput();
+
+            int variableGroupType = field.GetVariableGroup(selectableRelations);
+
+            string labelText = field.Name.DivideToLabelName();
+            string inputName = field.Name;
+
+            modelFilterFieldInput.InputGroup = variableGroupType;
+            modelFilterFieldInput.InputName = inputName;
+            modelFilterFieldInput.InputName = inputName;
+
+            // ### SelectList ###
+            if (variableGroupType == 1)
+            {
+                var relation = selectableRelations.First(f => f.Key.Trim().ToLower() == field.Name.Trim().ToLower());
+                string entityName = relation.Value;
+                string listPropName = relation.Key.ToForeignFieldSlectListName(entityName);
+
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group d-flex flex-nowrap"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <select name=""{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
+                            <option></option>
+                        </select>
+                    </div>
+                </div>";
+            }
+            // ### Number ###
+            else if (variableGroupType == 2)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <input name=""{inputName}"" type=""number"" class=""form-control"" />
+                    </div>
+                </div>";
+            }
+            // ### Text ###
+            else if (variableGroupType == 3)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <input name=""{inputName}"" type=""text"" class=""form-control"" />
+                    </div>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 4)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <input name=""{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    </div>
+                </div>";
+            }
+            // ### CheckBox ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"                
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <div class=""input-group-text"">
+                            <input name=""{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        </div>
+                    </div>
+                </div>";
+            }
+        }
+
+        return result;
+    }
+
     private class ModelFilterFieldInput
     {
         public int InputGroup { get; set; }
         public string InputName { get; set; } = null!;
         public string LabelText { get; set; } = null!;
         public string InputCode { get; set; } = null!;
-        public string DomSelector { get; set; } = null!;
     }
     #endregion
 }

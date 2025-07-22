@@ -61,6 +61,9 @@ namespace GeneratorWPF.ViewModel._Generate
                     stepControl = _layerGeneratorService.GenerateAPILayer(AppendToResults);
                     if (!stepControl) return false;
 
+                    stepControl = _layerGeneratorService.GenerateWebUIILayer(AppendToResults);
+                    if (!stepControl) return false;
+
                     return true;
                 });
 

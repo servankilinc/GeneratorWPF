@@ -59,7 +59,7 @@ public class RoslynWebUIViewModelGenerator
 
         // 3) Namespace
         var namespaceDeclaration = SyntaxFactory
-            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}"))
+            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}_"))
             .AddMembers(classes.ToArray());
 
 
@@ -110,7 +110,7 @@ public class RoslynWebUIViewModelGenerator
 
         // 3) Namespace
         var namespaceDeclaration = SyntaxFactory
-            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}"))
+            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}_"))
             .AddMembers(classes.ToArray());
 
 
@@ -118,13 +118,16 @@ public class RoslynWebUIViewModelGenerator
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc.Rendering"))
         };
 
-        if (isThereCreateDto) usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Dtos.{entity.Name}_")));
+        if (isThereCreateDto) 
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Dtos.{entity.Name}_")));
+        else 
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Entities")));
 
         var compilationUnit = SyntaxFactory
-            .CompilationUnit()
-            .AddUsings(usingsList.ToArray())
-            .AddMembers(namespaceDeclaration)
-            .NormalizeWhitespace();
+                .CompilationUnit()
+                .AddUsings(usingsList.ToArray())
+                .AddMembers(namespaceDeclaration)
+                .NormalizeWhitespace();
 
         return compilationUnit.ToFullString();
     }
@@ -166,15 +169,18 @@ public class RoslynWebUIViewModelGenerator
 
         // 5) Namespace
         var namespaceDeclaration = SyntaxFactory
-            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}"))
+            .NamespaceDeclaration(SyntaxFactory.ParseName($"WebUI.Models.ViewModels.{entity.Name}_"))
             .AddMembers(classes.ToArray());
 
         List<UsingDirectiveSyntax> usingsList = new List<UsingDirectiveSyntax>(){
             SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc.Rendering"))
         };
 
-        if (isThereUpdateDto) usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Dtos.{entity.Name}_")));
-
+        if (isThereUpdateDto) 
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Dtos.{entity.Name}_")));
+        else
+            usingsList.Add(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"Model.Entities")));
+        
         var compilationUnit = SyntaxFactory
             .CompilationUnit()
             .AddUsings(usingsList.ToArray())

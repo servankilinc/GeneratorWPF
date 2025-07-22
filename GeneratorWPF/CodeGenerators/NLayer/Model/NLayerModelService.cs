@@ -227,21 +227,21 @@ public class Log: IEntity, IProjectEntity
     public string GenerateServiceRegistrations(string solutionPath)
     {
         string code = @"
-            using FluentValidation;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Reflection;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
-            namespace Model;
+namespace Model;
 
-            public static class ServiceRegistration
-            {
-                public static IServiceCollection AddModelServices(this IServiceCollection services)
-                {
-                    services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+public static class ServiceRegistration
+{
+    public static IServiceCollection AddModelServices(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-                    return services;
-                }
-            }";
+        return services;
+    }
+}";
 
         string folderPath = Path.Combine(solutionPath, "Model");
 

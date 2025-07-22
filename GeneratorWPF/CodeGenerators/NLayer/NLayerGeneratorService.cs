@@ -203,23 +203,23 @@ public class NLayerGeneratorService
 
             string solutionPath = Path.Combine(_appSetting.Path, _appSetting.SolutionName);
 
-            // 1. Create Core Class Library if not exists
-            log(nLayerBusinessService.CreateProject(solutionPath, _appSetting.SolutionName));
+            //// 1. Create Core Class Library if not exists
+            //log(nLayerBusinessService.CreateProject(solutionPath, _appSetting.SolutionName));
 
-            // 2. Service Base
-            log(nLayerBusinessService.GenerateServiceBase(solutionPath));
+            //// 2. Service Base
+            //log(nLayerBusinessService.GenerateServiceBase(solutionPath));
 
-            // 3. Utils
-            log(nLayerBusinessService.GenerateUtils(solutionPath));
+            //// 3. Utils
+            //log(nLayerBusinessService.GenerateUtils(solutionPath));
 
-            // 4. Mappings
-            log(nLayerBusinessService.GenerateMappings(solutionPath));
+            //// 4. Mappings
+            //log(nLayerBusinessService.GenerateMappings(solutionPath));
 
             // 5. Concretes
             log(nLayerBusinessService.GeneraterService(solutionPath));
 
-            // 6. Service Registrations
-            log(nLayerBusinessService.GenerateServiceRegistrations(solutionPath));
+            //// 6. Service Registrations
+            //log(nLayerBusinessService.GenerateServiceRegistrations(solutionPath));
 
             return true;
         }

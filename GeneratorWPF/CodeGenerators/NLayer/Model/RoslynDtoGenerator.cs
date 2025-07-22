@@ -244,7 +244,7 @@ public partial class RoslynDtoGenerator
                     .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
             );
 
-        bool isRequiredReferanceType = dtoField.IsRequired && !Statics.nonReferanceTypes.Contains(fieldTypeName);
+        bool isRequiredReferanceType = !mappedDtoFieldTypeName.EndsWith("?") && !Statics.nonReferanceTypes.Contains(fieldTypeName);
         if (isRequiredReferanceType)
         {
             property = property

@@ -658,7 +658,7 @@ public partial class RoslynUOWGenerator
         {
             return SyntaxFactory
             .FieldDeclaration(
-                SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(type + (isNullable  == true ? "?" : string.Empty))
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(type + (isNullable == true ? "?" : string.Empty))
             )
             .AddVariables(SyntaxFactory.VariableDeclarator(name)))
             .AddModifiers(

@@ -225,7 +225,7 @@ public partial class RoslynAuthModelsGenerator
     {
         var ruleListOfValidation = new List<string>()
         {
-            @"When(b => b.IsTrusted, () => RuleFor(b => b.RefreshToken).NotNull().NotEmpty());"
+            @"When(b => b.IsTrusted == false, () => RuleFor(b => b.RefreshToken).NotNull().NotEmpty());"
         };
 
         // 1) Property List
@@ -363,21 +363,27 @@ public partial class RoslynAuthModelsGenerator
 
     public string GeneraterSignUpRequest()
     {
-        var ruleListOfValidation = new List<string>()
-        {
-            @"RuleFor(b => b.Email).NotNull().EmailAddress().NotEmpty().EmailAddress();",
-            @"RuleFor(b => b.Password).NotNull().MinimumLength(6).NotEmpty();"
-        };
+        var ruleListOfValidation = new List<string>();
 
         // 1) Property List
-        var propertyList = new List<MemberDeclarationSyntax>()
+        var userFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId, include: i => i.Include(x => x.FieldType));
+
+        var propertyList = new List<MemberDeclarationSyntax>();
+
+        if (!userFields.Any(f => f.Name == "Email"))
         {
-            GenerateProperty("string", "Email", true),
-            GenerateProperty("string", "Password", true)
-        };
+            propertyList.Add(GenerateProperty("string", "Email", true));
+            ruleListOfValidation.Add(@"RuleFor(b => b.Email).NotNull().EmailAddress().NotEmpty().EmailAddress();");
+        }
+
+        if (!userFields.Any(f => f.Name == "Password"))
+        {
+            propertyList.Add(GenerateProperty("string", "Password", true));
+            ruleListOfValidation.Add(@"RuleFor(b => b.Password).NotNull().MinimumLength(6).NotEmpty();");
+        }
+
         if (_appSetting.UserEntityId != null)
         {
-            var userFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId, include: i => i.Include(x => x.FieldType));
             if (userFields != null)
             {
                 foreach (var uf in userFields.Where(f => !f.IsUnique && f.IsRequired && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
@@ -429,7 +435,7 @@ public partial class RoslynAuthModelsGenerator
             {
                 var uField = userEntity.Fields.FirstOrDefault(f => f.IsUnique);
                 if (uField != null) typeOfUserKey = uField.MapFieldTypeName();
-                typeOfUser = userEntity.Name; 
+                typeOfUser = userEntity.Name;
             }
         }
         string IdentityUserType = $"IdentityUser<{typeOfUserKey}>";

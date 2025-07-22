@@ -1705,7 +1705,7 @@ public class TokenService : ITokenService
     }
     #endregion
 
-    public string GenerateMappings(string solutionPath) 
+    public string GenerateMappings(string solutionPath)
     {
         StringBuilder sb = new();
 

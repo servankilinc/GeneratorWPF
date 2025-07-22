@@ -2979,9 +2979,11 @@ public partial class RoslynBusinessServiceGenerator
     {
         InvocationExpressionSyntax? chain = null;
 
-        dto.DtoFields = dto.DtoFields.GroupBy(p => p.SourceField.EntityId).Select(g => g.First()).ToList();
+        var dto_DtoFields = _dtoFieldRepository.GetAll(f => f.DtoId == dto.Id, include: i => i.Include(x => x.SourceField));
+        if(dto_DtoFields != default) 
+            dto_DtoFields = dto_DtoFields.GroupBy(p => p.SourceField.EntityId).Select(g => g.First()).ToList();
 
-        foreach (var dtoField in dto.DtoFields)
+        foreach (var dtoField in dto_DtoFields!)
         {
             var dtoFieldRelations = _dtoFieldRepository.GetDtoFieldRelations(dtoField.Id);
             if (!dtoFieldRelations.Any()) continue;

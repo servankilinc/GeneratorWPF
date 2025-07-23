@@ -20,7 +20,7 @@ public class ViewGenerator
         _fieldRepository = new();
     }
 
-    public string GenerateIndex(Entity entity)
+    public string GenerateIndexPage(Entity entity)
     {
         List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id, include: i => i.Include(x => x.FieldType));
 
@@ -29,7 +29,7 @@ public class ViewGenerator
         Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
         bool isThereReportDto = reportDto != default;
 
-        List<ModelFilterFieldInput> modelFilterFields = new List<ModelFilterFieldInput>();
+        List<ModelFieldInput> modelFilterFields = new List<ModelFieldInput>();
         if (filterableFields.Any()) modelFilterFields = CreateFilterInputsModel(entity, filterableFields);
 
         StringBuilder sb = new StringBuilder();
@@ -96,11 +96,121 @@ public class ViewGenerator
         return sb.ToString();
     }
 
+    public string GenerateCreatePage(Entity entity)
+    {
+        List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id, include: i => i.Include(x => x.FieldType));
+
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereCreateDto = createDto != default;
+        
+        List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
+        if (isThereCreateDto)
+        {
+            modelInputs = CreateFormInputsModelByDto(entity, createDto!);
+        }
+        else
+        {
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+        }
+            
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append($@"
+@using WebUI.Models.ViewModels.{entity.Name}_
+@model {entity.Name}CreateViewModel
+@{{
+    ViewData[""Title""] = ""Create {entity.Name}"";
+}}");
+
+        // ########## HTML ##########
+        sb.AppendLine("\r<div class=\"card\">");
+
+        // ******** HEADER ********
+        sb.AppendLine("\t<div class=\"card-header\">");
+        sb.AppendLine($"\t\tCreate {entity.Name}");
+        sb.AppendLine("\t</div>");
+
+
+        // ******** BODY ********
+        sb.AppendLine("\t<div class=\"card-body\">");
+
+        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Create", true, createDto));
+        
+        sb.AppendLine("\t</div>");
+        sb.AppendLine("</div>");
+
+        return sb.ToString();
+    }
+
+    public string GenerateCreateFormPage(Entity entity)
+    {
+        List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id, include: i => i.Include(x => x.FieldType));
+
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereCreateDto = createDto != default;
+
+        List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
+        if (isThereCreateDto)
+        {
+            modelInputs = CreateFormInputsModelByDto(entity, createDto!);
+        }
+        else
+        {
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append($@"
+@using WebUI.Models.ViewModels.{entity.Name}_
+@model {entity.Name}CreateViewModel
+@{{
+    Layout = null;
+}}"); 
+
+        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Create", false, createDto));
+         
+        return sb.ToString();
+    }
+
+    public string GenerateUpdateFormPage(Entity entity)
+    {
+        List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id, include: i => i.Include(x => x.FieldType));
+
+        Dto? updateDto = entity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereUpdateDto = updateDto != default;
+
+        List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
+        if (isThereUpdateDto)
+        {
+            modelInputs = CreateFormInputsModelByDto(entity, updateDto!);
+        }
+        else
+        {
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append($@"
+@using WebUI.Models.ViewModels.{entity.Name}_
+@model {entity.Name}UpdateViewModel
+@{{
+    Layout = null;
+}}");
+
+        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Update", false, updateDto));
+
+        return sb.ToString();
+    }
+
+
 
     #region Helpers
 
+    #region Index Helpers
     // Html Helpers
-    private string CreateFilterForm(Entity entity, List<ModelFilterFieldInput> modelFilterFields)
+    private string CreateFilterForm(Entity entity, List<ModelFieldInput> modelFilterFields)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -208,9 +318,8 @@ public class ViewGenerator
     }
 
 
-
     // Script Helpers
-    private string CreateTableInitMethodByEntity(Entity entity, List<Field> fieldList, List<ModelFilterFieldInput> modelFilterFields)
+    private string CreateTableInitMethodByEntity(Entity entity, List<Field> fieldList, List<ModelFieldInput> modelFilterFields)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -226,7 +335,7 @@ public class ViewGenerator
             }})";
     }
 
-    private string CreateTableInitMethodByDto(Entity entity, Dto reportDto, List<ModelFilterFieldInput> modelFilterFields)
+    private string CreateTableInitMethodByDto(Entity entity, Dto reportDto, List<ModelFieldInput> modelFilterFields)
     {
         return $@"
             PageTable = DatatableManager.Create({{serverSide: true,
@@ -241,7 +350,7 @@ public class ViewGenerator
     }
 
 
-    private string DynamicFilterObject(Entity entity, List<ModelFilterFieldInput> modelFilterFields)
+    private string DynamicFilterObject(Entity entity, List<ModelFieldInput> modelFilterFields)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -587,7 +696,6 @@ public class ViewGenerator
                             );";
     }
 
-
     private string CustomTableButtons(Entity entity)
     {
         string entityLabelName = entity.Name.DivideToLabelName();
@@ -636,17 +744,15 @@ public class ViewGenerator
                         }}
                     }}
                 ]";
-    }
-
-
+    } 
 
     // Helper UI Model
-    private List<ModelFilterFieldInput> CreateFilterInputsModel(Entity entity, List<Field> filterableFields)
+    private List<ModelFieldInput> CreateFilterInputsModel(Entity entity, List<Field> fields)
     {
         StringBuilder sb = new StringBuilder();
 
         Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
-        foreach (var field in filterableFields)
+        foreach (var field in fields)
         {
             Relation? relation = _relationRepository.Get(
               filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
@@ -658,10 +764,10 @@ public class ViewGenerator
             selectableRelations.Add(field.Name, relation.PrimaryField.Entity.Name);
         }
 
-        List<ModelFilterFieldInput> result = new List<ModelFilterFieldInput>();
-        foreach (var field in filterableFields)
+        List<ModelFieldInput> result = new List<ModelFieldInput>();
+        foreach (var field in fields)
         {
-            ModelFilterFieldInput modelFilterFieldInput = new ModelFilterFieldInput();
+            ModelFieldInput modelFilterFieldInput = new ModelFieldInput();
 
             int variableGroupType = field.GetVariableGroup(selectableRelations);
 
@@ -749,8 +855,258 @@ public class ViewGenerator
 
         return result;
     }
+    #endregion
 
-    private class ModelFilterFieldInput
+
+
+    private List<ModelFieldInput> CreateFormInputsModelByEntity(Entity entity, List<Field> fields)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
+        foreach (var field in fields)
+        {
+            Relation? relation = _relationRepository.Get(
+              filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+              include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+
+            if (relation == null) continue;
+
+            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+            selectableRelations.Add(field.Name, relation.PrimaryField.Entity.Name);
+        }
+
+        List<ModelFieldInput> result = new List<ModelFieldInput>();
+        foreach (var field in fields)
+        {
+            ModelFieldInput modelFilterFieldInput = new ModelFieldInput();
+
+            int variableGroupType = field.GetVariableGroup(selectableRelations);
+
+            string labelText = field.Name.DivideToLabelName();
+            string inputName = field.Name;
+
+            modelFilterFieldInput.InputGroup = variableGroupType;
+            modelFilterFieldInput.InputName = inputName;
+            modelFilterFieldInput.InputName = inputName;
+
+            // ### SelectList ###
+            if (variableGroupType == 1)
+            {
+                var relation = selectableRelations.First(f => f.Key.Trim().ToLower() == field.Name.Trim().ToLower());
+                string entityName = relation.Value;
+                string listPropName = relation.Key.ToForeignFieldSlectListName(entityName);
+
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <select asp-for=""CreateModel.{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
+                        <option></option>
+                    </select>
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Number ###
+            else if (variableGroupType == 2)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""number"" class=""form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Text ###
+            else if (variableGroupType == 3)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 4)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### CheckBox ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"                
+                <div class=""col-sm-6"">
+                    <div class=""form-check"">
+                        <label asp-for=""CreateModel.{inputName}"" class=""form-check-label"">
+                            {labelText}
+                        </label>
+                        <input asp-for=""CreateModel.{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    </div>
+                </div>";
+            }
+        }
+
+        return result;
+    }
+    private List<ModelFieldInput> CreateFormInputsModelByDto(Entity entity, Dto dto)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
+        foreach (var dtoField in dto.DtoFields)
+        {
+            Relation? relation = _relationRepository.Get(
+              filter: f => f.ForeignFieldId == dtoField.SourceField.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+              include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+
+            if (relation == null) continue;
+
+            string selectPropName = dtoField.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+            selectableRelations.Add(dtoField.Name, relation.PrimaryField.Entity.Name);
+        }
+
+        List<ModelFieldInput> result = new List<ModelFieldInput>();
+        foreach (var dtoField in dto.DtoFields)
+        {
+            ModelFieldInput modelFilterFieldInput = new ModelFieldInput();
+
+            int variableGroupType = selectableRelations.Any(f => f.Key == dtoField.Name) ? 1 : dtoField.SourceField.GetVariableGroup(selectableRelations);
+
+            string labelText = dtoField.SourceField.Name.DivideToLabelName();
+            string inputName = dtoField.SourceField.Name;
+
+            modelFilterFieldInput.InputGroup = variableGroupType;
+            modelFilterFieldInput.InputName = inputName;
+            modelFilterFieldInput.InputName = inputName;
+
+            // ### SelectList ###
+            if (variableGroupType == 1)
+            {
+                var relation = selectableRelations.First(f => f.Key.Trim().ToLower() == dtoField.SourceField.Name.Trim().ToLower());
+                string entityName = relation.Value;
+                string listPropName = relation.Key.ToForeignFieldSlectListName(entityName);
+
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <select asp-for=""CreateModel.{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
+                        <option></option>
+                    </select>
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Number ###
+            else if (variableGroupType == 2)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""number"" class=""form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Text ###
+            else if (variableGroupType == 3)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 4)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### CheckBox ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"                
+                <div class=""col-sm-6"">
+                    <div class=""form-check"">
+                        <label asp-for=""CreateModel.{inputName}"" class=""form-check-label"">
+                            {labelText}
+                        </label>
+                        <input asp-for=""CreateModel.{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    </div>
+                </div>";
+            }
+        }
+
+        return result;
+    }
+
+
+    private string CreateForm(Entity entity, List<Field> fields, List<ModelFieldInput> modelFieldInputs, string action, bool submitBtn, Dto? dto = default)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        foreach (var modelFilterField in modelFieldInputs)
+        {
+            sb.Append(modelFilterField.InputCode);
+        }
+
+        string button = submitBtn ? @"
+                <div class=""col-12"">
+					<button type=""submit"" class=""btn btn-success"">
+						<i class=""fa-solid fa-floppy-disk me-2""></i>
+						Save
+					</button>
+				</div>" : string.Empty;
+
+        string uniqueFieldInputs = string.Join("\n", fields.Where(f => f.IsUnique).Select(d =>
+        {
+            if (dto != default)
+            {
+                DtoField? dtoField = dto.DtoFields.FirstOrDefault(f => f.SourceFieldId == d.Id);
+                if (dtoField != default) 
+                    return @$"<input asp-for=""UpdateModel.{dtoField.Name}"" type=""hidden"" class=""form-control"" />";
+            }
+            return @$"<input asp-for=""UpdateModel.{d.Name}"" type=""hidden"" class=""form-control"" />";
+        }).ToList());
+
+        return $@"
+		<form asp-controller=""{entity.Name}"" asp-action=""{action}"" method=""post"">
+            <div class=""row row-gap-4 m-2"">
+                {sb.ToString()}
+                {button}
+            </div>
+        </form>";
+    }
+
+
+
+    private class ModelFieldInput
     {
         public int InputGroup { get; set; }
         public string InputName { get; set; } = null!;

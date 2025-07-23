@@ -976,10 +976,19 @@ app.MapControllerRoute(
             //        .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
             //        .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
 
-            string code_indexView= viewGenerator.GenerateIndex(entity);
+            string code_indexPage = viewGenerator.GenerateIndexPage(entity);
+            string code_createPage = viewGenerator.GenerateCreatePage(entity);
+            string code_createFormPage = viewGenerator.GenerateCreateFormPage(entity);
+            string code_updateFormPage = viewGenerator.GenerateUpdateFormPage(entity);
 
             string viewFolderPath = Path.Combine(solutionPath, "WebUI", "Views", entity.Name);
-            results.Add(AddFileByExt(viewFolderPath, $"{entity.Name}.cshtml", code_indexView));
+            string viewPartialFolderPath = Path.Combine(solutionPath, "WebUI", "Views", entity.Name, "Partials");
+
+            results.Add(AddFileByExt(viewFolderPath, $"Index.cshtml", code_indexPage));
+            results.Add(AddFileByExt(viewFolderPath, $"Create.cshtml", code_createPage));
+
+            results.Add(AddFileByExt(viewPartialFolderPath, $"CreateForm.cshtml", code_createFormPage));
+            results.Add(AddFileByExt(viewPartialFolderPath, $"UpdateForm.cshtml", code_updateFormPage));
         }
 
         #region Account Views
@@ -1183,10 +1192,10 @@ app.MapControllerRoute(
 </div>";
 
         string errorViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Error");
-        results.Add(AddFile(errorViewsPath, "Forbidden.cshtml", code_Forbidden));
-        results.Add(AddFile(errorViewsPath, "InternalServer.cshtml", code_InternalServer));
-        results.Add(AddFile(errorViewsPath, "InvalidProcess.cshtml", code_InvalidProcess));
-        results.Add(AddFile(errorViewsPath, "NotFound.cshtml", code_NotFound));
+        results.Add(AddFileByExt(errorViewsPath, "Forbidden.cshtml", code_Forbidden));
+        results.Add(AddFileByExt(errorViewsPath, "InternalServer.cshtml", code_InternalServer));
+        results.Add(AddFileByExt(errorViewsPath, "InvalidProcess.cshtml", code_InvalidProcess));
+        results.Add(AddFileByExt(errorViewsPath, "NotFound.cshtml", code_NotFound));
         #endregion
          
         #region Layout 

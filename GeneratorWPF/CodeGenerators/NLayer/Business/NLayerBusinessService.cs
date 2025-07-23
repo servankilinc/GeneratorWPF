@@ -1743,7 +1743,7 @@ public class TokenService : ITokenService
             // ** Signup to user
             if (_appSetting.IsThereIdentiy && _appSetting.UserEntityId == entity.Id)
             {
-                //sb.AppendLine($"\t\tCreateMap<SignUpRequest, {entity.Name}>()");
+                sb.AppendLine($"\t\tCreateMap<SignUpRequest, {entity.Name}>()");
                 foreach (var field_user in entity.Fields.Where(f => !f.IsUnique && f.IsRequired && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
                 {
                     sb.AppendLine($"\t\t\t.ForMember(dest => dest.{field_user.Name}, opt => opt.MapFrom(src => src.{field_user.Name}))");

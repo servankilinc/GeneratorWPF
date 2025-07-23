@@ -74,29 +74,49 @@ public class RoslynWebUIViewModelGenerator
 
     public string GenerateViewModelCreate(Entity entity)
     {
-        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId) : default;
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i=> i.Include(x => x.DtoFields).ThenInclude(y => y.SourceField)) : default;
         bool isThereCreateDto = createDto != default;
         string createModelType = isThereCreateDto ? createDto!.Name : entity.Name;
 
         // 1) Property List
-        var propertyList = new List<MemberDeclarationSyntax>();
-
-        // a) FilterModel Prop
-        propertyList.Add(GeneratorProperty(createModelType, "CreateModel", earlyInstance: true));
+        var propertyList = new List<MemberDeclarationSyntax>
+        {
+            // a) FilterModel Prop
+            GeneratorProperty(createModelType, "CreateModel", earlyInstance: true)
+        };
 
         // b) SelectList Props
         List<Field> filterableFields = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id && f.Filterable, include: i => i.Include(x => x.FieldType));
-        foreach (var field in filterableFields)
+        if (isThereCreateDto)
         {
-            Relation? relation = _relationRepository.Get(
-                filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
-                include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+            foreach (var dtoField in createDto!.DtoFields)
+            {
+                if (filterableFields.Any(f => f.Id == dtoField.SourceFieldId) == false) continue;
+             
+                Relation? relation = _relationRepository.Get(
+                    filter: f => f.ForeignFieldId == dtoField.SourceField.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+                    include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
 
-            if (relation == null) continue;
+                if (relation == null) continue;
 
-            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);          
-            propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+                string selectPropName = dtoField.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+            }
+        }
+        else
+        {
+            foreach (var field in filterableFields)
+            {
+                Relation? relation = _relationRepository.Get(
+                    filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+                    include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
 
+                if (relation == null) continue;
+
+                string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+
+            }
         }
 
         // 2) Class List
@@ -134,28 +154,48 @@ public class RoslynWebUIViewModelGenerator
 
     public string GenerateViewModelUpdate(Entity entity)
     {
-        Dto? updateDto = entity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.UpdateDtoId) : default;
+        Dto? updateDto = entity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(y => y.SourceField)) : default;
         bool isThereUpdateDto = updateDto != default;
         string updateModelType = isThereUpdateDto ? updateDto!.Name : entity.Name;
 
         // 1) Property List
-        var propertyList = new List<MemberDeclarationSyntax>();
-
-        // a) FilterModel Prop
-        propertyList.Add(GeneratorProperty(updateModelType, "UpdateModel", earlyInstance: true));
+        var propertyList = new List<MemberDeclarationSyntax>
+        {
+            // a) FilterModel Prop
+            GeneratorProperty(updateModelType, "UpdateModel", earlyInstance: true)
+        };
 
         // b) SelectList Props
         List<Field> filterableFields = _fieldRepository.GetAll(filter: f => f.EntityId == entity.Id && f.Filterable, include: i => i.Include(x => x.FieldType));
-        foreach (var field in filterableFields)
+        if (isThereUpdateDto)
         {
-            Relation? relation = _relationRepository.Get(
-                filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
-                include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+            foreach (var dtoField in updateDto!.DtoFields)
+            {
+                if (filterableFields.Any(f => f.Id == dtoField.SourceFieldId) == false) continue;
 
-            if (relation == null) continue;
+                Relation? relation = _relationRepository.Get(
+                    filter: f => f.ForeignFieldId == dtoField.SourceField.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+                    include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
 
-            string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
-            propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+                if (relation == null) continue;
+
+                string selectPropName = dtoField.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+            }
+        }
+        else
+        {
+            foreach (var field in filterableFields)
+            {
+                Relation? relation = _relationRepository.Get(
+                    filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany,
+                    include: i => i.Include(x => x.PrimaryField).ThenInclude(x => x.Entity));
+
+                if (relation == null) continue;
+
+                string selectPropName = field.Name.ToForeignFieldSlectListName(relation.PrimaryField.Entity.Name);
+                propertyList.Add(GeneratorProperty("SelectList?", selectPropName));
+            }
         }
 
         // 2) Class List

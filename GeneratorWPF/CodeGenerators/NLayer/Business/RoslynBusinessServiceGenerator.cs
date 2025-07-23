@@ -1012,7 +1012,7 @@ public partial class RoslynBusinessServiceGenerator
                 .WithDefault(SyntaxFactory.EqualsValueClause(
                     SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
         };
-        
+
         var typeParameterList = SyntaxFactory.TypeParameterList(
             SyntaxFactory.SingletonSeparatedList(
                 SyntaxFactory.TypeParameter("TResponse")));
@@ -1705,39 +1705,29 @@ public partial class RoslynBusinessServiceGenerator
                     SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression, SyntaxFactory.Token(SyntaxKind.DefaultKeyword))))
         };
 
-        // 2) Arguments of method call
-        var arguments = new List<ArgumentSyntax>
-        {   
 
         // 2) Arguments of method call  
         var awaitInvocation = SyntaxFactory.AwaitExpression(
             SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("_GetListAsync"))
                 .AddArgumentListArguments(
-            SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"s => new{{ s.{uniqueName}, s.{textName} }}"))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("select"))),
-            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("where"))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("where"))),
-            SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("tracking"))),
-            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
-                .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken")))
+                    SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"s => new{{ s.{uniqueName}, s.{textName} }}"))
+                        .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("select"))),
+                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("where"))
+                        .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("where"))),
+                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression))
+                        .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("tracking"))),
+                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
+                        .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken")))
                 )
         );
 
-        // 3) Method Call
-        var awaitInvocation =
-            SyntaxFactory.AwaitExpression(
-                SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.IdentifierName("_GetListAsync"))
-                .AddArgumentListArguments(arguments.ToArray())
-            );
 
         var newSelectList = SyntaxFactory.ObjectCreationExpression(
             SyntaxFactory.IdentifierName("SelectList"))
                 .AddArgumentListArguments(
-            SyntaxFactory.Argument(awaitInvocation),
-            SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(uniqueName))),
-            SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(textName)))
+                    SyntaxFactory.Argument(awaitInvocation),
+                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(uniqueName))),
+                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(textName)))
                 );
 
         // 4) Method Call Decleration by Result 
@@ -1881,7 +1871,7 @@ public partial class RoslynBusinessServiceGenerator
                 .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("tracking"))),
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
                 .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken")))
-        }; 
+        };
 
         // 3) Method Call
         var awaitInvocation =
@@ -2444,7 +2434,7 @@ public partial class RoslynBusinessServiceGenerator
 
         if (isThereBasicResponseDto)
             identifierNameSyntaxes.Add(SyntaxFactory.IdentifierName(basicResponseDto!.Name));
-        
+
         var awaitInvocation =
             SyntaxFactory.AwaitExpression(
                 SyntaxFactory.InvocationExpression(
@@ -2980,7 +2970,7 @@ public partial class RoslynBusinessServiceGenerator
         InvocationExpressionSyntax? chain = null;
 
         var dto_DtoFields = _dtoFieldRepository.GetAll(f => f.DtoId == dto.Id, include: i => i.Include(x => x.SourceField));
-        if(dto_DtoFields != default) 
+        if (dto_DtoFields != default)
             dto_DtoFields = dto_DtoFields.GroupBy(p => p.SourceField.EntityId).Select(g => g.First()).ToList();
 
         foreach (var dtoField in dto_DtoFields!)

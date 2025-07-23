@@ -2411,7 +2411,7 @@ public static class EntityEntryExtension
                     sb.AppendLine($"\t\t\t\t\tId = {roleData.Value}," );
                     sb.AppendLine($"\t\t\t\t\tName = \"{roleData.Key}\"," );
                     sb.AppendLine($"\t\t\t\t\tNormalizedName = \"{roleData.Key.ToUpperInvariant()}\"," );
-                    sb.AppendLine($"\t\t\t\t\tConcurrencyStamp= \"{roleData.Value}\"" );
+                    sb.AppendLine($"\t\t\t\t\tConcurrencyStamp= {roleData.Value}" );
                     if (_indexOfRole == defaultRoles.Count) 
                         sb.AppendLine("\t\t\t\t}");
                     else 

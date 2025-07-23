@@ -24,12 +24,12 @@ namespace GeneratorWPF.Repository
                     .AsNoTracking()
                     .ToList();
             /*
-             var query = _context.Relations
-                    .Include(i => i.ForeignField)
-                        .ThenInclude(ti => ti.Entity)
-                    .Include(i => i.PrimaryField)
-                        .ThenInclude(ti => ti.Entity)
-                    .AsNoTracking().ToList();
+            var query = _context.Relations
+                   .Include(i => i.ForeignField)
+                       .ThenInclude(ti => ti.Entity)
+                   .Include(i => i.PrimaryField)
+                       .ThenInclude(ti => ti.Entity)
+                   .AsNoTracking().ToList();
 
             return query.Where(f =>
                         fieldsOfEntities.Any(s => s == f.PrimaryFieldId) || fieldsOfEntities.Any(s => s == f.ForeignFieldId)).ToList();
@@ -51,12 +51,12 @@ namespace GeneratorWPF.Repository
                     .ToList();
 
             /*
-              var query = _context.Relations
-                    .Include(i => i.ForeignField)
-                        .ThenInclude(ti => ti.Entity)
-                    .Include(i => i.PrimaryField)
-                        .ThenInclude(ti => ti.Entity)
-                    .AsNoTracking().ToList();
+            var query = _context.Relations
+                  .Include(i => i.ForeignField)
+                      .ThenInclude(ti => ti.Entity)
+                  .Include(i => i.PrimaryField)
+                      .ThenInclude(ti => ti.Entity)
+                  .AsNoTracking().ToList();
 
             return query.Where(f => fieldsOfEntities.Any(s => s == f.PrimaryFieldId)).ToList();
             */
@@ -76,12 +76,12 @@ namespace GeneratorWPF.Repository
                     .ToList();
 
             /*
-               var query = _context.Relations
-                    .Include(i => i.ForeignField)
-                        .ThenInclude(ti => ti.Entity)
-                    .Include(i => i.PrimaryField)
-                        .ThenInclude(ti => ti.Entity)
-                    .AsNoTracking().ToList();
+            var query = _context.Relations
+                 .Include(i => i.ForeignField)
+                     .ThenInclude(ti => ti.Entity)
+                 .Include(i => i.PrimaryField)
+                     .ThenInclude(ti => ti.Entity)
+                 .AsNoTracking().ToList();
 
             return query.Where(f => fieldsOfEntities.Any(s => s == f.ForeignFieldId)).ToList();
             */

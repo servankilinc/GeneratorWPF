@@ -64,7 +64,7 @@ namespace GeneratorWPF.Models
             {
                 return 2;
             }
-            else if (this.FieldTypeId == (byte)FieldTypeEnums.String && this.FieldTypeId == (byte)FieldTypeEnums.Char)
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.String || this.FieldTypeId == (byte)FieldTypeEnums.Char)
             {
                 return 3;
             }
@@ -104,7 +104,7 @@ namespace GeneratorWPF.Models
             {
                 return 2;
             }
-            else if (this.FieldTypeId == (byte)FieldTypeEnums.String && this.FieldTypeId == (byte)FieldTypeEnums.Char)
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.String || this.FieldTypeId == (byte)FieldTypeEnums.Char)
             {
                 return 3;
             }

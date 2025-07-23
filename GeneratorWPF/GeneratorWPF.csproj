@@ -48,6 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="CodeGenerators\NLayer\WebUI\wwwroot\" />
     <Folder Include="Dtos\_DtoFieldRelation\" />
   </ItemGroup>
 </Project>

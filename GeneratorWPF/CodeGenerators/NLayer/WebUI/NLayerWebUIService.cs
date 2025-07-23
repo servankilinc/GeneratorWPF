@@ -29,7 +29,8 @@ public class NLayerWebUIService
         try
         {
             string projectPath = Path.Combine(path, "WebUI");
-            string projectViewsPath = Path.Combine(path, "WebUI", "Views", "Shared");
+            string projectViewsPath = Path.Combine(path, "WebUI", "Views");
+            string projectViewsSharedPath = Path.Combine(path, "WebUI", "Views", "Shared");
             string csprojPath = Path.Combine(projectPath, "WebUI.csproj");
 
             if (Directory.Exists(projectPath) && File.Exists(csprojPath))
@@ -41,7 +42,8 @@ public class NLayerWebUIService
 
             RemoveFile(projectPath, "Program.cs");
             RemoveFile(projectPath, "appsettings.json");
-            RemoveFile(projectViewsPath, "_Layout.cshtml");
+            RemoveFile(projectViewsPath, "_ViewImports.cshtml");
+            RemoveFile(projectViewsSharedPath, "_Layout.cshtml");
 
             return "OK: WebUI Project Created Successfully";
         }
@@ -91,6 +93,26 @@ public class NLayerWebUIService
         {
             throw new Exception($"ERROR: An error occurred while restoring WebUI project. \n Details:{ex.Message}");
         }
+    }
+    public string CopyDirectory(string sourceDir, string destinationDir)
+    {
+        if (Directory.Exists(destinationDir)) return $"INFO: Directory {sourceDir} already exists in WebUI project.";
+
+        Directory.CreateDirectory(destinationDir);
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            string targetFilePath = Path.Combine(destinationDir, Path.GetFileName(file));
+            File.Copy(file, targetFilePath, true);
+        }
+
+        foreach (var directory in Directory.GetDirectories(sourceDir))
+        {
+            string targetSubDir = Path.Combine(destinationDir, Path.GetFileName(directory));
+            CopyDirectory(directory, targetSubDir);
+        }
+
+        return $"OK: Directory {sourceDir} added to WebUI project.";
     }
     #endregion
 
@@ -1077,16 +1099,6 @@ app.MapControllerRoute(
             <div class=""card-body"">
                 <form asp-controller=""Account"" asp-action=""SignUp"" method=""post"" class=""mb-6"">
                     <div class=""mb-6"">
-                        <label asp-for=""FirstName"" class=""form-label"">First Name</label>
-                        <input asp-for=""FirstName"" class=""form-control"" autofocus />
-                        <span asp-validation-for=""FirstName""></span>
-                    </div>
-                    <div class=""mb-6"">
-                        <label asp-for=""LastName"" class=""form-label"">Last Name</label>
-                        <input asp-for=""LastName"" class=""form-control"" autofocus />
-                        <span asp-validation-for=""LastName""></span>
-                    </div>
-                    <div class=""mb-6"">
                         <label asp-for=""Email"" class=""form-label"">Email</label>
                         <input asp-for=""Email"" class=""form-control"" autofocus />
                         <span asp-validation-for=""Email""></span>
@@ -1120,6 +1132,20 @@ app.MapControllerRoute(
         </div>
     </div>
 </div>";
+
+            if (_appSetting.IsThereUser && _appSetting.UserEntityId != default)
+            {
+                Dto? userCreatDto = _dtoRepository.Get(
+                    filter: f => f.RelatedEntityId == _appSetting.UserEntityId,
+                    include: i => i
+                        .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
+                        .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
+                if (userCreatDto != default)
+                {
+                    Entity? userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
+                    if(userEntity != default) code_Signup = viewGenerator.GenerateSignUpPage(userEntity);
+                }
+            }
 
             string accountViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Account");
             results.Add(AddFileByExt(accountViewsPath, "Login.cshtml", code_Login));
@@ -1475,8 +1501,9 @@ app.MapControllerRoute(
 }
 
 <!-- LIBS -->
+<link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
+<link rel=""stylesheet"" href=""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"" integrity=""sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ=="" crossorigin=""anonymous"" referrerpolicy=""no-referrer"" />
 <link rel=""stylesheet"" href=""~/lib/bootstrap/dist/css/bootstrap.min.css"" />
-<link rel=""stylesheet"" href=""~/lib/fontawesome-free-6.7.2-web/css/all.min.css"" />
 <link rel=""stylesheet"" href=""~/lib/perfect-scrollbar/perfect-scrollbar.min.css"" />
 <link rel=""stylesheet"" href=""~/lib/apex-charts/apex-charts.css"" />
 <link rel=""stylesheet"" href=""~/lib/select2/select2.css"" />
@@ -1516,7 +1543,7 @@ else
 <script src=""~/lib/bootstrap/dist/js/bootstrap.bundle.min.js""></script>
 
 <!-- LIBS -->
-<script src=""~/lib/fontawesome-free-6.7.2-web/js/all.min.js""></script>
+<script src=""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/js/all.min.js"" integrity=""sha512-gBYquPLlR76UWqCwD06/xwal4so02RjIR0oyG1TIhSGwmBTRrIkQbaPehPF8iwuY9jFikDHMGEelt0DtY7jtvQ=="" crossorigin=""anonymous"" referrerpolicy=""no-referrer""></script>
 <script src=""~/lib/popper/popper.js""></script>
 <script src=""~/lib/perfect-scrollbar/perfect-scrollbar.min.js""></script>
 <script src=""~/lib/highlight/highlight.js""></script>
@@ -1580,12 +1607,20 @@ else
 	};
 </script>";
 
-        string sharedViewsPath = Path.Combine(solutionPath, "WebUI", "Views", "Shared");
+        string code_ViewImports = @"
+﻿@using WebUI
+@using WebUI.Models
+@using WebUI.Utils.Extensions
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers";
 
-        results.Add(AddFileByExt(sharedViewsPath, "_Layout.cshtml", code_Layout)); 
-        results.Add(AddFileByExt(sharedViewsPath, "_LayoutBase.cshtml", code_LayoutBase)); 
-        results.Add(AddFileByExt(sharedViewsPath, "_LayoutHeader.cshtml", code_LayoutHeader));
-        results.Add(AddFileByExt(sharedViewsPath, "_LayoutScripts.cshtml", code_LayoutScripts));
+        string viewsPath = Path.Combine(solutionPath, "WebUI", "Views");
+        string sharedViewsSharedPath = Path.Combine(solutionPath, "WebUI", "Views", "Shared");
+
+        results.Add(AddFileByExt(sharedViewsSharedPath, "_Layout.cshtml", code_Layout)); 
+        results.Add(AddFileByExt(sharedViewsSharedPath, "_LayoutBase.cshtml", code_LayoutBase)); 
+        results.Add(AddFileByExt(sharedViewsSharedPath, "_LayoutHeader.cshtml", code_LayoutHeader));
+        results.Add(AddFileByExt(sharedViewsSharedPath, "_LayoutScripts.cshtml", code_LayoutScripts));
+        results.Add(AddFileByExt(viewsPath, "_ViewImports.cshtml", code_ViewImports));
         #endregion
 
         #region SideMenu
@@ -1880,7 +1915,6 @@ else
             }
         }
     }
-
 
 
     #region Program.cs Implemantations

@@ -286,41 +286,56 @@ public class NLayerGeneratorService
 
             string solutionPath = Path.Combine(_appSetting.Path, _appSetting.SolutionName);
 
-            // 1. Create Project if not exists
-            log(nLayerWebUIService.CreateProject(solutionPath, _appSetting.SolutionName));
+            //// 1. Create Project if not exists
+            //log(nLayerWebUIService.CreateProject(solutionPath, _appSetting.SolutionName));
 
-            // 2. Add Packages
-            log(nLayerWebUIService.AddPackage(solutionPath, "FluentValidation.AspNetCore"));
-            log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation"));
-            log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.VisualStudio.Web.CodeGeneration.Design"));
+            //// 2. Add Packages
+            //log(nLayerWebUIService.AddPackage(solutionPath, "FluentValidation.AspNetCore"));
+            //log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation"));
+            //log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.VisualStudio.Web.CodeGeneration.Design"));
             
-            // 3. Utils
-            log(nLayerWebUIService.GenerateUtils(solutionPath));
+            //// 3. Utils
+            //log(nLayerWebUIService.GenerateUtils(solutionPath));
 
-            // 4. Exception Handler
-            log(nLayerWebUIService.GenerateExceptionHandler(solutionPath));
+            //// 4. Exception Handler
+            //log(nLayerWebUIService.GenerateExceptionHandler(solutionPath));
 
-            // 5. Side Menu ViewComponent
-            log(nLayerWebUIService.GenerateSideMenuViewComponent(solutionPath));
+            //// 5. Side Menu ViewComponent
+            //log(nLayerWebUIService.GenerateSideMenuViewComponent(solutionPath));
 
-            // 6. wwwroot
-            log(nLayerWebUIService.Generate_wwwroot(solutionPath));
+            //// 6. wwwroot
+            //log(nLayerWebUIService.Generate_wwwroot(solutionPath));
 
             // 7. ViewModels
             log(nLayerWebUIService.GenerateViewModels(solutionPath));
 
-            // 8. Program.cs
-            log(nLayerWebUIService.GenerateProgramCs(solutionPath));
+            //// 8. Program.cs
+            //log(nLayerWebUIService.GenerateProgramCs(solutionPath));
 
-            // 9. AppSettings.json
-            log(nLayerWebUIService.GenerateAppSettings(solutionPath));
+            //// 9. AppSettings.json
+            //log(nLayerWebUIService.GenerateAppSettings(solutionPath));
 
-            // 10. Controllers
-            log(nLayerWebUIService.GenerateControllers(solutionPath));
+            //// 10. Controllers
+            //log(nLayerWebUIService.GenerateControllers(solutionPath));
 
             // 11. Views
             log(nLayerWebUIService.GenerateViews(solutionPath));
 
+            // 12. wwwroot
+            //string basePath = AppContext.BaseDirectory;
+  
+            //string sourcePath_assets = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\assets"));
+            //string sourcePath_css = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\css"));
+            //string sourcePath_js = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\js"));
+            //string sourcePath_lib = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\lib"));
+
+            //string destPath_assets = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"CodeGenerators\NLayer\WebUI\wwwroot\assets"));
+            //string destPath_css = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"CodeGenerators\NLayer\WebUI\wwwroot\css"));
+            //string destPath_js = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"CodeGenerators\NLayer\WebUI\wwwroot\js"));
+            //string destPath_lib = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"CodeGenerators\NLayer\WebUI\wwwroot\lib"));
+
+            //log(nLayerWebUIService.CopyDirectory());
+            
             return true;
         }
         catch (Exception ex)

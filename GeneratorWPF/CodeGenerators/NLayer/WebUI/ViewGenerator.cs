@@ -205,6 +205,63 @@ public class ViewGenerator
     }
 
 
+    public string GenerateSignUpPage(Entity userEntity)
+    {
+        StringBuilder sb = new StringBuilder();
+        
+        List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == userEntity.Id, include: i => i.Include(x => x.FieldType));
+
+        Dto? updateDto = userEntity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == userEntity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        bool isThereUpdateDto = updateDto != default;
+
+        List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
+        if (isThereUpdateDto)
+        {
+            modelInputs = CreateFormInputsModelByDto(userEntity, updateDto!);
+        }
+        else
+        {
+            modelInputs = CreateFormInputsModelByEntity(userEntity, fieldList);
+        }
+
+        string formBody = CreateSignUpForm(userEntity, fieldList, modelInputs!, "SignUp", true);
+
+        sb.Append($@"
+﻿@using Model.Auth.SignUp
+@model SignUpRequest
+@{{
+    Layout = ""_LayoutBase"";
+    ViewData[""Title""] = ""SignUp"";
+}}
+
+<div class=""row justify-content-center"">
+    <div class=""col-lg-4 mt-12"">
+        <div class=""card"">
+            <div class=""card-header border-bottom mb-6"">
+                <div class=""app-brand justify-content-center"">
+                    <a asp-controller=""Home"" asp-action=""Index"" class=""d-flex gap-2"">
+                        <h4 class=""text-primary m-0"">
+                            Create New Account
+                        </h4>
+                    </a>
+                </div>
+            </div>
+            <div class=""card-body"">
+                {formBody}
+                <p class=""text-center"">
+                    <span>Already have an account?</span>
+                    <a asp-controller=""Account"" asp-action=""Login"">
+                        <span>Login instead</span>
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>");
+
+        return sb.ToString();
+    }
+
 
     #region Helpers
 
@@ -253,34 +310,35 @@ public class ViewGenerator
     public string CreateTableByEntity(Entity entity, List<Field> fields)
     {
         StringBuilder sb = new StringBuilder();
-        foreach (var field in fields)
+        foreach (var field in fields.Where(f => f.IsUnique == false))
         {
             string labelText = field.Name.DivideToLabelName();
-            sb.AppendLine($"<th>{labelText}</th>");
+            sb.AppendLine($"\t\t\t\t\t<th>{labelText}</th>");
         }
 
         if (entity.Auditable)
         {
-            sb.AppendLine("<th>Create Date</th>");
-            sb.AppendLine("<th>Last Update Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Create Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Last Update Date</th>");
         }
 
         if (entity.SoftDeletable)
         {
-            sb.AppendLine("<th>Status</th>");
-            sb.AppendLine("<th>Delete Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Status</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Delete Date</th>");
         }
 
-        sb.AppendLine("<th>Actions</th>");
+        sb.AppendLine("\t\t\t\t\t<th>Actions</th>");
 
         return $@"
         <table id=""table_page"" class=""table table-hover table-striped"">
             <thead class=""bg-light"">
                 <tr> 
-                    {sb.ToString()}
+{sb.ToString()}
                 </tr>
             </thead>
-        </table>";
+        </table>
+";
     }
 
     public string CreateTableByDto(Entity entity, Dto reportDto)
@@ -289,32 +347,33 @@ public class ViewGenerator
         foreach (var dtoField in reportDto.DtoFields)
         {
             string labelText = dtoField.Name.DivideToLabelName();
-            sb.AppendLine($"<th>{labelText}</th>");
+            sb.AppendLine($"\t\t\t\t\t<th>{labelText}</th>");
         }
 
         if (entity.Auditable)
         {
-            sb.AppendLine("<th>Create Date</th>");
-            sb.AppendLine("<th>Last Update Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Create Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Last Update Date</th>");
         }
 
         if (entity.SoftDeletable)
         {
-            sb.AppendLine("<th>Status</th>");
-            sb.AppendLine("<th>Delete Date</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Status</th>");
+            sb.AppendLine("\t\t\t\t\t<th>Delete Date</th>");
         }
 
-        sb.AppendLine("<th>Actions</th>");
+        sb.AppendLine("\t\t\t\t\t<th>Actions</th>");
 
 
         return $@"
         <table id=""table_page"" class=""table table-hover table-striped"">
             <thead class=""bg-light"">
                 <tr> 
-                    {sb.ToString()}
+{sb.ToString()}
                 </tr>
             </thead>
-        </table>";
+        </table>
+";
     }
 
 
@@ -360,49 +419,49 @@ public class ViewGenerator
             if (modelFilterField.InputGroup == 1)
             {
                 sb.AppendLine($@"
-                {{
-                    operator: 'eq',
-                    field: ""{modelFilterField.InputName.ToCamelCase()}"",
-                    value: $(""select[name='{modelFilterField.InputName}']"").val(),
-                }},");
+                            {{
+                                operator: 'eq',
+                                field: ""{modelFilterField.InputName.ToCamelCase()}"",
+                                value: $(""select[name='{modelFilterField.InputName}']"").val(),
+                            }},");
             }
             // input select
             else if (modelFilterField.InputGroup == 3)
             {
                 sb.AppendLine($@"
-                {{
-                    operator: 'contains',
-                    field: ""{modelFilterField.InputName.ToCamelCase()}"",
-                    value: $(""input[name='{modelFilterField.InputName}']"").val(),
-                }},");
+                            {{
+                                operator: 'contains',
+                                field: ""{modelFilterField.InputName.ToCamelCase()}"",
+                                value: $(""input[name='{modelFilterField.InputName}']"").val(),
+                            }},");
             }
             else
             {
                 sb.AppendLine($@"
-                {{
-                    operator: 'eq',
-                    field: ""{modelFilterField.InputName.ToCamelCase()}"",
-                    value: $(""input[name='{modelFilterField.InputName}']"").val(),
-                }},");
+                            {{
+                                operator: 'eq',
+                                field: ""{modelFilterField.InputName.ToCamelCase()}"",
+                                value: $(""input[name='{modelFilterField.InputName}']"").val(),
+                            }},");
             }
         }
 
         if (entity.SoftDeletable)
         {
             sb.AppendLine(@"
-            {
-                operator: 'eq',
-                field: ""IsDeleted"",
-                value: false,
-                logic: 'or',
-                filters: [
-                    {
-                        operator: 'eq',
-                        field: ""IsDeleted"",
-                        value: $(""input[name='IsDeleted']"").val(),
-                    }
-                ]
-            }");
+                            {
+                                operator: 'eq',
+                                field: ""IsDeleted"",
+                                value: false,
+                                logic: 'or',
+                                filters: [
+                                    {
+                                        operator: 'eq',
+                                        field: ""IsDeleted"",
+                                        value: $(""input[name='IsDeleted']"").val(),
+                                    }
+                                ]
+                            }");
         }
 
         return $@"
@@ -421,7 +480,7 @@ public class ViewGenerator
     {
         StringBuilder sb = new StringBuilder();
 
-        foreach (var field in fields)
+        foreach (var field in fields.Where(f => f.IsUnique == false))
         {
             // date type
             if (field.GetVariableGroup() == 5)
@@ -438,7 +497,7 @@ public class ViewGenerator
             // bool
             else if (field.GetVariableGroup() == 4)
             {
-                sb.AppendLine($@"
+                sb.AppendLine(@$"
                     {{
                         data: '{field.Name.ToCamelCase()}',
                         render: function (data) {{
@@ -450,7 +509,7 @@ public class ViewGenerator
             }
             else
             {
-                sb.AppendLine($@"{{data: '{field.Name.ToCamelCase()}' }},");
+                sb.AppendLine($"\t\t\t\t\t{{data: '{field.Name.ToCamelCase()}' }},");
             }
         }
 
@@ -463,9 +522,7 @@ public class ViewGenerator
                             if(data == null) return '';
                             return moment(data).format('DD.MM.YYYY HH:mm');
                         }
-                    },");
-
-            sb.AppendLine(@"
+                    },
                     {
                         data: 'updateDateUtc',
                         render: function (data) {
@@ -485,9 +542,7 @@ public class ViewGenerator
                             else if(data == false) return (`<span class=""badge rounded-pill bg-label-success""><i class=""fa-solid fa-check""></i></span>`);
                             else return ('');
                         }
-                    },");
-
-            sb.AppendLine(@"
+                    },
                     {
                         data: 'deletedDateUtc',
                         render: function (data) {
@@ -851,6 +906,8 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
+
+            result.Add(modelFilterFieldInput);
         }
 
         return result;
@@ -958,6 +1015,8 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
+
+            result.Add(modelFilterFieldInput);
         }
 
         return result;
@@ -1061,6 +1120,8 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
+
+            result.Add(modelFilterFieldInput);
         }
 
         return result;
@@ -1097,12 +1158,63 @@ public class ViewGenerator
 
         return $@"
 		<form asp-controller=""{entity.Name}"" asp-action=""{action}"" method=""post"">
+            {uniqueFieldInputs}
             <div class=""row row-gap-4 m-2"">
                 {sb.ToString()}
                 {button}
             </div>
         </form>";
     }
+
+
+    private string CreateSignUpForm(Entity entity, List<Field> fields, List<ModelFieldInput> modelFieldInputs, string action, bool submitBtn, Dto? dto = default)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        foreach (var modelFilterField in modelFieldInputs)
+        {
+            sb.Append(modelFilterField.InputCode);
+        }
+
+
+        if (dto == default || !fields.Any(f => f.Name.ToLowerInvariant().Trim() == "email"))
+        {
+            sb.AppendLine(@"
+                    <div class=""mb-6"">
+                        <label asp-for=""Email"" class=""form-label"">Email</label>
+                        <input asp-for=""Email"" class=""form-control"" autofocus />
+                        <span asp-validation-for=""Email""></span>
+                    </div>");
+        }
+
+        if(dto == default || !fields.Any(f => f.Name.ToLowerInvariant().Trim() == "password"))
+        {
+            sb.AppendLine(@"
+                    <div>
+                        <label asp-for=""Password"" class=""form-label"">Password</label>
+                        <div class=""input-group"">
+                            <input asp-for=""Password"" type=""password"" class=""form-control"" placeholder=""&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"" /> 
+                            <span asp-validation-for=""Password""></span>
+                        </div>
+                    </div>");
+        }
+
+        return $@"
+	        	<form asp-controller=""Account"" asp-action=""SignUp"" method=""post"" class=""mb-6"">
+                    {sb.ToString()}
+                    <div class=""my-7"">
+                        <div class=""form-check mb-0"">
+                            <input class=""form-check-input"" type=""checkbox"" id=""terms-conditions"" name=""terms"" />
+                            <label class=""form-check-label"" for=""terms-conditions"">
+                                I agree to
+                                <a href=""javascript:void(0);"">privacy policy & terms</a>
+                            </label>
+                        </div>
+                    </div>
+                    <button type=""submit"" class=""btn btn-primary d-grid w-100"">Sign up</button>
+                </form>";
+    }
+
 
 
 

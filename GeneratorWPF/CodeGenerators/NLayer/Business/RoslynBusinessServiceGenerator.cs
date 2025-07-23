@@ -2,12 +2,10 @@
 using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
-using Humanizer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using System.Text;
 
 
@@ -50,7 +48,7 @@ public partial class RoslynBusinessServiceGenerator
         bool isThereOneUnique = entity.Fields.Count(f => f.IsUnique) == 1;
         if (isThereOneUnique)
         {
-            Field ? textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant() == "name");
+            Field? textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant() == "name");
             if (textField == default)
             {
                 textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant().Contains("name"));
@@ -138,7 +136,7 @@ public partial class RoslynBusinessServiceGenerator
         methodList.Add(GeneratorDatatableClientSideMethodOfAbstract(entity.Name));
         methodList.Add(GeneratorDatatableServerSideMethodOfAbstract(entity.Name));
         Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId) : default;
-        if(reportDto != default)
+        if (reportDto != default)
         {
             methodList.Add(GeneratorDatatableClientSideByDtoOfAbstract(reportDto.Name, "DatatableClientSideByReportAsync"));
             methodList.Add(GeneratorDatatableServerSideByDtoOfAbstract(reportDto.Name, "DatatableServerSideByReportAsync"));
@@ -1056,7 +1054,7 @@ public partial class RoslynBusinessServiceGenerator
                     SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("IDto"))));
 
         return SyntaxFactory
-            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<ICollection<TResponse>?>"),"GetListAsync")
+            .MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<ICollection<TResponse>?>"), "GetListAsync")
             .WithTypeParameterList(typeParameterList)
             .AddParameterListParameters(paramList.ToArray())
             .AddConstraintClauses(constraintClause)
@@ -1711,6 +1709,10 @@ public partial class RoslynBusinessServiceGenerator
         var arguments = new List<ArgumentSyntax>
         {   
 
+        // 2) Arguments of method call  
+        var awaitInvocation = SyntaxFactory.AwaitExpression(
+            SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("_GetListAsync"))
+                .AddArgumentListArguments(
             SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"s => new{{ s.{uniqueName}, s.{textName} }}"))
                 .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("select"))),
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName("where"))
@@ -1719,7 +1721,8 @@ public partial class RoslynBusinessServiceGenerator
                 .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("tracking"))),
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName("cancellationToken"))
                 .WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("cancellationToken")))
-        };
+                )
+        );
 
         // 3) Method Call
         var awaitInvocation =
@@ -1729,16 +1732,13 @@ public partial class RoslynBusinessServiceGenerator
                 .AddArgumentListArguments(arguments.ToArray())
             );
 
-        var selectListArguments = new SeparatedSyntaxList<ArgumentSyntax> {
+        var newSelectList = SyntaxFactory.ObjectCreationExpression(
+            SyntaxFactory.IdentifierName("SelectList"))
+                .AddArgumentListArguments(
             SyntaxFactory.Argument(awaitInvocation),
             SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(uniqueName))),
             SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(textName)))
-        };
-
-        var newSelectList = SyntaxFactory.ObjectCreationExpression(
-            SyntaxFactory.IdentifierName("SelectList"))
-            .WithArgumentList(
-                SyntaxFactory.ArgumentList(selectListArguments));
+                );
 
         // 4) Method Call Decleration by Result 
         var methodCallDecleration = SyntaxFactory.LocalDeclarationStatement(

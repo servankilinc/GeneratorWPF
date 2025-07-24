@@ -411,26 +411,27 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
 
     public string GenerateAppSettings(string solutionPath)
     {
-        string code = @"{
-  ""Logging"": {
-    ""LogLevel"": {
+        string code = @$"
+{{
+  ""Logging"": {{
+    ""LogLevel"": {{
       ""Default"": ""Information"",
       ""Microsoft.AspNetCore"": ""Warning""
-    }
-  },
-  ""ConnectionStrings"": {
-    ""Database"": ""Data Source=.; Initial Catalog=GeneratedProjectDB; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
-  },
-  ""TokenSettings"": {
+    }}
+  }},
+  ""ConnectionStrings"": {{
+    ""Database"": ""{_appSetting.DBConnectionString}""
+  }},
+  ""TokenSettings"": {{
     ""Audience"": ""sporoutine.com"",
     ""Issuer"": ""sporoutine.com"",
     ""AccessTokenExpiration"": 1440, // 1 day
     ""RefreshTokenExpiration"": 10080, // 7 day
     ""SecurityKey"": ""UÜVWXYZ0123456789-._@+/*|!,;()&#._TrDgoSJRCddnx57CnU_O43bIXGo6LwLr3em3YqAD8_NM37wMmNPuOr25NBYVfbtGwxtUrZLsgGL39UwKXjINCn0."",
     ""RefreshTokenTTL"": 7 // 7 günlük token süresince kaç kere refresh işlemi yapılacağını sınırlamak için
-  },
+  }},
   ""AllowedHosts"": ""*""
-}
+}}
 ";
 
         string folderPath = Path.Combine(solutionPath, "WebAPI");

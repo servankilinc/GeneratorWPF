@@ -106,7 +106,7 @@ function AutoInitDatePicker(parentElement) {
         if (elemensOfDatePicker != null && elemensOfDatePicker.length != undefined && elemensOfDatePicker.length > 0) {
             elemensOfDatePicker.forEach((elementOfDatePicker) => {
                 $(elementOfDatePicker).datepicker({
-                    //format: 'dd.mm.yyyy',
+                    format: 'dd.mm.yyyy',
                     todayHighlight: true,
                     clearBtn: true,
                     //todayBtn: true,
@@ -124,7 +124,7 @@ function AutoInitDatePicker(parentElement) {
         if (elemensOfDatePicker != null && elemensOfDatePicker.length != undefined && elemensOfDatePicker.length > 0) {
             elemensOfDatePicker.map((index, elementOfDatePicker) => {
                 $(elementOfDatePicker).datepicker({
-                    //format: 'dd.mm.yyyy',
+                    format: 'dd.mm.yyyy',
                     todayHighlight: true,
                     clearBtn: true,
                     //todayBtn: true,

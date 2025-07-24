@@ -14,11 +14,13 @@ public partial class RoslynAuthModelsGenerator
 {
     private readonly EntityRepository _entityRepository;
     private readonly FieldRepository _fieldRepository;
+    private readonly RelationRepository _relationRepository;
     private readonly AppSetting _appSetting;
     public RoslynAuthModelsGenerator(AppSetting appSetting)
     {
         _entityRepository = new();
         _fieldRepository = new();
+        _relationRepository = new();
         _appSetting = appSetting;
     }
 
@@ -366,7 +368,7 @@ public partial class RoslynAuthModelsGenerator
         var ruleListOfValidation = new List<string>();
 
         // 1) Property List
-        var userFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId, include: i => i.Include(x => x.FieldType));
+        var userFields = _appSetting.UserEntityId != null ? _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId, include: i => i.Include(x => x.FieldType)) : new List<Field>();
 
         var propertyList = new List<MemberDeclarationSyntax>();
 
@@ -386,9 +388,12 @@ public partial class RoslynAuthModelsGenerator
         {
             if (userFields != null)
             {
-                foreach (var uf in userFields.Where(f => !f.IsUnique && f.IsRequired && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
+                foreach (var uf in userFields.Where(f => !f.IsUnique && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base))
                 {
-                    ruleListOfValidation.Add($"RuleFor(b => b.{uf.Name}).NotNull().NotEmpty();");
+                    Relation? relation = _relationRepository.Get(filter: f => f.ForeignFieldId == uf.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany);
+                    if (relation != null) continue; // ilişkisi olan alan modelde olmasın
+
+                    if (uf.IsRequired) ruleListOfValidation.Add($"RuleFor(b => b.{uf.Name}).NotNull().NotEmpty();");
                     propertyList.Add(GenerateProperty(uf.MapFieldTypeName(), uf.Name, true));
                 }
             }

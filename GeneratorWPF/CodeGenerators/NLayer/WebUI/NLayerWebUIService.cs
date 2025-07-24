@@ -96,9 +96,10 @@ public class NLayerWebUIService
     }
     public string CopyDirectory(string sourceDir, string destinationDir)
     {
-        if (Directory.Exists(destinationDir)) return $"INFO: Directory {sourceDir} already exists in WebUI project.";
+        if (!Directory.Exists(destinationDir)) 
+            Directory.CreateDirectory(destinationDir);
 
-        Directory.CreateDirectory(destinationDir);
+        //return $"INFO: Directory {sourceDir} already exists in WebUI project.";
 
         foreach (var file in Directory.GetFiles(sourceDir))
         {
@@ -592,7 +593,26 @@ public class SideMenuViewComponent : ViewComponent
 
     public string Generate_wwwroot(string solutionPath)
     {
-        // ........
+        if (string.IsNullOrEmpty(_appSetting.Path)) return "Warning: Not Found Destionation Path to Generation wwwroot files";
+
+        var results = new List<string>();
+
+        string basePath = AppContext.BaseDirectory;
+
+        string sourcePath_assets = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\assets"));
+        string sourcePath_css = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\css"));
+        string sourcePath_js = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\js"));
+        string sourcePath_lib = Path.GetFullPath(Path.Combine(basePath, @"CodeGenerators\NLayer\WebUI\wwwroot\lib"));
+
+        string destPath_assets = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"WebUI\wwwroot\assets"));
+        string destPath_css = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"WebUI\wwwroot\css"));
+        string destPath_js = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"WebUI\wwwroot\js"));
+        string destPath_lib = Path.GetFullPath(Path.Combine(_appSetting.Path, _appSetting.SolutionName, @"WebUI\wwwroot\lib"));
+
+        results.Add(this.CopyDirectory(sourcePath_assets, destPath_assets));
+        results.Add(this.CopyDirectory(sourcePath_css, destPath_css));
+        results.Add(this.CopyDirectory(sourcePath_js, destPath_js));
+        results.Add(this.CopyDirectory(sourcePath_lib, destPath_lib));
         return "wwwroot generated";
     }
 
@@ -938,20 +958,21 @@ app.MapControllerRoute(
 
     public string GenerateAppSettings(string solutionPath)
     {
-        string code = @"{
-  ""Logging"": {
-    ""LogLevel"": {
+        string code = @$"
+{{
+  ""Logging"": {{
+    ""LogLevel"": {{
       ""Default"": ""Information"",
       ""Microsoft.AspNetCore"": ""Warning""
-    }
-  },
-  ""ConnectionStrings"": {
-    ""Database"": ""Data Source=.; Initial Catalog=GeneratedProjectDB; Integrated Security=SSPI; Trusted_Connection=True; TrustServerCertificate=True;""
-  },
+    }}
+  }},
+  ""ConnectionStrings"": {{
+    ""Database"": ""{_appSetting.DBConnectionString}""
+  }},
   ""AllowedHosts"": ""*""
-}
-";
+}}
 
+";
         string folderPath = Path.Combine(solutionPath, "WebUI");
         try
         {
@@ -992,12 +1013,6 @@ app.MapControllerRoute(
 
         foreach (var entity in entities)
         {
-            //var dtos = _dtoRepository.GetAll(
-            //    filter: f => f.RelatedEntityId == entity.Id,
-            //    include: i => i
-            //        .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
-            //        .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
-
             string code_indexPage = viewGenerator.GenerateIndexPage(entity);
             string code_createPage = viewGenerator.GenerateCreatePage(entity);
             string code_createFormPage = viewGenerator.GenerateCreateFormPage(entity);
@@ -1135,15 +1150,11 @@ app.MapControllerRoute(
 
             if (_appSetting.IsThereUser && _appSetting.UserEntityId != default)
             {
-                Dto? userCreatDto = _dtoRepository.Get(
-                    filter: f => f.RelatedEntityId == _appSetting.UserEntityId,
-                    include: i => i
-                        .Include(x => x.DtoFields).ThenInclude(x => x.SourceField)
-                        .Include(x => x.RelatedEntity).ThenInclude(ti => ti.Fields));
-                if (userCreatDto != default)
-                {
-                    Entity? userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
-                    if(userEntity != default) code_Signup = viewGenerator.GenerateSignUpPage(userEntity);
+                Entity? userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
+
+                if (userEntity != default)
+                { 
+                    code_Signup = viewGenerator.GenerateSignUpPage(userEntity);
                 }
             }
 
@@ -1496,7 +1507,8 @@ app.MapControllerRoute(
 </body>
 </html>";
 
-        string code_LayoutHeader = @"@{
+        string code_LayoutHeader = @"
+@{
     var lightMode = Context.GetLightMode();
 }
 
@@ -1537,7 +1549,8 @@ else
 <script src=""~/js/config.js""></script>
 <script src=""~/js/helpers.js""></script>";
 
-        string code_LayoutScripts = @"<script src=""~/lib/jquery/dist/jquery.min.js""></script>
+        string code_LayoutScripts = @"
+<script src=""~/lib/jquery/dist/jquery.min.js""></script>
 <script src=""~/lib/jquery-validation/dist/jquery.validate.min.js""></script>
 <script src=""~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js""></script>
 <script src=""~/lib/bootstrap/dist/js/bootstrap.bundle.min.js""></script>
@@ -1681,8 +1694,8 @@ else
 			<span class=""app-brand-text demo menu-text fw-bolder ms-2"">Sneat</span>
 		</a>
 
-		<span role=""button"" class=""layout-menu-toggle menu-link text-large ms-auto d-flex align-items-center justify-content-center"" style=""width:35px; height:35px;"">
-			<i class=""fas fa-chevron-left fa-sm""></i>
+		<span role=""button"" class=""layout-menu-toggle menu-link text-large ms-auto d-flex align-items-center justify-content-center"">
+			<i class=""bx bx-chevron-left bx-sm d-flex align-items-center justify-content-center""></i>
 		</span>
 	</div>
 

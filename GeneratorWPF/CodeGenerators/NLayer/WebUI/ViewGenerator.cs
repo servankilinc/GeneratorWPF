@@ -4,6 +4,7 @@ using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
 using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Text;
 
 namespace GeneratorWPF.CodeGenerators.NLayer.WebUI;
@@ -106,16 +107,16 @@ public class ViewGenerator
         List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
         if (isThereCreateDto)
         {
-            modelInputs = CreateFormInputsModelByDto(entity, createDto!);
+            modelInputs = CreateFormInputsModelByDto(entity, createDto!, "Create", "CreateModel");
         }
         else
         {
-            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList, "Create", "CreateModel");
         }
             
         StringBuilder sb = new StringBuilder();
 
-        sb.Append($@"
+        sb.AppendLine($@"
 @using WebUI.Models.ViewModels.{entity.Name}_
 @model {entity.Name}CreateViewModel
 @{{
@@ -134,7 +135,7 @@ public class ViewGenerator
         // ******** BODY ********
         sb.AppendLine("\t<div class=\"card-body\">");
 
-        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Create", true, createDto));
+        sb.AppendLine(CreateForm(entity, fieldList, modelInputs!, "Create", true, createDto));
         
         sb.AppendLine("\t</div>");
         sb.AppendLine("</div>");
@@ -152,23 +153,23 @@ public class ViewGenerator
         List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
         if (isThereCreateDto)
         {
-            modelInputs = CreateFormInputsModelByDto(entity, createDto!);
+            modelInputs = CreateFormInputsModelByDto(entity, createDto!, "Create", "CreateModel");
         }
         else
         {
-            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList, "Create", "CreateModel");
         }
 
         StringBuilder sb = new StringBuilder();
 
-        sb.Append($@"
+        sb.AppendLine($@"
 @using WebUI.Models.ViewModels.{entity.Name}_
 @model {entity.Name}CreateViewModel
 @{{
     Layout = null;
 }}"); 
 
-        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Create", false, createDto));
+        sb.AppendLine(CreateForm(entity, fieldList, modelInputs!, "Create", false, createDto));
          
         return sb.ToString();
     }
@@ -183,23 +184,23 @@ public class ViewGenerator
         List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
         if (isThereUpdateDto)
         {
-            modelInputs = CreateFormInputsModelByDto(entity, updateDto!);
+            modelInputs = CreateFormInputsModelByDto(entity, updateDto!, "Update", "UpdateModel");
         }
         else
         {
-            modelInputs = CreateFormInputsModelByEntity(entity, fieldList);
+            modelInputs = CreateFormInputsModelByEntity(entity, fieldList, "Update", "UpdateModel");
         }
 
         StringBuilder sb = new StringBuilder();
 
-        sb.Append($@"
+        sb.AppendLine($@"
 @using WebUI.Models.ViewModels.{entity.Name}_
 @model {entity.Name}UpdateViewModel
 @{{
     Layout = null;
 }}");
 
-        sb.Append(CreateForm(entity, fieldList, modelInputs!, "Update", false, updateDto));
+        sb.AppendLine(CreateForm(entity, fieldList, modelInputs!, "Update", false, updateDto));
 
         return sb.ToString();
     }
@@ -209,22 +210,16 @@ public class ViewGenerator
     {
         StringBuilder sb = new StringBuilder();
         
-        List<Field> fieldList = _fieldRepository.GetAll(filter: f => f.EntityId == userEntity.Id, include: i => i.Include(x => x.FieldType));
-
-        Dto? updateDto = userEntity.UpdateDtoId != default ? _dtoRepository.Get(f => f.Id == userEntity.UpdateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
-        bool isThereUpdateDto = updateDto != default;
+        List<Field>? fieldList = _fieldRepository.GetAll(
+            filter: f => f.EntityId == userEntity.Id && !f.IsUnique && f.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base, 
+            include: i => i.Include(x => x.FieldType)
+        );
 
         List<ModelFieldInput> modelInputs = new List<ModelFieldInput>();
-        if (isThereUpdateDto)
-        {
-            modelInputs = CreateFormInputsModelByDto(userEntity, updateDto!);
-        }
-        else
-        {
-            modelInputs = CreateFormInputsModelByEntity(userEntity, fieldList);
-        }
+        modelInputs = CreateFormInputsModelForSignUp(userEntity, fieldList);
+    
 
-        string formBody = CreateSignUpForm(userEntity, fieldList, modelInputs!, "SignUp", true);
+        string formBody = CreateSignUpForm(userEntity, fieldList, modelInputs!, true);
 
         sb.Append($@"
 ﻿@using Model.Auth.SignUp
@@ -482,8 +477,10 @@ public class ViewGenerator
 
         foreach (var field in fields.Where(f => f.IsUnique == false))
         {
+            int variableGroup = field.GetVariableGroup();
+
             // date type
-            if (field.GetVariableGroup() == 5)
+            if (variableGroup == 5)
             {
                 sb.AppendLine($@"
                     {{
@@ -495,7 +492,7 @@ public class ViewGenerator
                     }},");
             }
             // bool
-            else if (field.GetVariableGroup() == 4)
+            else if (variableGroup == 4)
             {
                 sb.AppendLine(@$"
                     {{
@@ -878,21 +875,8 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
-            // ### Date ###
-            else if (variableGroupType == 4)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-md-4 col-sm-6 col-12"">
-                    <div class=""input-group"">
-                        <span class=""input-group-text bg-lightest"">
-                            {labelText}
-                        </span>
-                        <input name=""{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
-                    </div>
-                </div>";
-            }
             // ### CheckBox ###
-            else if (variableGroupType == 5)
+            else if (variableGroupType == 4)
             {
                 modelFilterFieldInput.InputCode = $@"                
                 <div class=""col-md-4 col-sm-6 col-12"">
@@ -906,6 +890,19 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
+            // ### Date ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <input name=""{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    </div>
+                </div>";
+            }
 
             result.Add(modelFilterFieldInput);
         }
@@ -916,8 +913,9 @@ public class ViewGenerator
 
 
 
-    private List<ModelFieldInput> CreateFormInputsModelByEntity(Entity entity, List<Field> fields)
+    private List<ModelFieldInput> CreateFormInputsModelByEntity(Entity entity, List<Field> fields, string action, string modelName)
     {
+        if (!string.IsNullOrWhiteSpace(modelName) && !modelName.EndsWith('.')) modelName = $"{modelName}.";
         StringBuilder sb = new StringBuilder();
 
         Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
@@ -945,7 +943,6 @@ public class ViewGenerator
 
             modelFilterFieldInput.InputGroup = variableGroupType;
             modelFilterFieldInput.InputName = inputName;
-            modelFilterFieldInput.InputName = inputName;
 
             // ### SelectList ###
             if (variableGroupType == 1)
@@ -956,25 +953,31 @@ public class ViewGenerator
 
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <select asp-for=""CreateModel.{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
+                    <select asp-for=""{modelName}{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
                         <option></option>
                     </select>
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <span asp-validation-for=""{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
+            }
+            // ### Hidden ###
+            else if (field.IsUnique && action == "Update")
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <input asp-for=""{modelName}{inputName}"" type=""hidden"" />";
             }
             // ### Number ###
             else if (variableGroupType == 2)
             {
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""number"" class=""form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <input asp-for=""{modelName}{inputName}"" type=""number"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
             // ### Text ###
@@ -982,37 +985,37 @@ public class ViewGenerator
             {
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
-                </div>";
-            }
-            // ### Date ###
-            else if (variableGroupType == 4)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
-                        {labelText}
-                    </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <input asp-for=""{modelName}{inputName}"" type=""text"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
             // ### CheckBox ###
-            else if (variableGroupType == 5)
+            else if (variableGroupType == 4)
             {
                 modelFilterFieldInput.InputCode = $@"                
                 <div class=""col-sm-6"">
                     <div class=""form-check"">
-                        <label asp-for=""CreateModel.{inputName}"" class=""form-check-label"">
+                        <label asp-for=""{modelName}{inputName}"" class=""form-check-label"">
                             {labelText}
                         </label>
-                        <input asp-for=""CreateModel.{inputName}"" type=""checkbox"" class=""form-check-input"" />
-                        <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                        <input asp-for=""{modelName}{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                     </div>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""{modelName}{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
 
@@ -1021,8 +1024,10 @@ public class ViewGenerator
 
         return result;
     }
-    private List<ModelFieldInput> CreateFormInputsModelByDto(Entity entity, Dto dto)
+    private List<ModelFieldInput> CreateFormInputsModelByDto(Entity entity, Dto dto, string action, string modelName)
     {
+        if (!string.IsNullOrWhiteSpace(modelName) && !modelName.EndsWith('.')) modelName = $"{modelName}.";
+
         StringBuilder sb = new StringBuilder();
 
         Dictionary<string, string> selectableRelations = new Dictionary<string, string>();
@@ -1061,25 +1066,30 @@ public class ViewGenerator
 
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <select asp-for=""CreateModel.{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
+                    <select asp-for=""{modelName}{inputName}"" asp-items=""Model.{listPropName}"" class=""autoInitSelect2 form-select"">
                         <option></option>
                     </select>
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
+            }
+            else if (dtoField.SourceField.IsUnique && action == "Update")
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <input asp-for=""{modelName}{inputName}"" type=""hidden"" />";
             }
             // ### Number ###
             else if (variableGroupType == 2)
             {
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""number"" class=""form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <input asp-for=""{modelName}{inputName}"" type=""number"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
             // ### Text ###
@@ -1087,37 +1097,37 @@ public class ViewGenerator
             {
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
-                </div>";
-            }
-            // ### Date ###
-            else if (variableGroupType == 4)
-            {
-                modelFilterFieldInput.InputCode = $@"
-                <div class=""col-sm-6"">
-                    <label asp-for=""CreateModel.{inputName}"" class=""form-label"">
-                        {labelText}
-                    </label>
-                    <input asp-for=""CreateModel.{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
-                    <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                    <input asp-for=""{modelName}{inputName}"" type=""text"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
             // ### CheckBox ###
-            else if (variableGroupType == 5)
+            else if (variableGroupType == 4)
             {
                 modelFilterFieldInput.InputCode = $@"                
                 <div class=""col-sm-6"">
                     <div class=""form-check"">
-                        <label asp-for=""CreateModel.{inputName}"" class=""form-check-label"">
+                        <label asp-for=""{modelName}{inputName}"" class=""form-check-label"">
                             {labelText}
                         </label>
-                        <input asp-for=""CreateModel.{inputName}"" type=""checkbox"" class=""form-check-input"" />
-                        <span asp-validation-for=""CreateModel.{inputName}"" class=""form_validation_feedback""></span>
+                        <input asp-for=""{modelName}{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                     </div>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""{modelName}{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
 
@@ -1126,7 +1136,76 @@ public class ViewGenerator
 
         return result;
     }
+    private List<ModelFieldInput> CreateFormInputsModelForSignUp(Entity entity, List<Field> fields)
+    {
+        StringBuilder sb = new StringBuilder();
 
+        List<ModelFieldInput> result = new List<ModelFieldInput>();
+        foreach (var field in fields)
+        {
+            Relation? relation = _relationRepository.Get(filter: f => f.ForeignFieldId == field.Id && f.RelationTypeId == (byte)RelationTypeEnums.OneToMany);
+            if (relation != null) continue; // ilişkisi olan alan modelde olmasın
+             
+            ModelFieldInput modelFilterFieldInput = new ModelFieldInput();
+             
+            int variableGroupType = field.GetVariableGroup();
+
+            string labelText = field.Name.DivideToLabelName();
+            string inputName = field.Name;
+
+            modelFilterFieldInput.InputGroup = variableGroupType;
+            modelFilterFieldInput.InputName = inputName;
+
+            // ### SelectList ###
+            //if (variableGroupType == 1)
+            // ### Number ###
+            if (variableGroupType == 1 || variableGroupType == 2)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""mb-6"">
+                    <label asp-for=""{inputName}"" class=""form-label"">{labelText}</label>
+                    <input asp-for=""{inputName}"" type=""number"" class=""form-control"" autofocus />
+                    <span asp-validation-for=""{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### Text ###
+            else if (variableGroupType == 3)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""mb-6"">
+                    <label asp-for=""{inputName}"" class=""form-label"">{labelText}</label>
+                    <input asp-for=""{inputName}"" type=""text"" class=""form-control"" autofocus />
+                    <span asp-validation-for=""{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+            // ### CheckBox ###
+            else if (variableGroupType == 4)
+            {
+                modelFilterFieldInput.InputCode = $@"                
+                <div class=""mb-6"">
+                    <div class=""form-check"">
+                        <label asp-for=""{inputName}"" class=""form-check-label"">{labelText}</label>
+                        <input asp-for=""{inputName}"" type=""checkbox"" class=""form-check-input"" />
+                        <span asp-validation-for=""{inputName}"" class=""form_validation_feedback""></span>
+                    </div>
+                </div>";
+            }
+            // ### Date ###
+            else if (variableGroupType == 5)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""mb-6"">
+                    <label asp-for=""{inputName}"" class=""form-label"">{labelText}</label>
+                    <input asp-for=""{inputName}"" type=""text"" class=""autoInitDatePicker form-control"" autofocus />
+                    <span asp-validation-for=""{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
+
+            result.Add(modelFilterFieldInput);
+        }
+
+        return result;
+    }
 
     private string CreateForm(Entity entity, List<Field> fields, List<ModelFieldInput> modelFieldInputs, string action, bool submitBtn, Dto? dto = default)
     {
@@ -1145,20 +1224,8 @@ public class ViewGenerator
 					</button>
 				</div>" : string.Empty;
 
-        string uniqueFieldInputs = string.Join("\n", fields.Where(f => f.IsUnique).Select(d =>
-        {
-            if (dto != default)
-            {
-                DtoField? dtoField = dto.DtoFields.FirstOrDefault(f => f.SourceFieldId == d.Id);
-                if (dtoField != default) 
-                    return @$"<input asp-for=""UpdateModel.{dtoField.Name}"" type=""hidden"" class=""form-control"" />";
-            }
-            return @$"<input asp-for=""UpdateModel.{d.Name}"" type=""hidden"" class=""form-control"" />";
-        }).ToList());
-
         return $@"
 		<form asp-controller=""{entity.Name}"" asp-action=""{action}"" method=""post"">
-            {uniqueFieldInputs}
             <div class=""row row-gap-4 m-2"">
                 {sb.ToString()}
                 {button}
@@ -1167,7 +1234,7 @@ public class ViewGenerator
     }
 
 
-    private string CreateSignUpForm(Entity entity, List<Field> fields, List<ModelFieldInput> modelFieldInputs, string action, bool submitBtn, Dto? dto = default)
+    private string CreateSignUpForm(Entity entity, List<Field> fields, List<ModelFieldInput> modelFieldInputs, bool submitBtn)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -1177,7 +1244,7 @@ public class ViewGenerator
         }
 
 
-        if (dto == default || !fields.Any(f => f.Name.ToLowerInvariant().Trim() == "email"))
+        if (!fields.Any(f => f.Name.ToLowerInvariant().Trim() == "email"))
         {
             sb.AppendLine(@"
                     <div class=""mb-6"">
@@ -1187,7 +1254,7 @@ public class ViewGenerator
                     </div>");
         }
 
-        if(dto == default || !fields.Any(f => f.Name.ToLowerInvariant().Trim() == "password"))
+        if(!fields.Any(f => f.Name.ToLowerInvariant().Trim() == "password"))
         {
             sb.AppendLine(@"
                     <div>

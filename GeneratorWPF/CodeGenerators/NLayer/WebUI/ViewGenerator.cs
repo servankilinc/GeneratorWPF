@@ -27,7 +27,7 @@ public class ViewGenerator
 
         List<Field> filterableFields = fieldList.Where(f => f.Filterable).ToList();
 
-        Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        Dto? reportDto = entity.ReportDtoId != default ? _dtoRepository.Get(f => f.Id == entity.ReportDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField.FieldType)) : default;
         bool isThereReportDto = reportDto != default;
 
         List<ModelFieldInput> modelFilterFields = new List<ModelFieldInput>();
@@ -47,7 +47,7 @@ public class ViewGenerator
 
         // ******** HEADER ********
         sb.AppendLine("\t<div class=\"card-header\">");
-        if (filterableFields.Any())
+        if (filterableFields.Any() || entity.SoftDeletable)
         {
             sb.Append(CreateFilterForm(entity, modelFilterFields));
         }
@@ -305,7 +305,7 @@ public class ViewGenerator
     public string CreateTableByEntity(Entity entity, List<Field> fields)
     {
         StringBuilder sb = new StringBuilder();
-        foreach (var field in fields.Where(f => f.IsUnique == false))
+        foreach (var field in fields.Where(f => f.IsUnique == false && f.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base))
         {
             string labelText = field.Name.DivideToLabelName();
             sb.AppendLine($"\t\t\t\t\t<th>{labelText}</th>");
@@ -339,7 +339,7 @@ public class ViewGenerator
     public string CreateTableByDto(Entity entity, Dto reportDto)
     {
         StringBuilder sb = new StringBuilder();
-        foreach (var dtoField in reportDto.DtoFields)
+        foreach (var dtoField in reportDto.DtoFields.Where(f => f.SourceField.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base))
         {
             string labelText = dtoField.Name.DivideToLabelName();
             sb.AppendLine($"\t\t\t\t\t<th>{labelText}</th>");
@@ -475,7 +475,7 @@ public class ViewGenerator
     {
         StringBuilder sb = new StringBuilder();
 
-        foreach (var field in fields.Where(f => f.IsUnique == false))
+        foreach (var field in fields.Where(f => f.IsUnique == false && f.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base))
         {
             int variableGroup = field.GetVariableGroup();
 
@@ -570,7 +570,7 @@ public class ViewGenerator
     {
         StringBuilder sb = new StringBuilder();
 
-        foreach (var dtoField in reportDto.DtoFields)
+        foreach (var dtoField in reportDto.DtoFields.Where(f => f.SourceField.FieldType.SourceTypeId == (byte)FieldTypeSourceEnums.Base))
         {
             int variableGroup = dtoField.SourceField.GetVariableGroup();
 
@@ -670,7 +670,7 @@ public class ViewGenerator
     private string RowButtons(Entity entity)
     {
         // id: rowData.id
-        string uniqueFieldParams = string.Join(", ", entity.Fields.Where(f => f.IsUnique).Select(d => d.Name.ToCamelCase()));
+        string uniqueFieldParams = string.Join(", ", entity.Fields.Where(f => f.IsUnique).Select(d => $"\"{d.Name.ToCamelCase()}\": rowData.{d.Name.ToCamelCase()}"));
 
         string entityLabelName = entity.Name.DivideToLabelName();
         return $@"

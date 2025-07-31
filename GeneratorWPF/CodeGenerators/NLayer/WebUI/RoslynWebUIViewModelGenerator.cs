@@ -42,7 +42,7 @@ public class RoslynWebUIViewModelGenerator
         }
 
         // b) FilterModel Prop
-        if (filterableFields.Any())
+        if (filterableFields.Any() || entity.SoftDeletable)
             propertyList.Add(GeneratorProperty($"{entity.Name}FilterModel", "FilterModel", earlyInstance: true));
 
 
@@ -54,7 +54,7 @@ public class RoslynWebUIViewModelGenerator
                 .AddMembers(propertyList.ToArray()),
         ];
 
-        if (filterableFields.Any())
+        if (filterableFields.Any() || entity.SoftDeletable)
             classes.Add(GenerateFilterModel(entity, filterableFields));
 
         // 3) Namespace

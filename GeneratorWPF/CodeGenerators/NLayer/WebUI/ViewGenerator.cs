@@ -722,6 +722,7 @@ public class ViewGenerator
                                     // 2) Delete Button
                                     DatatableManager.RowButton({{
                                         kind: DatatableManager.buttonKinds.delete,
+                                        disable: rowData.isDeleted == true,
                                         onClick: async () =>
                                         {{
                                             ModalManager.DeleteModal({{
@@ -968,12 +969,17 @@ public class ViewGenerator
                 modelFilterFieldInput.InputCode = $@"
                 <input asp-for=""{modelName}{inputName}"" type=""hidden"" />";
             }
+            // ### Hidden ###
+            else if (field.IsUnique && action == "Create")
+            {
+                modelFilterFieldInput.InputCode = $@"";
+            }
             // ### Number ###
             else if (variableGroupType == 2)
             {
                 modelFilterFieldInput.InputCode = $@"
                 <div class=""col-sm-6"">
-                    <label asp-for=""{inputName}"" class=""form-label"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
                         {labelText}
                     </label>
                     <input asp-for=""{modelName}{inputName}"" type=""number"" class=""form-control"" />

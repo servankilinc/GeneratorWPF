@@ -1513,7 +1513,7 @@ app.MapControllerRoute(
 }
 
 <!-- LIBS -->
-<link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
+<link rel=""stylesheet"" href=""https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css"" integrity=""sha512-cn16Qw8mzTBKpu08X0fwhTSv02kK/FojjNLz0bwp2xJ4H+yalwzXKFw/5cLzuBZCxGWIA+95X4skzvo8STNtSg=="" crossorigin=""anonymous"" referrerpolicy=""no-referrer"" />
 <link rel=""stylesheet"" href=""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"" integrity=""sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ=="" crossorigin=""anonymous"" referrerpolicy=""no-referrer"" />
 <link rel=""stylesheet"" href=""~/lib/bootstrap/dist/css/bootstrap.min.css"" />
 <link rel=""stylesheet"" href=""~/lib/perfect-scrollbar/perfect-scrollbar.min.css"" />

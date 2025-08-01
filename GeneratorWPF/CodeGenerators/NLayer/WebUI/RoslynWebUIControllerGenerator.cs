@@ -191,14 +191,14 @@ public class RoslynWebUIControllerGenerator
 
 
         // 2) Selecting Call List
-        var selectListCallings = new SyntaxNodeOrToken[] { };
+        var selectListCallings = new List<ExpressionSyntax>();
 
         foreach (var relation in selectableRelations)
         {
             string entityName = relation.Value;
             string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
-            selectListCallings.Append(
+            selectListCallings.Add(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName(fieldName),
@@ -221,7 +221,7 @@ public class RoslynWebUIControllerGenerator
                 .WithInitializer(
                     SyntaxFactory.InitializerExpression(
                         SyntaxKind.ObjectInitializerExpression,
-                        SyntaxFactory.SeparatedList<ExpressionSyntax>(selectListCallings)
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(JoinWithCommas(selectListCallings))
                     )
                 );
 
@@ -270,7 +270,7 @@ public class RoslynWebUIControllerGenerator
     #region Create Methods
     private MethodDeclarationSyntax GenerateActionCreateGet(Entity entity, Dictionary<string, string> selectableRelations)
     {
-        Dto? createDto = entity.CreateDto != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
         bool isThereCreateDto = createDto != default;
 
         // 1) Attribute List
@@ -281,7 +281,7 @@ public class RoslynWebUIControllerGenerator
 
 
         // 2) Selecting Call List
-        var selectListCallings = new SyntaxNodeOrToken[] { };
+        var selectListCallings = new List<ExpressionSyntax>();
 
         foreach (var relation in selectableRelations)
         {
@@ -289,11 +289,11 @@ public class RoslynWebUIControllerGenerator
             string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
             // dto içerisnde yoksa boşuna eklenmemeli
-            if (isThereCreateDto && !createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
+            if (isThereCreateDto && createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == relation.Key.Trim().ToLowerInvariant()) == false)
                 continue;
 
 
-            selectListCallings.Append(
+            selectListCallings.Add(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName(fieldName),
@@ -316,7 +316,7 @@ public class RoslynWebUIControllerGenerator
                 .WithInitializer(
                     SyntaxFactory.InitializerExpression(
                         SyntaxKind.ObjectInitializerExpression,
-                        SyntaxFactory.SeparatedList<ExpressionSyntax>(selectListCallings)
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(JoinWithCommas(selectListCallings))
                     )
                 );
 
@@ -363,7 +363,7 @@ public class RoslynWebUIControllerGenerator
 
     private MethodDeclarationSyntax GenerateActionCreateForm(Entity entity, Dictionary<string, string> selectableRelations)
     {
-        Dto? createDto = entity.CreateDto != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
+        Dto? createDto = entity.CreateDtoId != default ? _dtoRepository.Get(f => f.Id == entity.CreateDtoId, include: i => i.Include(x => x.DtoFields).ThenInclude(x => x.SourceField)) : default;
         bool isThereCreateDto = createDto != default;
 
         // 1) Attribute List
@@ -373,7 +373,7 @@ public class RoslynWebUIControllerGenerator
         };
 
         // 2) Selecting Call List
-        var selectListCallings = new SyntaxNodeOrToken[] { };
+        var selectListCallings = new List<ExpressionSyntax>();
 
         foreach (var relation in selectableRelations)
         {
@@ -381,10 +381,10 @@ public class RoslynWebUIControllerGenerator
             string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
             // dto içerisnde yoksa boşuna eklenmemeli
-            if (isThereCreateDto && createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
+            if (isThereCreateDto && createDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == relation.Key.Trim().ToLowerInvariant()) == false)
                 continue;
 
-            selectListCallings.Append(
+            selectListCallings.Add(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName(fieldName),
@@ -407,7 +407,7 @@ public class RoslynWebUIControllerGenerator
                 .WithInitializer(
                     SyntaxFactory.InitializerExpression(
                         SyntaxKind.ObjectInitializerExpression,
-                        SyntaxFactory.SeparatedList<ExpressionSyntax>(selectListCallings)
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(JoinWithCommas(selectListCallings))
                     )
                 );
 
@@ -606,14 +606,15 @@ public class RoslynWebUIControllerGenerator
 
 
         // 7) ViewModel Prop List
-        var viewModelProps = new SyntaxNodeOrToken[] {};
-        viewModelProps.Append(
+        var viewModelProps = new List<ExpressionSyntax>()
+        {
             SyntaxFactory.AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
                 SyntaxFactory.IdentifierName("UpdateModel"), 
-                SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("data"))
+                SyntaxFactory.IdentifierName("data")
             )
-        );
+        };
+        
 
         foreach (var relation in selectableRelations)
         {
@@ -621,10 +622,11 @@ public class RoslynWebUIControllerGenerator
             string fieldName = relation.Key.ToForeignFieldSlectListName(entityName);
 
             // dto içerisnde yoksa boşuna eklenmemeli
-            if (isThereUpdateDto && updateDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == fieldName.Trim().ToLowerInvariant()) == false)
+            if (isThereUpdateDto && updateDto!.DtoFields.Any(f => f.SourceField.Name.Trim().ToLowerInvariant() == relation.Key.Trim().ToLowerInvariant()) == false)
                 continue;
 
-            viewModelProps.Append(
+
+            viewModelProps.Add(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName(fieldName),
@@ -647,7 +649,7 @@ public class RoslynWebUIControllerGenerator
                 .WithInitializer(
                     SyntaxFactory.InitializerExpression(
                         SyntaxKind.ObjectInitializerExpression,
-                        SyntaxFactory.SeparatedList<ExpressionSyntax>(viewModelProps)
+                        SyntaxFactory.SeparatedList<ExpressionSyntax>(JoinWithCommas(viewModelProps))
                     )
                 );
 
@@ -1074,4 +1076,24 @@ public class RoslynWebUIControllerGenerator
         );
     }
     #endregion
+
+    public static SyntaxNodeOrToken[] JoinWithCommas(IEnumerable<ExpressionSyntax> expressions)
+    {
+        var list = new List<SyntaxNodeOrToken>();
+        var exprArray = expressions.ToArray();
+
+        for (int i = 0; i < exprArray.Length; i++)
+        {
+            list.Add(exprArray[i]);
+
+            // Sona virgül koyma
+            if (i < exprArray.Length - 1)
+            {
+                list.Add(SyntaxFactory.Token(SyntaxKind.CommaToken));
+            }
+        }
+
+        return list.ToArray();
+    }
+
 }

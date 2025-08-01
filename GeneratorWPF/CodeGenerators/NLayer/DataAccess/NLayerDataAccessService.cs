@@ -2293,28 +2293,28 @@ public static class EntityEntryExtension
                     Id = new Guid(""b370875e-34cd-4b79-891c-93ae38f99d11""),
                     Name = ""User"",
                     NormalizedName = ""USER"",
-                    ConcurrencyStamp = new Guid(""b370875e-34cd-4b79-891c-93ae38f99d11"").ToString()
+                    ConcurrencyStamp = ""b370875e-34cd-4b79-891c-93ae38f99d11"")
                 }},
                 new
                 {{
                     Id = new Guid(""cd6040ef-dacc-4678-9a85-154f12581cff""),
                     Name = ""Manager"",
                     NormalizedName = ""MANAGER"",
-                    ConcurrencyStamp = new Guid(""cd6040ef-dacc-4678-9a85-154f12581cff"").ToString()
+                    ConcurrencyStamp =""cd6040ef-dacc-4678-9a85-154f12581cff""
                 }},
                 new
                 {{
                     Id = new Guid(""7138ec51-4f9e-4afd-b61b-5a9a4584f5da""),
                     Name = ""Admin"",
                     NormalizedName = ""ADMIN"",
-                    ConcurrencyStamp = new Guid(""7138ec51-4f9e-4afd-b61b-5a9a4584f5da"").ToString()
+                    ConcurrencyStamp = ""7138ec51-4f9e-4afd-b61b-5a9a4584f5da""
                 }},
                 new
                 {{
                     Id = new Guid(""1f20c152-530e-4064-a39c-bbbed341fe84""),
                     Name = ""Owner"",
                     NormalizedName = ""OWNER"",
-                    ConcurrencyStamp = new Guid(""1f20c152-530e-4064-a39c-bbbed341fe84"").ToString()
+                    ConcurrencyStamp = ""1f20c152-530e-4064-a39c-bbbed341fe84""
                 }}
             );");
             }

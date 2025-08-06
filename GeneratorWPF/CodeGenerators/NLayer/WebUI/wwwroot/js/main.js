@@ -3,6 +3,87 @@ function GenerateId() {
 }
 
 
+function RenderShortCutsDropdown() {
+    let links = localStorage.getItem("list-of-shortcuts");
+
+    $("#dropdownshortcutslist").html("");
+    if (links != undefined) {
+        let shortcuts = JSON.parse(links);
+        if (Array.isArray(shortcuts)) {
+            for (let index = 0; index < shortcuts.length;) {
+                let firstData = shortcuts[index];
+                let secondData = shortcuts[index + 1];
+                if (secondData == null) {
+                    $("#dropdownshortcutslist").append(`
+                        <div class="row row-bordered overflow-visible g-0">
+                            <div class="dropdown-shortcuts-item col">
+                                <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+                                    <i class="${firstData.icon} text-heading"></i>
+                                </span>
+                                <a href="${firstData.location}" class="stretched-link">${firstData.name}</a>
+                            </div>
+                        </div>
+                    `);
+                }
+                else {
+                    $("#dropdownshortcutslist").append(`
+                        <div class="row row-bordered overflow-visible g-0">
+                            <div class="dropdown-shortcuts-item col">
+                                <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+                                    <i class="${firstData.icon} text-heading"></i>
+                                </span>
+                                <a href="${firstData.location}" class="stretched-link">${firstData.name}</a>
+                            </div>
+                            <div class="dropdown-shortcuts-item col">
+                                <span class="dropdown-shortcuts-icon rounded-circle mb-3">
+                                    <i class="${secondData.icon} text-heading"></i>
+                                </span>
+                                <a href="${secondData.location}" class="stretched-link">${secondData.name}</a>
+                            </div>
+                        </div>
+                    `);
+                }
+
+                index += 2;
+            }
+        }
+    }
+
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Add New Shortcut
+    (function () {
+        RenderShortCutsDropdown();
+    })();
+    document.getElementById("dropdown-shortcuts-add").addEventListener("click", function () {
+        let isSubMEnuActive = $("li.menu-item.active").length > 1;
+        let activeMenuE = isSubMEnuActive ? $("li .menu-item.active") : $("li.menu-item.active");
+        let name = isSubMEnuActive ? `${activeMenuE.closest("ul").parent().find("span.menu-toggle > span.page-name").text()} ${activeMenuE.find("a > span.page-name").text()}` : activeMenuE.find("a > span.page-name").text();
+        let icon = activeMenuE.find("a").data("icon");
+
+        let links = localStorage.getItem("list-of-shortcuts");
+        let shortcuts = [];
+        if (links != undefined) {
+            shortcuts = JSON.parse(links);
+            let isExist = shortcuts.some(s => s.location == location);
+            if (isExist) {
+                return;
+            }
+        }
+
+        shortcuts.push({
+            name: name,
+            icon: icon,
+            location: window.location.href
+        });
+        localStorage.setItem("list-of-shortcuts", JSON.stringify(shortcuts));
+        RenderShortCutsDropdown();
+    });
+});
+
+
+
 /**
  * Select2 Auto Initilaze
  */

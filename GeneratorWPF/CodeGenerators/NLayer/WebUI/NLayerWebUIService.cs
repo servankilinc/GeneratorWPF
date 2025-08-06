@@ -1322,43 +1322,12 @@ app.MapControllerRoute(
                                     <div class=""dropdown-menu-header border-bottom"">
                                         <div class=""dropdown-header d-flex align-items-center py-3"">
                                             <h6 class=""mb-0 me-auto"">Shortcuts</h6>
-                                            <a href=""javascript:void(0)"" class=""dropdown-shortcuts-add py-2"" data-bs-toggle=""tooltip""
-                                               data-bs-placement=""top"" title=""Add shortcuts""><i class=""bx bx-plus-circle text-heading""></i></a>
+                                            <span id=""dropdown-shortcuts-add"" class=""dropdown-shortcuts-add py-2"" data-bs-toggle=""tooltip"" role=""button""
+                                               data-bs-placement=""top"" title=""Add shortcuts""><i class=""bx bx-plus-circle text-heading""></i></span>
                                         </div>
                                     </div>
                                     <div id=""dropdownshortcutslist"" class=""dropdown-shortcuts-list scrollable-container"">
-                                        <div class=""row row-bordered overflow-visible g-0"">
-                                            <div class=""dropdown-shortcuts-item col"">
-                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
-                                                    <i class=""bx bx-calendar bx-26px text-heading""></i>
-                                                </span>
-                                                <a href=""app-calendar.html"" class=""stretched-link"">Calendar</a>
-                                                <small>Appointments</small>
-                                            </div>
-                                            <div class=""dropdown-shortcuts-item col"">
-                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
-                                                    <i class=""bx bx-food-menu bx-26px text-heading""></i>
-                                                </span>
-                                                <a href=""app-invoice-list.html"" class=""stretched-link"">Invoice App</a>
-                                                <small>Manage Accounts</small>
-                                            </div>
-                                        </div>
-                                        <div class=""row row-bordered overflow-visible g-0"">
-                                            <div class=""dropdown-shortcuts-item col"">
-                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
-                                                    <i class=""bx bx-user bx-26px text-heading""></i>
-                                                </span>
-                                                <a href=""app-user-list.html"" class=""stretched-link"">User App</a>
-                                                <small>Manage Users</small>
-                                            </div>
-                                            <div class=""dropdown-shortcuts-item col"">
-                                                <span class=""dropdown-shortcuts-icon rounded-circle mb-3"">
-                                                    <i class=""bx bx-check-shield bx-26px text-heading""></i>
-                                                </span>
-                                                <a href=""app-access-roles.html"" class=""stretched-link"">Role Management</a>
-                                                <small>Permission</small>
-                                            </div>
-                                        </div>
+                                        <!-- ShortCuts Coming Here -->
                                     </div>
                                 </div>
                             </li>
@@ -1585,12 +1554,14 @@ else
 <!-- LIBS -->
 
 <script src=""~/js/menu.js""></script>
-<script src=""~/js/main.js""></script>
 
 <script src=""~/js/utils/requestManager.js""></script>
 <script src=""~/js/utils/alertManager.js""></script>
 <script src=""~/js/utils/datatableManager.js""></script>
 <script src=""~/js/utils/modalManager.js""></script>
+<script src=""~/js/UIManager.js""></script>
+
+<script src=""~/js/main.js""></script>
 
 <script>
 	window.paceOptions = {

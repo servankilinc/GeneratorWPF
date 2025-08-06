@@ -677,74 +677,25 @@ public class ViewGenerator
                             DatatableManager.AppendRowButtons(td,
                                 [
                                     // 1) Update Button
-                                    DatatableManager.RowButton({{
-                                        kind: DatatableManager.buttonKinds.update,
-                                        onClick: async (e_btn) =>
-                                        {{
-                                            await RequestManager.Get({{
-                                                path: '{entity.Name}/UpdateForm',
-                                                requestData: {{
-                                                    {uniqueFieldParams}
-                                                }},
-                                                dataType: 'text',
-                                                showToastrSuccess: false,
-                                                buttonElement: e_btn.currentTarget,
-                                                onSuccess: (formHtml) =>
-                                                {{
-                                                    ModalManager.CreateModal({{
-                                                        title: ""Update {entityLabelName} Informations"",
-                                                        innerHtml: formHtml,
-                                                        modalSize: ""xl"",
-                                                        buttons: [
-                                                            ModalManager.Button({{
-                                                                kind: ModalManager.buttonKinds.update,
-                                                                onClick: (e_btn_modal, e_modal, e_form) =>
-                                                                {{
-                                                                    RequestManager.HandleRequest({{
-                                                                        type: e_form.attr(""method""),
-                                                                        path: e_form.attr(""action""),
-                                                                        requestData: e_form.serializeArray(),
-                                                                        buttonElement: e_btn_modal,
-                                                                        onSuccess: () =>
-                                                                        {{
-                                                                            $(e_modal).modal(""hide"");
-                                                                            PageTable.reload();
-                                                                        }}
-                                                                    }})
-                                                                }}
-                                                            }})
-                                                        ]
-                                                    }}).show();
-                                                }}
-                                            }})
-                                        }}
-                                    }}),
+                                    UIManager.UpdateButtonTable({{
+										title: ""Update {entityLabelName} Informations"",
+										formGetterUrl: '{entity.Name}/UpdateForm',
+										requestData: {{
+											{uniqueFieldParams}
+										}},
+										pageTable: PageTable
+									}}),
                                     // 2) Delete Button
-                                    DatatableManager.RowButton({{
-                                        kind: DatatableManager.buttonKinds.delete,
+									UIManager.DeleteButtonTable({{
+										title: ""Are you sure you want to delete?"",
+										requestUrl: '{entity.Name}/Delete',
                                         disable: rowData.isDeleted == true,
-                                        onClick: async () =>
-                                        {{
-                                            ModalManager.DeleteModal({{
-                                                onClick: (e_btn, e_mdl) =>
-                                                {{
-                                                    RequestManager.Delete({{
-                                                        path: '{entity.Name}/Delete',
-                                                        requestData: {{
-                                                            // deleteModel destegi yok
-                                                            {uniqueFieldParams}
-                                                        }},
-                                                        buttonElement: e_btn,
-                                                        onSuccess: () =>
-                                                        {{
-                                                            $(e_mdl).modal(""hide"");
-                                                            PageTable.reload();
-                                                        }}
-                                                    }})
-                                                }}
-                                            }}).show();
-                                        }}
-                                    }})
+										requestData: {{
+                                            // deleteModel destegi yok
+                                            {uniqueFieldParams}
+										}},
+										pageTable:PageTable
+									}})
                                 ]
                             );";
     }
@@ -761,39 +712,12 @@ public class ViewGenerator
                         className: 'create-new btn btn-primary mx-2',
                         action: (e_btn) =>
                         {{
-                            RequestManager.Get({{
-                                path: '{entity.Name}/CreateForm',
-                                dataType: 'text',
-                                showToastrSuccess: false,
-                                buttonElement: e_btn.currentTarget,
-                                onSuccess: (formHtml) =>
-                                {{
-                                    ModalManager.CreateModal({{
-                                        title: ""Add New {entityLabelName}"",
-                                        innerHtml: formHtml,
-                                        modalSize: ""xl"",
-                                        buttons: [
-                                            ModalManager.Button({{
-                                                kind: ModalManager.buttonKinds.save,
-                                                onClick: (e_btn_modal, e_modal, e_form) =>
-                                                {{
-                                                    RequestManager.HandleRequest({{
-                                                        type: e_form.attr(""method""),
-                                                        path: e_form.attr(""action""),
-                                                        requestData: e_form.serializeArray(),
-                                                        buttonElement: e_btn_modal,
-                                                        onSuccess: () =>
-                                                        {{
-                                                            $(e_modal).modal(""hide"");
-                                                            PageTable.reload();
-                                                        }}
-                                                    }})
-                                                }}
-                                            }})
-                                        ]
-                                    }}).show();
-                                }}
-                            }})
+                            UIManager.InsertModal({{
+								title: ""Add New {entityLabelName}"",
+								formGetterUrl: '{entity.Name}/CreateForm',
+								e_btn:e_btn.currentTarget,
+								pageTable: PageTable
+							}})
                         }}
                     }}
                 ]";

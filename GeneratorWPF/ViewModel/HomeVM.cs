@@ -2,11 +2,7 @@
 using GeneratorWPF.Repository;
 using GeneratorWPF.Services;
 using GeneratorWPF.Utils;
-using GeneratorWPF.View._Entity.Partials;
 using GeneratorWPF.View._Generate;
-using GeneratorWPF.ViewModel._Entity;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Forms;

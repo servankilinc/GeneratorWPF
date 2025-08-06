@@ -24,6 +24,7 @@ public partial class App : Application
         services.AddTransient<EntityDetailVM>();
         services.AddTransient<DtoHomeVM>();
         services.AddTransient<DtoDetailVM>();
+        services.AddTransient<EntranceVM>();
 
         _serviceProvider = services.BuildServiceProvider();
     }

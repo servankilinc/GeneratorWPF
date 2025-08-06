@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GeneratorWPF.Migrations
 {
-    [DbContext(typeof(LocalContext))]
+    [DbContext(typeof(ProjectContext))]
     [Migration("20250709201721_validatorTypes")]
     partial class validatorTypes
     {

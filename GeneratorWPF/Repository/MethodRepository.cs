@@ -8,7 +8,7 @@ namespace GeneratorWPF.Repository
     {
         public void CreateByFields(MethodCreateDto createDto)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {

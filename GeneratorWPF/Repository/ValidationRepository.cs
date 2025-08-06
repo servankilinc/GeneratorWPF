@@ -10,31 +10,31 @@ namespace GeneratorWPF.Repository
     {
         public List<ValidatorType> GetValidatorTypes()
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             return _context.Set<ValidatorType>().Include(i => i.ValidatorTypeParams).ToList();
         }
 
         public ValidatorType GetValidatorType(int validatorTypeId)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             return _context.Set<ValidatorType>().FirstOrDefault(i => i.Id == validatorTypeId);
         }
 
         public List<ValidatorTypeParam> GetValidatorTypeParams(int validatorTypeId)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             return _context.Set<ValidatorTypeParam>().Where(f => f.ValidatorTypeId == validatorTypeId).Include(i => i.ValidatorType).ToList();
         }
 
         public List<ValidationParam> GetValidationParams(int validationId)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             return _context.Set<ValidationParam>().Where(f => f.ValidationId == validationId).Include(i => i.Validation).Include(i => i.ValidatorTypeParam).ToList();
         }
 
         public void AddValidationList(List<ValidationCreateDto> list)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {
@@ -75,7 +75,7 @@ namespace GeneratorWPF.Repository
 
         public void AddValidation(ValidationCreateDto createDto)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {
@@ -113,7 +113,7 @@ namespace GeneratorWPF.Repository
 
         public void UpdateValidation(ValidationUpdateDto updateDto)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {

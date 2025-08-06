@@ -10,7 +10,7 @@ namespace GeneratorWPF.Repository
     {
         public void Create(EntityCreateDto createDto)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {
@@ -82,7 +82,7 @@ namespace GeneratorWPF.Repository
 
         public List<Entity> GetListBasic()
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
 
             var result = _context.Entities
                 .Include(e => e.CreateDto)
@@ -99,7 +99,7 @@ namespace GeneratorWPF.Repository
 
         public Entity Update(EntityUpdateDto updateDto)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             var existData = context.Entities.FirstOrDefault(f => f.Id == updateDto.Id);
             if (existData == null) throw new Exception("Data to update not found");
@@ -126,7 +126,7 @@ namespace GeneratorWPF.Repository
 
         public void Delete(int id)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             var existData = context.Entities.FirstOrDefault(f => f.Id == id);
             if (existData == null) throw new Exception("Data to delete not found");

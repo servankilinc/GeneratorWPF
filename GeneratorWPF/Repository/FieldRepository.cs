@@ -9,7 +9,7 @@ namespace GeneratorWPF.Repository
     {
         public Field Update(FieldUpdateDto updateDto)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             var existData = context.Fields.FirstOrDefault(f => f.Id == updateDto.Id);
             if (existData == null) throw new Exception("Data to update not found");
@@ -28,7 +28,7 @@ namespace GeneratorWPF.Repository
 
         public Field Add(FieldCreateDto fieldCreateDto)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             var data = new Field
             {
@@ -47,7 +47,7 @@ namespace GeneratorWPF.Repository
 
         public string GetFieldName(int fieldId)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             var name = context.Fields.Where(f => f.Id == fieldId).Select(d => d.Name).FirstOrDefault();
  

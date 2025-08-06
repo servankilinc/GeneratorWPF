@@ -12,7 +12,7 @@ namespace GeneratorWPF.Repository
     {
         public DtoField GetDtoFieldByValidations(Expression<Func<DtoField, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.DtoFields
                     .Where(expresion)
                     .Include(i => i.Validations)
@@ -27,7 +27,7 @@ namespace GeneratorWPF.Repository
 
         public List<Dto> GetListByValidations(Expression<Func<Dto, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.Dtos
                     .Where(expresion)
                     .Include(i => i.RelatedEntity)
@@ -44,7 +44,7 @@ namespace GeneratorWPF.Repository
 
         public List<Dto> GetList(Expression<Func<Dto, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.Dtos
                     .Where(expresion)
                     .Include(i => i.RelatedEntity)
@@ -60,7 +60,7 @@ namespace GeneratorWPF.Repository
 
         public List<DtoDetailResponseDto> GetDetailList(Expression<Func<Dto, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.Dtos
                     .Where(expresion)
                     .Include(i => i.RelatedEntity)
@@ -102,7 +102,7 @@ namespace GeneratorWPF.Repository
 
         public void CreateByFields(DtoCreateDto createDto)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             using var transaction = _context.Database.BeginTransaction();
             try
             {
@@ -158,7 +158,7 @@ namespace GeneratorWPF.Repository
 
         public void Update(DtoUpdateDto updateModel)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var existData = context.Dtos.FirstOrDefault(f => f.Id == updateModel.Id);
             if(existData == null) throw new Exception("Data to update not found!");
 
@@ -192,7 +192,7 @@ namespace GeneratorWPF.Repository
 
         public void Delete(int id)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
 
             Dto? dto = context.Dtos.FirstOrDefault(f => f.Id == id);
 

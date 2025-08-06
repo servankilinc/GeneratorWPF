@@ -28,6 +28,9 @@
         <viewDto:DtoDetail/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type vmHome:EntranceVM}">
+        <viewHome:Entrance/>
+    </DataTemplate>
 
     <!--<DataTemplate DataType="{x:Type vm:ValidationListVM}">
         <view:ValidationList/>

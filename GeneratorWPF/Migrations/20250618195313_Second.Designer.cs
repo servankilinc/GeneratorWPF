@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GeneratorWPF.Migrations
 {
-    [DbContext(typeof(LocalContext))]
+    [DbContext(typeof(ProjectContext))]
     [Migration("20250618195313_Second")]
     partial class Second
     {

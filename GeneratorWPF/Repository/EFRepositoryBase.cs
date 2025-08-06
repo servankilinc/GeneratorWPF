@@ -10,7 +10,7 @@ namespace GeneratorWPF.Repository
 
         public virtual TEntity Get(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null)
         { 
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             IQueryable<TEntity> queryable = _context.Set<TEntity>();
             if (include != null) queryable = include(queryable);
             return queryable.FirstOrDefault(filter)!;
@@ -18,7 +18,7 @@ namespace GeneratorWPF.Repository
 
         public virtual TEntity Add(TEntity entity)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             _context.Entry(entity).State = EntityState.Added;
             _context.SaveChanges();
             return entity;
@@ -26,14 +26,14 @@ namespace GeneratorWPF.Repository
 
         public virtual void Delete(TEntity entity)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             _context.Entry(entity).State = EntityState.Deleted;
             _context.SaveChanges();
         }
 
         public virtual TEntity Update(TEntity entity)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             _context.Entry(entity).State = EntityState.Modified;
             _context.SaveChanges();
             return entity;
@@ -41,7 +41,7 @@ namespace GeneratorWPF.Repository
 
         public virtual bool IsExist(Expression<Func<TEntity, bool>> filter)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             return _context.Set<TEntity>().Any(filter);
         }
 
@@ -51,7 +51,7 @@ namespace GeneratorWPF.Repository
             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null,
             bool enableTracking = true)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             IQueryable<TEntity> queryable = _context.Set<TEntity>();
             if (!enableTracking) queryable = queryable.AsNoTracking();
             if (include != null) queryable = include(queryable);
@@ -63,7 +63,7 @@ namespace GeneratorWPF.Repository
 
         public virtual void DeleteByFilter(Expression<Func<TEntity, bool>> filter)
         {
-            using var _context = new LocalContext();
+            using var _context = new ProjectContext();
             var entity = _context.Set<TEntity>().FirstOrDefault(filter);
             if (entity == null) throw new InvalidOperationException("The specified entity to delete could not be found.");
             _context.Entry(entity).State = EntityState.Deleted;

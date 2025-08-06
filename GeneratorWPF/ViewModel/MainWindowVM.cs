@@ -2,6 +2,7 @@
 using GeneratorWPF.Utils;
 using GeneratorWPF.ViewModel._Dto;
 using GeneratorWPF.ViewModel._Entity;
+using System.Windows;
 using System.Windows.Input;
 
 namespace GeneratorWPF.ViewModel
@@ -14,7 +15,6 @@ namespace GeneratorWPF.ViewModel
         public ICommand ToHomeCommand { get; set; }
         public ICommand ToEntityListCommand { get; set; }
         public ICommand ToDtoListCommand { get; set; }
-        public ICommand ToValidationListCommand { get; set; }
 
         public MainWindowVM(INavigationService navigation)
         {
@@ -22,25 +22,35 @@ namespace GeneratorWPF.ViewModel
 
             ToHomeCommand = new RellayCommand(obj =>
             {
+                if (StateStatics.CurrentProject == default)
+                {
+                    MessageBox.Show("Please Firstly Select a Project!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 Navigation.NavigateTo<HomeVM>();
             });
 
             ToEntityListCommand = new RellayCommand(obj =>
             {
+                if (StateStatics.CurrentProject == default)
+                {
+                    MessageBox.Show("Please Firstly Select a Project!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 Navigation.NavigateTo<EntityHomeVM>();
             });
 
             ToDtoListCommand = new RellayCommand(obj =>
             {
+                if (StateStatics.CurrentProject == default)
+                {
+                    MessageBox.Show("Please Firstly Select a Project!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 Navigation.NavigateTo<DtoHomeVM>();
             });
 
-            ToValidationListCommand = new RellayCommand(obj =>
-            {
-                //CurrentView = new ValidationListVM();
-            });
-
-            Navigation.NavigateTo<HomeVM>();
+            Navigation.NavigateTo<EntranceVM>();
         }
     }
 }

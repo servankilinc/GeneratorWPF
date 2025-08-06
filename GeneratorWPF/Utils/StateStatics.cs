@@ -1,7 +1,11 @@
-﻿namespace GeneratorWPF.Utils
+﻿using GeneratorWPF.Models.LocalModels;
+
+namespace GeneratorWPF.Utils
 {
     public static class StateStatics
     {
+        public static Project? CurrentProject { get; set; } = default;
+
         public static int EntityDetailId { get; set; }
         public static int EntityUpdateId { get; set; }
         public static int FieldUpdateId { get; set; }

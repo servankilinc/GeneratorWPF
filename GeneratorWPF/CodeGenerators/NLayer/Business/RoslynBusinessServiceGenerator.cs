@@ -245,8 +245,8 @@ public partial class RoslynBusinessServiceGenerator
         if (isThereBasicResponseDto)
         {
             var dtoFieldIdsOfBasicResponse = basicResponseDto!.DtoFields.Select(f => f.Id).ToList();
-            var isThereIncludeOfBasicResponse = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfBasicResponse.Contains(f.DtoFieldId)); // efcheck
-            // var isThereIncludeOfBasicResponse = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfBasicResponse.Contains(f.DtoFieldId));
+            //var isThereIncludeOfBasicResponse = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfBasicResponse.Contains(f.DtoFieldId)); // efcheck
+            var isThereIncludeOfBasicResponse = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfBasicResponse.Contains(f.DtoFieldId));
 
             methodList.Add(GeneratorGetMethodByDtoOfConcrete("GetByBasicAsync", basicResponseDto!, uniqueFields, isThereIncludeOfBasicResponse));
             methodList.Add(GeneratorGetAllMethodByDtoOfConcrete("GetAllByBasicAsync", basicResponseDto, isThereIncludeOfBasicResponse));
@@ -259,8 +259,8 @@ public partial class RoslynBusinessServiceGenerator
         if (detailResponseDto != null)
         {
             var dtoFieldIdsOfDetailResponse = detailResponseDto.DtoFields.Select(f => f.Id).ToList();
-            var isThereIncludeOfDetailResponse = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId)); // efcheck
-            // var isThereIncludeOfDetailResponse = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId));
+            //var isThereIncludeOfDetailResponse = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId)); // efcheck
+            var isThereIncludeOfDetailResponse = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId));
 
             methodList.Add(GeneratorGetMethodByDtoOfConcrete("GetByDetailAsync", detailResponseDto!, uniqueFields, isThereIncludeOfDetailResponse));
             methodList.Add(GeneratorGetAllMethodByDtoOfConcrete("GetAllByDetailAsync", detailResponseDto, isThereIncludeOfDetailResponse));
@@ -275,8 +275,8 @@ public partial class RoslynBusinessServiceGenerator
             foreach (var readDto in readResponseDtos)
             {
                 var dtoFieldIdsOfReadDto = readDto.DtoFields.Select(f => f.Id).ToList();
-                var isThereIncludeOfReadDto = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfReadDto.Contains(f.DtoFieldId)); // efcheck
-                // var isThereIncludeOfReadDto = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfReadDto.Contains(f.DtoFieldId));
+                //var isThereIncludeOfReadDto = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfReadDto.Contains(f.DtoFieldId)); // efcheck
+                var isThereIncludeOfReadDto = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfReadDto.Contains(f.DtoFieldId));
 
                 methodList.Add(GeneratorGetMethodByDtoOfConcrete($"Get{readDto.Name}Async", readDto!, uniqueFields, isThereIncludeOfReadDto));
                 methodList.Add(GeneratorGetAllMethodByDtoOfConcrete($"GetAll{readDto.Name}Async", readDto, isThereIncludeOfReadDto));
@@ -304,8 +304,8 @@ public partial class RoslynBusinessServiceGenerator
         if (reportDto != default)
         {
             var dtoFieldIdsOfDetailResponse = reportDto.DtoFields.Select(f => f.Id).ToList();
-            var isThereIncludeOfReportDto = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId)); // efcheck
-            // var isThereIncludeOfReportDto = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId));
+            //var isThereIncludeOfReportDto = _dtoFieldRelationsRepository.IsExist(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId)); // efcheck
+            var isThereIncludeOfReportDto = _dtoFieldRelationsRepository.GetAll().Any(f => dtoFieldIdsOfDetailResponse.Contains(f.DtoFieldId));
 
             methodList.Add(GeneratorDatatableClientSideByDtoOfConcrete("DatatableClientSideByReportAsync", reportDto, isThereIncludeOfReportDto));
             methodList.Add(GeneratorDatatableServerSideByDtoOfConcrete("DatatableServerSideByReportAsync", reportDto, isThereIncludeOfReportDto));

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GeneratorWPF.Migrations
 {
-    [DbContext(typeof(LocalContext))]
+    [DbContext(typeof(ProjectContext))]
     [Migration("20250718062816_ReportDto")]
     partial class ReportDto
     {

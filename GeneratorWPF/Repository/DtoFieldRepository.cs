@@ -13,7 +13,7 @@ namespace GeneratorWPF.Repository
     {
         public List<DtoField> GetBySourceField(Expression<Func<DtoField, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.DtoFields
                     .Where(expresion)
                     .Include(i => i.SourceField)
@@ -23,7 +23,7 @@ namespace GeneratorWPF.Repository
 
         public List<DtoFieldResponseDto> GetDetailList(Expression<Func<DtoField, bool>> expresion)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             return context.DtoFields
                     .Where(expresion)
                     .Include(i => i.Dto)
@@ -55,7 +55,7 @@ namespace GeneratorWPF.Repository
 
         public List<ValidationResponse> GetValidations(int dtoId)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var data = context.DtoFields
                     .Where(f => f.DtoId == dtoId)
                     .Include(i => i.SourceField)
@@ -94,7 +94,7 @@ namespace GeneratorWPF.Repository
 
         public List<DtoFieldRelations> GetDtoFieldRelations(int dtoFieldId)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var data = context.DtoFieldRelations
                     .Where(f => f.DtoFieldId == dtoFieldId)
                     .Include(x => x.DtoField)
@@ -115,7 +115,7 @@ namespace GeneratorWPF.Repository
 
         public void Add(DtoFieldCreateDto createDto)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var transaction = context.Database.BeginTransaction();
             try
             {
@@ -152,7 +152,7 @@ namespace GeneratorWPF.Repository
 
         public void Update(DtoFieldUpdateDto updateDto)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var transaction = context.Database.BeginTransaction();
             try
             {
@@ -195,7 +195,7 @@ namespace GeneratorWPF.Repository
 
         public void Delete(int id)
         {
-            using var context = new LocalContext();
+            using var context = new ProjectContext();
             var existData = context.DtoFields.FirstOrDefault(f => f.Id == id);
 
             if (existData == null) throw new Exception("Data not found!");

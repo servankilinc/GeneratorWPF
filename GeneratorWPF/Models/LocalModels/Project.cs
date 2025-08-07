@@ -6,7 +6,7 @@ namespace GeneratorWPF.Models.LocalModels
     {
         [Key]
         public int Id { get; set; }
-        public string ProjectName { get; set; } = $"My Project ({DateTime.Now:yyyy-MM-dd})";
+        public string ProjectName { get; set; } = $"My Project {DateTime.Now:yyyy_MM_dd}";
         public DateTime CreateDate { get; set; } 
     }
 }

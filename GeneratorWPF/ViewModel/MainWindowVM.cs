@@ -15,6 +15,7 @@ namespace GeneratorWPF.ViewModel
         public ICommand ToHomeCommand { get; set; }
         public ICommand ToEntityListCommand { get; set; }
         public ICommand ToDtoListCommand { get; set; }
+        public ICommand ToProjectsCommand { get; set; }
 
         public MainWindowVM(INavigationService navigation)
         {
@@ -48,6 +49,16 @@ namespace GeneratorWPF.ViewModel
                     return;
                 }
                 Navigation.NavigateTo<DtoHomeVM>();
+            });
+
+            ToProjectsCommand = new RellayCommand(obj =>
+            {
+                if (StateStatics.CurrentProject == default)
+                {
+                    MessageBox.Show("Please Firstly Select a Project!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                Navigation.NavigateTo<EntranceVM>();
             });
 
             Navigation.NavigateTo<EntranceVM>();

@@ -2,6 +2,7 @@
 using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Utils;
+using System.IO;
 
 namespace GeneratorWPF.Context
 {
@@ -16,12 +17,18 @@ namespace GeneratorWPF.Context
         // Dynamic Version
         public ProjectContext(): base(GetOptions())
         {
+            this.Database.Migrate();
         }
 
         private static DbContextOptions<ProjectContext> GetOptions()
         {
+            if (StateStatics.CurrentProject == default) throw new Exception("Project Configurations Could not Uploaded");
+
             var optionsBuilder = new DbContextOptionsBuilder<ProjectContext>();
-            optionsBuilder.UseSqlServer(StateStatics.CurrentProject.ProjectName); // burası bir şekilde conn stringe dönüştürülmeli
+            
+            var dbPath = Path.Combine(AppContext.BaseDirectory, $"{StateStatics.CurrentProject.ProjectName.Replace(' ', '_')}Database.db");
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            
             return optionsBuilder.Options;
         }
 

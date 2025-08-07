@@ -101,6 +101,19 @@
                         </Style>
                     </Button.Resources>
                 </Button>
+                <Button Command="{Binding ToProjectsCommand}" Background="#AA087290" Foreground="#FFE6E6E6" Margin="0,5" BorderThickness="0">
+                    <Button.Content>
+                        <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Orientation="Horizontal" >
+                            <Image Source="/Images/img_order.png" Width="30" Height="30"/>
+                            <TextBlock Text="Projects" Width="100" VerticalAlignment="Center" Margin="10,0,0,0"  />
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.Resources>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="CornerRadius" Value="0, 6, 6, 0"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
                 <!--<Button Command="{Binding ToValidationListCommand}" Background="#FF3C61C0" Margin="0,5" BorderThickness="0">
                     <Button.Content>
                         <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Orientation="Horizontal" >

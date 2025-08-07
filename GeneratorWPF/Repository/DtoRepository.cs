@@ -17,7 +17,7 @@ namespace GeneratorWPF.Repository
                     .Where(expresion)
                     .Include(i => i.Validations)
                         .ThenInclude(i => i.ValidatorType)
-                            .ThenInclude(i=> i.ValidatorTypeParams)
+                            .ThenInclude(i => i.ValidatorTypeParams)
                     .Include(i => i.Validations)
                         .ThenInclude(i => i.ValidationParams)
                             .ThenInclude(i => i.ValidatorTypeParam)
@@ -61,43 +61,86 @@ namespace GeneratorWPF.Repository
         public List<DtoDetailResponseDto> GetDetailList(Expression<Func<Dto, bool>> expresion)
         {
             using var context = new ProjectContext();
-            return context.Dtos
-                    .Where(expresion)
-                    .Include(i => i.RelatedEntity)
-                    .Include(i => i.CrudType)
-                    .Include(i => i.DtoFields)
-                        .ThenInclude(df => df.SourceField)
-                            .ThenInclude(sf => sf.FieldType)
-                    .Include(i => i.DtoFields)
-                        .ThenInclude(df => df.SourceField)
-                            .ThenInclude(sf => sf.Entity)
-                    .Include(i => i.DtoFields)
-                        .ThenInclude(df => df.DtoFieldRelations)
-                    .Select(x => new DtoDetailResponseDto
-                    {
-                        Id = x.Id,
-                        Name = x.Name,
-                        RelatedEntityName = x.RelatedEntity.Name,
-                        CrudTypeName = x.CrudType.Name,
-                        DtoFields = x.DtoFields.Select(y => new DtoFieldResponseDto
-                        {
-                            Id = y.Id,
-                            Name = y.Name,
-                            DtoId = x.Id,
-                            SourceFieldName = y.SourceField.Name,
-                            EntityName = y.SourceField.Entity.Name,
-                            FieldTypeName = y.SourceField.FieldType.Name,
-                            IsRequired = y.IsRequired,
-                            IsList = y.IsList,
-                            IsSourceFromForeignEntity = x.RelatedEntityId != y.SourceField.EntityId,
-                            IsThereRelations = y.DtoFieldRelations != null && y.DtoFieldRelations.Any(),
-                            DtoFieldRelationsPath =
-                                y.DtoFieldRelations != null ?
-                                    string.Join(",\n", y.DtoFieldRelations.OrderBy(o => o.SequenceNo)
-                                        .Select(dr => $"{dr.Relation.PrimaryEntityVirPropName}.{dr.Relation.ForeignEntityVirPropName}")) :
-                                    string.Empty
-                        }).ToList()
-                    }).ToList();
+            //return context.Dtos
+            //        .Where(expresion)
+            //        .Include(i => i.RelatedEntity)
+            //        .Include(i => i.CrudType)
+            //        .Include(i => i.DtoFields)
+            //            .ThenInclude(df => df.SourceField)
+            //                .ThenInclude(sf => sf.FieldType)
+            //        .Include(i => i.DtoFields)
+            //            .ThenInclude(df => df.SourceField)
+            //                .ThenInclude(sf => sf.Entity)
+            //        .Include(i => i.DtoFields)
+            //            .ThenInclude(df => df.DtoFieldRelations)
+            //        .Select(x => new DtoDetailResponseDto
+            //        {
+            //            Id = x.Id,
+            //            Name = x.Name,
+            //            RelatedEntityName = x.RelatedEntity.Name,
+            //            CrudTypeName = x.CrudType.Name,
+            //            DtoFields = x.DtoFields.Select(y => new DtoFieldResponseDto
+            //            {
+            //                Id = y.Id,
+            //                Name = y.Name,
+            //                DtoId = x.Id,
+            //                SourceFieldName = y.SourceField.Name,
+            //                EntityName = y.SourceField.Entity.Name,
+            //                FieldTypeName = y.SourceField.FieldType.Name,
+            //                IsRequired = y.IsRequired,
+            //                IsList = y.IsList,
+            //                IsSourceFromForeignEntity = x.RelatedEntityId != y.SourceField.EntityId,
+            //                IsThereRelations = y.DtoFieldRelations != null && y.DtoFieldRelations.Any(),
+            //                DtoFieldRelationsPath =
+            //                    y.DtoFieldRelations != null ?
+            //                        string.Join(",\n", y.DtoFieldRelations.OrderBy(o => o.SequenceNo)
+            //                            .Select(dr => $"{dr.Relation.PrimaryEntityVirPropName}.{dr.Relation.ForeignEntityVirPropName}")) :
+            //                        string.Empty
+            //            }).ToList()
+            //        }).ToList();
+
+            var data = context.Dtos
+                .Where(expresion)
+                .Include(i => i.RelatedEntity)
+                .Include(i => i.CrudType)
+                .Include(i => i.DtoFields)
+                    .ThenInclude(df => df.SourceField)
+                        .ThenInclude(sf => sf.FieldType)
+                .Include(i => i.DtoFields)
+                    .ThenInclude(df => df.SourceField)
+                        .ThenInclude(sf => sf.Entity)
+                .Include(i => i.DtoFields)
+                    .ThenInclude(df => df.DtoFieldRelations)
+                        .ThenInclude(r => r.Relation)
+                .AsNoTracking()
+                .ToList();
+
+            // Bellekte LINQ ile dönüştürme
+            return data.Select(x => new DtoDetailResponseDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                RelatedEntityName = x.RelatedEntity?.Name,
+                CrudTypeName = x.CrudType?.Name,
+                DtoFields = x.DtoFields.Select(y => new DtoFieldResponseDto
+                {
+                    Id = y.Id,
+                    Name = y.Name,
+                    DtoId = x.Id,
+                    SourceFieldName = y.SourceField?.Name,
+                    EntityName = y.SourceField?.Entity?.Name,
+                    FieldTypeName = y.SourceField?.FieldType?.Name,
+                    IsRequired = y.IsRequired,
+                    IsList = y.IsList,
+                    IsSourceFromForeignEntity = x.RelatedEntityId != y.SourceField?.EntityId,
+                    IsThereRelations = y.DtoFieldRelations != null && y.DtoFieldRelations.Any(),
+                    DtoFieldRelationsPath =
+                        y.DtoFieldRelations != null ?
+                            string.Join(",\n", y.DtoFieldRelations.OrderBy(o => o.SequenceNo)
+                                .Select(dr => $"{dr.Relation?.PrimaryEntityVirPropName}.{dr.Relation?.ForeignEntityVirPropName}")) :
+                            string.Empty
+                }).ToList()
+            }).ToList();
         }
 
         public void CreateByFields(DtoCreateDto createDto)
@@ -160,7 +203,7 @@ namespace GeneratorWPF.Repository
         {
             using var context = new ProjectContext();
             var existData = context.Dtos.FirstOrDefault(f => f.Id == updateModel.Id);
-            if(existData == null) throw new Exception("Data to update not found!");
+            if (existData == null) throw new Exception("Data to update not found!");
 
             bool nameChanged = existData.Name != updateModel.Name;
             bool entityIdChanged = existData.RelatedEntityId != updateModel.RelatedEntityId;
@@ -177,7 +220,7 @@ namespace GeneratorWPF.Repository
             if (entityIdChanged)
             {
                 if (existField != null) existField.EntityId = updateModel.RelatedEntityId;
-                
+
                 existData.RelatedEntityId = updateModel.RelatedEntityId;
             }
 
@@ -202,7 +245,7 @@ namespace GeneratorWPF.Repository
             Field? field = context.Fields.FirstOrDefault(f => f.Name == dto.Name && f.EntityId == dto.RelatedEntityId);
 
             if (fieldType == null || field == null) throw new Exception("Related Data(s) not found!");
-            
+
             context.Remove(dto);
             context.Remove(field);
             context.Remove(fieldType);

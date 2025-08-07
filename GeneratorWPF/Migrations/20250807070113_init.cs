@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace GeneratorWPF.Migrations.Local
+namespace GeneratorWPF.Migrations
 {
     /// <inheritdoc />
-    public partial class localDbInit : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -6,11 +6,15 @@ namespace GeneratorWPF.Context
 {
     public class LocalContext : DbContext
     {
+        public LocalContext()
+        {
+            this.Database.Migrate();
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //optionsBuilder.UseSqlite("Data Source=LocalProjectDatabase.db"); // migration
-            var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LocalProjectDatabase.db");
-            optionsBuilder.UseSqlite("Data Source=C:\\Users\\Express\\Desktop\\GeneratorWPF\\GeneratorWPF\\LocalProjectDatabase.db");
+            var dbPath = Path.Combine(AppContext.BaseDirectory, "LocalProjectDatabase.db");
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
 
         public DbSet<Project> Projects { get; set; }

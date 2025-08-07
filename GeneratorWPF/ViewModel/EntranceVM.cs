@@ -15,7 +15,7 @@ namespace GeneratorWPF.ViewModel
         public ICommand AddNewProjectCommand { get; set; }
         public ICommand DeleteProjectCommand { get; set; }
 
-        private int _selectedProjectId = default;
+        private int _selectedProjectId = StateStatics.CurrentProject != null ? StateStatics.CurrentProject.Id : default;
         public int SelectedProjectId
         {
             get => _selectedProjectId;
@@ -74,7 +74,6 @@ namespace GeneratorWPF.ViewModel
 
                     StateStatics.CurrentProject = selectedProject;
 
-                    // Todo: Burada Runtime ProjectContext ayarlanıp devam edilmeli
                     _navigationService.NavigateTo<HomeVM>();
                 }
                 catch (Exception ex)

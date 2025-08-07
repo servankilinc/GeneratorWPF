@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace GeneratorWPF.Migrations.Local
+namespace GeneratorWPF.Migrations
 {
     [DbContext(typeof(LocalContext))]
-    [Migration("20250806134438_localDbInit")]
-    partial class localDbInit
+    [Migration("20250807070113_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

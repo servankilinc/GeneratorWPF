@@ -4,10 +4,10 @@
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace GeneratorWPF.Migrations
+namespace GeneratorWPF.Migrations.Project
 {
     /// <inheritdoc />
-    public partial class First : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,10 +16,10 @@ namespace GeneratorWPF.Migrations
                 name: "CrudTypes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,11 +30,11 @@ namespace GeneratorWPF.Migrations
                 name: "DeleteBehaviorTypes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -45,10 +45,10 @@ namespace GeneratorWPF.Migrations
                 name: "FieldTypeSources",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,10 +59,10 @@ namespace GeneratorWPF.Migrations
                 name: "RelationTypes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,10 +73,10 @@ namespace GeneratorWPF.Migrations
                 name: "ServiceLayers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,11 +87,11 @@ namespace GeneratorWPF.Migrations
                 name: "ValidatorTypes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -102,11 +102,11 @@ namespace GeneratorWPF.Migrations
                 name: "FieldTypes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SourceTypeId = table.Column<int>(type: "int", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    SourceTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -123,11 +123,11 @@ namespace GeneratorWPF.Migrations
                 name: "ValidatorTypeParams",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
-                    Key = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ValidatorTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -144,18 +144,18 @@ namespace GeneratorWPF.Migrations
                 name: "AppSettings",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SolutionName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Path = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DBConnectionString = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsThereIdentiy = table.Column<bool>(type: "bit", nullable: false),
-                    IsThereUser = table.Column<bool>(type: "bit", nullable: false),
-                    UserEntityId = table.Column<int>(type: "int", nullable: true),
-                    IsThereRole = table.Column<bool>(type: "bit", nullable: false),
-                    RoleEntityId = table.Column<int>(type: "int", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ProjectName = table.Column<string>(type: "TEXT", nullable: true),
+                    SolutionName = table.Column<string>(type: "TEXT", nullable: true),
+                    Path = table.Column<string>(type: "TEXT", nullable: true),
+                    DBConnectionString = table.Column<string>(type: "TEXT", nullable: true),
+                    IsThereIdentiy = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsThereUser = table.Column<bool>(type: "INTEGER", nullable: false),
+                    UserEntityId = table.Column<int>(type: "INTEGER", nullable: true),
+                    IsThereRole = table.Column<bool>(type: "INTEGER", nullable: false),
+                    RoleEntityId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -163,17 +163,31 @@ namespace GeneratorWPF.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DtoFieldRelations",
+                columns: table => new
+                {
+                    DtoFieldId = table.Column<int>(type: "INTEGER", nullable: false),
+                    RelationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SequenceNo = table.Column<int>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DtoFieldRelations", x => new { x.DtoFieldId, x.RelationId, x.SequenceNo });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DtoFields",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DtoId = table.Column<int>(type: "int", nullable: false),
-                    SourceFieldId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
-                    IsList = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DtoId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SourceFieldId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    IsRequired = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsList = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -184,12 +198,12 @@ namespace GeneratorWPF.Migrations
                 name: "Validations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DtoFieldId = table.Column<int>(type: "int", nullable: false),
-                    ValidatorTypeId = table.Column<int>(type: "int", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DtoFieldId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ValidatorTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "TEXT", nullable: true),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -212,10 +226,10 @@ namespace GeneratorWPF.Migrations
                 name: "ValidationParams",
                 columns: table => new
                 {
-                    ValidationId = table.Column<int>(type: "int", nullable: false),
-                    ValidatorTypeParamId = table.Column<int>(type: "int", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    ValidationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ValidatorTypeParamId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,12 +252,12 @@ namespace GeneratorWPF.Migrations
                 name: "Dtos",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RelatedEntityId = table.Column<int>(type: "int", nullable: false),
-                    CrudTypeId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    RelatedEntityId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CrudTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -260,20 +274,21 @@ namespace GeneratorWPF.Migrations
                 name: "Entities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TableName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreateDtoId = table.Column<int>(type: "int", nullable: true),
-                    UpdateDtoId = table.Column<int>(type: "int", nullable: true),
-                    DeleteDtoId = table.Column<int>(type: "int", nullable: true),
-                    BasicResponseDtoId = table.Column<int>(type: "int", nullable: true),
-                    DetailResponseDtoId = table.Column<int>(type: "int", nullable: true),
-                    SoftDeletable = table.Column<bool>(type: "bit", nullable: false),
-                    Auditable = table.Column<bool>(type: "bit", nullable: false),
-                    Loggable = table.Column<bool>(type: "bit", nullable: false),
-                    Archivable = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TableName = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    CreateDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    UpdateDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    DeleteDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ReportDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    BasicResponseDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    DetailResponseDtoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    SoftDeletable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Auditable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Loggable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Archivable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -303,6 +318,12 @@ namespace GeneratorWPF.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_Entities_Dtos_ReportDtoId",
+                        column: x => x.ReportDtoId,
+                        principalTable: "Dtos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Entities_Dtos_UpdateDtoId",
                         column: x => x.UpdateDtoId,
                         principalTable: "Dtos",
@@ -314,15 +335,16 @@ namespace GeneratorWPF.Migrations
                 name: "Fields",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EntityId = table.Column<int>(type: "int", nullable: false),
-                    FieldTypeId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsUnique = table.Column<bool>(type: "bit", nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
-                    IsList = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    EntityId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FieldTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    IsUnique = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsRequired = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsList = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Filterable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -345,11 +367,11 @@ namespace GeneratorWPF.Migrations
                 name: "Services",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ServiceLayerId = table.Column<int>(type: "int", nullable: false),
-                    RelatedEntityId = table.Column<int>(type: "int", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ServiceLayerId = table.Column<int>(type: "INTEGER", nullable: false),
+                    RelatedEntityId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -372,15 +394,15 @@ namespace GeneratorWPF.Migrations
                 name: "Relations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PrimaryFieldId = table.Column<int>(type: "int", nullable: false),
-                    ForeignFieldId = table.Column<int>(type: "int", nullable: false),
-                    RelationTypeId = table.Column<int>(type: "int", nullable: false),
-                    DeleteBehaviorTypeId = table.Column<int>(type: "int", nullable: false),
-                    PrimaryEntityVirPropName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ForeignEntityVirPropName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    PrimaryFieldId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ForeignFieldId = table.Column<int>(type: "INTEGER", nullable: false),
+                    RelationTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeleteBehaviorTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PrimaryEntityVirPropName = table.Column<string>(type: "TEXT", nullable: false),
+                    ForeignEntityVirPropName = table.Column<string>(type: "TEXT", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -415,15 +437,15 @@ namespace GeneratorWPF.Migrations
                 name: "Methods",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ServiceId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MethodReturnFieldId = table.Column<int>(type: "int", nullable: true),
-                    IsVoid = table.Column<bool>(type: "bit", nullable: false),
-                    IsAsync = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ServiceId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    MethodReturnFieldId = table.Column<int>(type: "INTEGER", nullable: true),
+                    IsVoid = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsAsync = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -440,13 +462,13 @@ namespace GeneratorWPF.Migrations
                 name: "MethodArgumentFields",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MethodId = table.Column<int>(type: "int", nullable: false),
-                    FieldTypeId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsList = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MethodId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FieldTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    IsList = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -469,12 +491,12 @@ namespace GeneratorWPF.Migrations
                 name: "MethodReturnFields",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MethodId = table.Column<int>(type: "int", nullable: false),
-                    FieldTypeId = table.Column<int>(type: "int", nullable: false),
-                    IsList = table.Column<bool>(type: "bit", nullable: false),
-                    Control = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MethodId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FieldTypeId = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsList = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Control = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -574,7 +596,8 @@ namespace GeneratorWPF.Migrations
                     { 13, false, "Field must be a valid URL", "Url" },
                     { 14, false, "Field must be a valid date", "Date" },
                     { 15, false, "Field must be a valid number", "Number" },
-                    { 16, false, "Field mus be a valid guid value", "GuidNotEmpty" }
+                    { 16, false, "Field mus be a valid guid value", "GuidNotEmpty" },
+                    { 17, false, "Field must have a exact number of characters\", \"Length", "Length" }
                 });
 
             migrationBuilder.InsertData(
@@ -607,22 +630,26 @@ namespace GeneratorWPF.Migrations
                     { 5, false, "Min", 6 },
                     { 6, false, "Pattern", 7 },
                     { 7, false, "Value", 8 },
-                    { 8, false, "Value", 9 }
+                    { 8, false, "Value", 9 },
+                    { 9, false, "Value", 17 }
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AppSettings_RoleEntityId",
                 table: "AppSettings",
                 column: "RoleEntityId",
-                unique: true,
-                filter: "[RoleEntityId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AppSettings_UserEntityId",
                 table: "AppSettings",
                 column: "UserEntityId",
-                unique: true,
-                filter: "[UserEntityId] IS NOT NULL");
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DtoFieldRelations_RelationId",
+                table: "DtoFieldRelations",
+                column: "RelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DtoFields_DtoId",
@@ -663,6 +690,11 @@ namespace GeneratorWPF.Migrations
                 name: "IX_Entities_DetailResponseDtoId",
                 table: "Entities",
                 column: "DetailResponseDtoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Entities_ReportDtoId",
+                table: "Entities",
+                column: "ReportDtoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Entities_UpdateDtoId",
@@ -778,6 +810,22 @@ namespace GeneratorWPF.Migrations
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
+                name: "FK_DtoFieldRelations_DtoFields_DtoFieldId",
+                table: "DtoFieldRelations",
+                column: "DtoFieldId",
+                principalTable: "DtoFields",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_DtoFieldRelations_Relations_RelationId",
+                table: "DtoFieldRelations",
+                column: "RelationId",
+                principalTable: "Relations",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_DtoFields_Dtos_DtoId",
                 table: "DtoFields",
                 column: "DtoId",
@@ -813,31 +861,34 @@ namespace GeneratorWPF.Migrations
                 name: "AppSettings");
 
             migrationBuilder.DropTable(
+                name: "DtoFieldRelations");
+
+            migrationBuilder.DropTable(
                 name: "MethodArgumentFields");
 
             migrationBuilder.DropTable(
                 name: "MethodReturnFields");
 
             migrationBuilder.DropTable(
-                name: "Relations");
-
-            migrationBuilder.DropTable(
                 name: "ValidationParams");
 
             migrationBuilder.DropTable(
+                name: "Relations");
+
+            migrationBuilder.DropTable(
                 name: "Methods");
-
-            migrationBuilder.DropTable(
-                name: "DeleteBehaviorTypes");
-
-            migrationBuilder.DropTable(
-                name: "RelationTypes");
 
             migrationBuilder.DropTable(
                 name: "Validations");
 
             migrationBuilder.DropTable(
                 name: "ValidatorTypeParams");
+
+            migrationBuilder.DropTable(
+                name: "DeleteBehaviorTypes");
+
+            migrationBuilder.DropTable(
+                name: "RelationTypes");
 
             migrationBuilder.DropTable(
                 name: "Services");

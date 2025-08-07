@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace GeneratorWPF.Migrations.Local
+namespace GeneratorWPF.Migrations
 {
     [DbContext(typeof(LocalContext))]
     partial class LocalContextModelSnapshot : ModelSnapshot

@@ -17,6 +17,7 @@ public partial class RoslynBusinessServiceGenerator
     private readonly DtoRepository _dtoRepository;
     private readonly DtoFieldRepository _dtoFieldRepository;
     private readonly EntityRepository _entityRepository;
+    private readonly FieldRepository _fieldRepository;
     private readonly DtoFieldRelationsRepository _dtoFieldRelationsRepository;
     public RoslynBusinessServiceGenerator(AppSetting appSetting)
     {
@@ -24,6 +25,7 @@ public partial class RoslynBusinessServiceGenerator
         _entityRepository = new EntityRepository();
         _dtoRepository = new DtoRepository();
         _dtoFieldRepository = new DtoFieldRepository();
+        _fieldRepository = new FieldRepository();
         _dtoFieldRelationsRepository = new DtoFieldRelationsRepository();
     }
 
@@ -378,24 +380,14 @@ public partial class RoslynBusinessServiceGenerator
 
     public string GeneraterAuthServiceConcrete()
     {
-        string typeOfUserKey = "int";
-        string typeOfUser = "IdentityUser";
-        Entity? userEntity = null;
-        if (_appSetting.IsThereUser)
-        {
-            userEntity = _entityRepository.Get(f => f.Id == _appSetting.UserEntityId, include: i => i.Include(x => x.Fields).ThenInclude(ti => ti.FieldType).Include(x => x.Dtos));
-            if (userEntity != null)
-            {
-                var uField = userEntity.Fields.FirstOrDefault(f => f.IsUnique);
-                if (uField != null) typeOfUserKey = uField.MapFieldTypeName();
-                typeOfUser = userEntity.Name;
-            }
-        }
+        var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository);
+        string IdentityUserType = identityTypeConfigs.IdentityUserType; 
 
-        string IdentityUserType = $"IdentityUser<{typeOfUserKey}>";
-        if (userEntity != null) IdentityUserType = userEntity.Name;
-
-
+        // response user model for login, signup
+        Entity? userEntity = _appSetting.IsThereUser ? _entityRepository.Get(
+                f => f.Id == _appSetting.UserEntityId, 
+                include: i => i.Include(x => x.Fields).ThenInclude(ti => ti.FieldType).Include(x => x.Dtos)) : null;
+        
         bool isThereUserDtoForResponse = false;
         string userModelType = IdentityUserType;
         if (userEntity != null)

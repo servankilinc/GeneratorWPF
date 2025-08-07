@@ -46,7 +46,7 @@
         btnCancelEnable = true,
         btnCancelSize = 'md',
         btnCancelText = 'Kapat',
-        backdrop = false,
+        backdrop = true,
         tabindex = -1,
         onBeforeShow = null,
         onAfterShow = null,

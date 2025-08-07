@@ -687,7 +687,6 @@ public class ViewGenerator
 									}}),
                                     // 2) Delete Button
 									UIManager.DeleteButtonTable({{
-										title: ""Are you sure you want to delete?"",
 										requestUrl: '{entity.Name}/Delete',
                                         disable: rowData.isDeleted == true,
 										requestData: {{

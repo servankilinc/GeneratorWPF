@@ -4,7 +4,7 @@
 
     Get: function ({
         path = '',
-        dataType = 'json',
+        dataType = null,
         requestData = null,
         formId = null,
         buttonId = null,
@@ -41,7 +41,7 @@
     },
     Delete: function ({
         path = '',
-        dataType = 'json',
+        dataType = null,
         requestData = null,
         formId = null,
         buttonId = null,
@@ -79,7 +79,7 @@
 
     Post: function ({
         path = '',
-        dataType = 'json',
+        dataType = null,
         requestData = null,
         formId = null,
         buttonId = null,
@@ -117,7 +117,7 @@
     HandleRequest: function ({
         type = 'GET',
         path = '',
-        dataType = 'json',
+        dataType = null,
         requestData = null,
         formId = null,
         buttonId = null,
@@ -162,10 +162,9 @@
             let originalBtnContent = '...';
             if (path[0] != '/') path = '/' + path.trim();
 
-            $.ajax({
+            const ajaxOptions = {
                 url: `${_baseUrl}${path}`,
                 type: type,
-                dataType: dataType,
                 data: data,
                 beforeSend: function () {
                     if (buttonId != null) {
@@ -257,7 +256,13 @@
 
                     if (onAfter != null && typeof onAfter === 'function') onAfter();
                 }
-            });
+            };
+
+            if (dataType != undefined && dataType != null) {
+                ajaxOptions.dataType = dataType;
+            }
+
+            $.ajax(ajaxOptions);
         });
     }
 }

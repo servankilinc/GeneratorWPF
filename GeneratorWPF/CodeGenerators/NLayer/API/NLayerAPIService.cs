@@ -334,35 +334,10 @@ public sealed class ScalarSecuritySchemeTransformer(IAuthenticationSchemeProvide
         AddAutofacModules(ref sb);
         if (_appSetting.IsThereIdentiy)
         {
-            // IDENTITY SETTINGS
-            Entity? roleEntity = null;
-            Entity? userEntity = null;
-            string IdentityKeyType = "int";
-            if (_appSetting.RoleEntityId != null)
-            {
-                roleEntity = _entityRepository.Get(f => f.Id == _appSetting.RoleEntityId);
-
-                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
-                if (uniqueFields != null)
-                {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-                }
-            }
-            if (_appSetting.UserEntityId != null)
-            {
-                userEntity = _entityRepository.Get(f => f.Id == _appSetting.UserEntityId);
-
-                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
-                if (uniqueFields != null)
-                {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-                }
-            }
-            string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
-            string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
-            if (userEntity != null) IdentityUserType = userEntity.Name;
-            if (roleEntity != null) IdentityRoleType = roleEntity.Name;
-            // IDENTITY SETTINGS 
+            var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository);
+            string IdentityKeyType = identityTypeConfigs.IdentityKeyType;
+            string IdentityUserType = identityTypeConfigs.IdentityUserType;
+            string IdentityRoleType = identityTypeConfigs.IdentityRoleType;
 
             AddIdentityImplemantation(ref sb, IdentityUserType, IdentityRoleType);
             AddJWTImplemantation(ref sb);

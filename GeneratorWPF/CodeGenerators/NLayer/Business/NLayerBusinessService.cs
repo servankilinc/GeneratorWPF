@@ -1,4 +1,5 @@
-﻿using GeneratorWPF.Models;
+﻿using Azure.Core;
+using GeneratorWPF.Models;
 using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public class NLayerBusinessService
     private readonly DtoFieldRelationsRepository _dtoFieldRelationsRepository;
     private readonly EntityRepository _entityRepository;
     private readonly RelationRepository _relationRepository;
+    private readonly FieldRepository _fieldRepository;
     private readonly AppSetting _appSetting;
     public NLayerBusinessService(AppSetting appSetting)
     {
@@ -24,6 +26,7 @@ public class NLayerBusinessService
         _dtoFieldRepository = new();
         _dtoFieldRelationsRepository = new();
         _entityRepository = new();
+        _fieldRepository = new();
         _relationRepository = new();
     }
 
@@ -1619,19 +1622,24 @@ public class ServiceBase<TEntity, TRepository> : IServiceBase<TEntity>, IService
 
     public string GenerateUtils(string solutionPath)
     {
-        string code_ITokenService = @"using Core.Utils.Auth;
+        var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository);
+
+        if (_appSetting.IsThereIdentiy)
+        {
+            string code_ITokenService = $@"
+using Core.Utils.Auth;
 using Model.Entities;
 using System.Security.Claims;
 
 namespace Business.Utils.TokenService;
 
 public interface ITokenService
-{
+{{
     AccessToken GenerateAccessToken(IList<Claim> claims);
-    RefreshToken GenerateRefreshToken(User user);
-}";
+    RefreshToken GenerateRefreshToken({identityTypeConfigs.IdentityUserType} user);
+}}";
 
-        string code_TokenService = @"using Core.Utils.Auth;
+            string code_TokenService = @"using Core.Utils.Auth;
 using Core.Utils.CrossCuttingConcerns;
 using Core.Utils.ExceptionHandle.Exceptions;
 using Core.Utils.HttpContextManager;
@@ -1693,15 +1701,16 @@ public class TokenService : ITokenService
 }";
 
 
-        string folderPath = Path.Combine(solutionPath, "Business", "Utils", "TokenService");
+            string folderPath = Path.Combine(solutionPath, "Business", "Utils", "TokenService");
 
-        var results = new List<string>
-        {
-            AddFile(folderPath, "ITokenService", code_ITokenService),
-            AddFile(folderPath, "TokenService", code_TokenService)
-        };
-
-        return string.Join("\n", results);
+            var results = new List<string>
+            {
+                AddFile(folderPath, "ITokenService", code_ITokenService),
+                AddFile(folderPath, "TokenService", code_TokenService)
+            };
+            return string.Join("\n", results);
+        }
+        return "";
     }
     #endregion
 

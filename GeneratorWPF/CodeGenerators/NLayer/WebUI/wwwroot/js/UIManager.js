@@ -85,7 +85,7 @@
         });
     },
     DeleteButtonTable: function ({
-        title = 'Sil',
+        text = 'Are you sure you want to delete?',
         requestUrl = '',
         requestData = undefined,
         pageTable = undefined,
@@ -93,13 +93,13 @@
     }) {
         return DatatableManager.RowButton({
             kind: DatatableManager.buttonKinds.delete,
+            disable: disable,
             onClick: async () => {
                 ModalManager.CreateModal({
-                    title: title,
-                    innerHtml: `<div class="d-flex flex-column justify-content-center"><i class="fa-solid fa-triangle-exclamation text-warning opacity-50" style="font-size: 2.5rem;"></i><h4 class="text-center fw-normal">Silmek İstediğinize Emin misiniz?</h4></div>`,
+                    innerHtml: `<div class="d-flex flex-column justify-content-center align-items-center"><i class="fa-solid fa-triangle-exclamation text-warning opacity-50" style="font-size: 2.5rem;"></i><h5 class="text-center fw-normal mt-4">${text}</h4></div>`,
                     modalSize: 'sm',
                     btnCancelSize: 'sm',
-                    showHeader: title == null || title.length == 0 ? false : true,
+                    showHeader: false,
                     buttons: [
                         ModalManager.Button(
                             {

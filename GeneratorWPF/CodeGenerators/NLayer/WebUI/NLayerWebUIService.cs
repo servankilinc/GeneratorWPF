@@ -877,37 +877,9 @@ public class UIController : Controller
 
         if (_appSetting.IsThereIdentiy)
         {
-            // IDENTITY SETTINGS
-            Entity? roleEntity = null;
-            Entity? userEntity = null;
-            string IdentityKeyType = "int";
-            if (_appSetting.RoleEntityId != null)
-            {
-                roleEntity = _entityRepository.Get(f => f.Id == _appSetting.RoleEntityId);
+            var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository);
 
-                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
-                if (uniqueFields != null)
-                {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-                }
-            }
-            if (_appSetting.UserEntityId != null)
-            {
-                userEntity = _entityRepository.Get(f => f.Id == _appSetting.UserEntityId);
-
-                var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
-                if (uniqueFields != null)
-                {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-                }
-            }
-            string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
-            string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
-            if (userEntity != null) IdentityUserType = userEntity.Name;
-            if (roleEntity != null) IdentityRoleType = roleEntity.Name;
-            // IDENTITY SETTINGS 
-
-            AddIdentityImplemantation(ref sb, IdentityUserType, IdentityRoleType);
+            AddIdentityImplemantation(ref sb, identityTypeConfigs.IdentityUserType, identityTypeConfigs.IdentityRoleType);
         }
         AddCookieOptions(ref sb);
         AddActionFilters(ref sb);
@@ -1702,9 +1674,9 @@ else
 				isActive = isThereSubs && item.SubMenuItems!.Any(f => f.Path == _basePath_);
 
 				<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
-					<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+					<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"" data-icon=""@item.Icon"">
 						<i class=""menu-icon @item.Icon""></i>
-						<div>@item.Title</div>
+						<div class=""page-name"">@item.Title</div>
 					</span>
 					@if (isThereSubs)
 					{
@@ -1717,9 +1689,9 @@ else
 				isActive = item.Path == _basePath_;
 
 				<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
-					<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+					<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"" data-icon=""@item.Icon"">
 						<i class=""menu-icon @item.Icon""></i>
-						<div>@item.Title</div>
+						<div class=""page-name"">@item.Title</div>
 					</a>
 					@if (isThereSubs)
 					{
@@ -1758,9 +1730,9 @@ else
 			isActive = isThereSubs && item.SubMenuItems!.Any(f => f.Path == _basePath_);
 
 			<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
-				<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+				<span role=""button"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"" data-icon=""@item.Icon"">
 					<i class=""menu-icon @item.Icon""></i>
-					<div>@item.Title</div>
+					<div class=""page-name"">@item.Title</div>
 				</span>
 				@if (isThereSubs)
 				{
@@ -1773,9 +1745,9 @@ else
 			isActive = item.Path == _basePath_;
 
 			<li class=""menu-item @(isActive ? ""active open"" : string.Empty)"">
-				<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"">
+				<a href=""@item.Path"" class=""menu-link @(isActive ? ""active"" : string.Empty) @(isThereSubs ? ""menu-toggle"" : string.Empty)"" data-icon=""@item.Icon"">
 					<i class=""menu-icon @item.Icon""></i>
-					<div>@item.Title</div>
+					<div class=""page-name"">@item.Title</div>
 				</a>
 				@if (isThereSubs)
 				{

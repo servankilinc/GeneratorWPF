@@ -94,43 +94,13 @@ public class NLayerDataAccessService
     #region Static Files
     public string GenerateRepositoryBase(string solutionPath)
     {
-        // IDENTITY SETTINGS
-        var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
-
-        Entity? roleEntity = null;
-        Entity? userEntity = null;
-        string IdentityKeyType = "int";
-        if (_appSetting.RoleEntityId != null)
-        {
-            roleEntity = entities.FirstOrDefault(f => f.Id == _appSetting.RoleEntityId);
-
-            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
-            if (uniqueFields != null)
-            {
-                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-            }
-        }
-        if (_appSetting.UserEntityId != null)
-        {
-            userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
-
-            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
-            if (uniqueFields != null)
-            {
-                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-            }
-        }
-        string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
-        string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
-        if (userEntity != null) IdentityUserType = userEntity.Name;
-        if (roleEntity != null) IdentityRoleType = roleEntity.Name;
+        var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository); 
 
         string contextRule = "DbContext";
         if (_appSetting.IsThereIdentiy)
         {
-            contextRule = $"IdentityDbContext<{IdentityUserType}, {IdentityRoleType}, {IdentityKeyType}>";
+            contextRule = $"IdentityDbContext<{identityTypeConfigs.IdentityUserType}, {identityTypeConfigs.IdentityRoleType}, {identityTypeConfigs.IdentityKeyType}>";
         }
-        // IDENTITY SETTINGS
 
         string code_IRepository = @"using AutoMapper;
 using Core.Model;
@@ -2121,35 +2091,10 @@ public static class EntityEntryExtension
 
         var entities = _entityRepository.GetAll(f => f.Control == false, include: i => i.Include(x => x.Fields));
 
-        // IDENTITY SETTINGS
-        Entity? roleEntity = null;
-        Entity? userEntity = null;
-        string IdentityKeyType = "int";
-        if (_appSetting.RoleEntityId != null)
-        {
-            roleEntity = entities.FirstOrDefault(f => f.Id == _appSetting.RoleEntityId);
-
-            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.RoleEntityId && f.IsUnique);
-            if (uniqueFields != null)
-            {
-                IdentityKeyType = uniqueFields.First().MapFieldTypeName();
-            }
-        }
-        if (_appSetting.UserEntityId != null)
-        {
-            userEntity = entities.FirstOrDefault(f => f.Id == _appSetting.UserEntityId);
-            
-            var uniqueFields = _fieldRepository.GetAll(f => f.EntityId == _appSetting.UserEntityId && f.IsUnique);
-            if (uniqueFields != null)
-            {
-                IdentityKeyType = uniqueFields.First().MapFieldTypeName(); 
-            }
-        }
-        string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";
-        string IdentityRoleType = $"IdentityRole<{IdentityKeyType}>";
-        if (userEntity != null) IdentityUserType = userEntity.Name;
-        if (roleEntity != null) IdentityRoleType = roleEntity.Name;
-        // IDENTITY SETTINGS
+        var identityTypeConfigs = _appSetting.GetIdentityModelTypeNames(_entityRepository, _fieldRepository);
+        string IdentityKeyType = identityTypeConfigs.IdentityKeyType;
+        string IdentityUserType = identityTypeConfigs.IdentityUserType;
+        string IdentityRoleType = identityTypeConfigs.IdentityRoleType;
 
 
         // Concretes

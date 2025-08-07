@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById("dropdown-shortcuts-add").addEventListener("click", function () {
         let isSubMEnuActive = $("li.menu-item.active").length > 1;
         let activeMenuE = isSubMEnuActive ? $("li .menu-item.active") : $("li.menu-item.active");
-        let name = isSubMEnuActive ? `${activeMenuE.closest("ul").parent().find("span.menu-toggle > span.page-name").text()} ${activeMenuE.find("a > span.page-name").text()}` : activeMenuE.find("a > span.page-name").text();
+        let name = isSubMEnuActive ? `${activeMenuE.closest("ul").parent().find("span.menu-toggle > div.page-name").text()} ${activeMenuE.find("a > div.page-name").text()}` : activeMenuE.find("a > div.page-name").text();
         let icon = activeMenuE.find("a").data("icon");
 
         let links = localStorage.getItem("list-of-shortcuts");

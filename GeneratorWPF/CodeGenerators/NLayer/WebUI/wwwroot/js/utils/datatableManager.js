@@ -546,13 +546,16 @@
                 }
 
                 $(button).prop("disabled", true);
-                
-                await btnObject.onClick(e);
 
-                $(button).prop("disabled", false);
+                try {
+                    await btnObject.onClick(e);
+                }
+                finally {
+                    $(button).prop("disabled", false);
 
-                if (dynamicContent.length == 1) {
-                    dynamicContent.html(original);
+                    if (dynamicContent.length == 1) {
+                        dynamicContent.html(original);
+                    }
                 }
             };
         }

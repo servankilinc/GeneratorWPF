@@ -188,13 +188,16 @@ function GenerateModalButtonDOM(btnObject, modalReferance)
             }
 
             $(button).prop("disabled", true);
-            
-            await btnObject.onClick(e, modal, form); 
 
-            $(button).prop("disabled", false);
+            try {
+                await btnObject.onClick(e, modal, form); 
+            }
+            finally {
+                $(button).prop("disabled", false);
 
-            if (dynamicContent.length == 1) {
-                dynamicContent.html(original);
+                if (dynamicContent.length == 1) {
+                    dynamicContent.html(original);
+                }
             }
         };
     }

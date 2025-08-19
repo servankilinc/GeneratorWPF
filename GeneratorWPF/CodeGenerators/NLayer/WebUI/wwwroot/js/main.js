@@ -62,11 +62,12 @@ document.addEventListener('DOMContentLoaded', function () {
         let name = isSubMEnuActive ? `${activeMenuE.closest("ul").parent().find("span.menu-toggle > div.page-name").text()} ${activeMenuE.find("a > div.page-name").text()}` : activeMenuE.find("a > div.page-name").text();
         let icon = activeMenuE.find("a").data("icon");
 
+        let _location = window.location.href;
         let links = localStorage.getItem("list-of-shortcuts");
         let shortcuts = [];
         if (links != undefined) {
             shortcuts = JSON.parse(links);
-            let isExist = shortcuts.some(s => s.location == location);
+            let isExist = shortcuts.some(s => s.location == _location);
             if (isExist) {
                 return;
             }
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
         shortcuts.push({
             name: name,
             icon: icon,
-            location: window.location.href
+            location: _location
         });
         localStorage.setItem("list-of-shortcuts", JSON.stringify(shortcuts));
         RenderShortCutsDropdown();

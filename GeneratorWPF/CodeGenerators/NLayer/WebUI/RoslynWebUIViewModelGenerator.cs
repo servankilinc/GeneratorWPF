@@ -236,7 +236,7 @@ public class RoslynWebUIViewModelGenerator
         var propertyList = new List<MemberDeclarationSyntax>();
         foreach (var field in filterableFields)
         {
-            propertyList.Add(GeneratorProperty($"{field.MapFieldTypeName()}?", field.Name, false));
+            propertyList.Add(GeneratorProperty($"{field.GetMapedTypeName()}?", field.Name, false));
         }
         if (entity.SoftDeletable)
         {

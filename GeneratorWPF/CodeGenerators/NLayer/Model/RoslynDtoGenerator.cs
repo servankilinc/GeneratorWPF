@@ -133,7 +133,7 @@ public partial class RoslynDtoGenerator
             // if there is no unique field with same name in dto
             if (dtoFieldList.Any(f => f.SourceFieldId == unqField.Id && f.Name.Trim() == unqField.Name.Trim()) == false)
             {
-                propertyList.Add(GeneratorPropertyByName(unqField.MapFieldTypeName(), unqField.Name, true));
+                propertyList.Add(GeneratorPropertyByName(unqField.GetMapedTypeName(), unqField.Name, true));
             }
         }
 
@@ -210,7 +210,7 @@ public partial class RoslynDtoGenerator
         Field field = dtoField.SourceField;
         string fieldTypeName =
             field.FieldType.SourceTypeId == (int)FieldTypeSourceEnums.Base ?
-            field.MapFieldTypeName() : field.FieldType.Name;
+            field.GetMapedTypeName() : field.FieldType.Name;
 
         string mappedFieldTypeName = fieldTypeName;
         if (field.IsList)

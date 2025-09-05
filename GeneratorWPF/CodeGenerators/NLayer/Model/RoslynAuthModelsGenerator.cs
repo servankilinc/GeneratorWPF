@@ -244,7 +244,7 @@ public partial class RoslynAuthModelsGenerator
                 if (uniqueFields.Count == 1)
                 {
                     ruleListOfValidation.Add(@"RuleFor(b => b.UserId).NotNull().NotEmpty();");
-                    string fieldType = uniqueFields.First().MapFieldTypeName();
+                    string fieldType = uniqueFields.First().GetMapedTypeName();
                     propertyList.Add(GenerateProperty(fieldType, "UserId", true));
                 }
                 else
@@ -252,7 +252,7 @@ public partial class RoslynAuthModelsGenerator
                     foreach (var uf in uniqueFields)
                     {
                         ruleListOfValidation.Add($"RuleFor(b => b.{uf.Name}).NotNull().NotEmpty();");
-                        propertyList.Add(GenerateProperty(uf.MapFieldTypeName(), uf.Name, true));
+                        propertyList.Add(GenerateProperty(uf.GetMapedTypeName(), uf.Name, true));
                     }
                 }
             }
@@ -394,7 +394,7 @@ public partial class RoslynAuthModelsGenerator
                     if (relation != null) continue; // ilişkisi olan alan modelde olmasın
 
                     if (uf.IsRequired) ruleListOfValidation.Add($"RuleFor(b => b.{uf.Name}).NotNull().NotEmpty();");
-                    propertyList.Add(GenerateProperty(uf.MapFieldTypeName(), uf.Name, true));
+                    propertyList.Add(GenerateProperty(uf.GetMapedTypeName(), uf.Name, true));
                 }
             }
         }

@@ -1,4 +1,5 @@
 using GeneratorWPF.Extensions;
+using GeneratorWPF.Models.Enums;
 using GeneratorWPF.Models.Signature;
 
 namespace GeneratorWPF.Models
@@ -37,6 +38,23 @@ namespace GeneratorWPF.Models
         public string GetUniqueArgs()
         {
             return String.Join(", ", Fields.Where(f => f.IsUnique).Select(f => $"{f.GetMapedTypeName()} {f.Name.ToCamelCase()}").ToArray());
+        }
+
+        public Field? GetSelectListTextField()
+        {
+            if (this.Fields == default || this.Fields.Any() == false) return default;
+
+            Field? textField = this.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant() == "name");
+            if (textField == default)
+            {
+                textField = this.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant().Contains("name"));
+            }
+            if (textField == default)
+            {
+                textField = this.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String);
+            }
+
+            return textField;
         }
     }
 }

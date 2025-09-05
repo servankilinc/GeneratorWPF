@@ -36,6 +36,8 @@ namespace GeneratorWPF.Models
                 (int)FieldTypeEnums.DateTime => "DateTime",
                 (int)FieldTypeEnums.DateOnly => "DateOnly",
                 (int)FieldTypeEnums.Guid => "Guid",
+                (int)FieldTypeEnums.TimeSpan => "TimeSpan",
+                (int)FieldTypeEnums.TimeOnly => "TimeOnly",
                 _ => this.Name
             };
         }
@@ -51,6 +53,7 @@ namespace GeneratorWPF.Models
         /// <returns></returns>
         public int GetVariableGroup(Dictionary<string, string> selectableRelations) // key: fieldName, value: entityName
         {
+            // joined(relational props) props = selectableRelations 
             if (selectableRelations.Any(f => f.Key.Trim().ToLower() == this.Name.Trim().ToLower())) // || this.FieldTypeId == (byte)FieldTypeEnums.Int || this.FieldTypeId == (byte)FieldTypeEnums.Guid
             {
                 return 1;
@@ -75,6 +78,10 @@ namespace GeneratorWPF.Models
             else if (this.FieldTypeId == (byte)FieldTypeEnums.DateOnly || this.FieldTypeId == (byte)FieldTypeEnums.DateTime)
             {
                 return 5;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.TimeSpan || this.FieldTypeId == (byte)FieldTypeEnums.TimeOnly)
+            {
+                return 6;
             }
 
             return 0;
@@ -115,6 +122,10 @@ namespace GeneratorWPF.Models
             else if (this.FieldTypeId == (byte)FieldTypeEnums.DateOnly || this.FieldTypeId == (byte)FieldTypeEnums.DateTime)
             {
                 return 5;
+            }
+            else if (this.FieldTypeId == (byte)FieldTypeEnums.TimeSpan || this.FieldTypeId == (byte)FieldTypeEnums.TimeOnly)
+            {
+                return 6;
             }
 
             return 0;

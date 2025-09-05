@@ -35,7 +35,7 @@ namespace GeneratorWPF.Models
                 var uniqueFields = fieldRepository.GetAll(f => f.EntityId == this.RoleEntityId && f.IsUnique);
                 if (uniqueFields != null)
                 {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+                    IdentityKeyType = uniqueFields.First().GetMapedTypeName();
                 }
             }
             if (this.UserEntityId != null)
@@ -45,7 +45,7 @@ namespace GeneratorWPF.Models
                 var uniqueFields = fieldRepository.GetAll(f => f.EntityId == this.UserEntityId && f.IsUnique);
                 if (uniqueFields != null)
                 {
-                    IdentityKeyType = uniqueFields.First().MapFieldTypeName();
+                    IdentityKeyType = uniqueFields.First().GetMapedTypeName();
                 }
             }
             string IdentityUserType = $"IdentityUser<{IdentityKeyType}>";

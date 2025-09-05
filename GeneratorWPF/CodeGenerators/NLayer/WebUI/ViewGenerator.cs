@@ -827,6 +827,19 @@ public class ViewGenerator
                     </div>
                 </div>";
             }
+            // ### Time ###
+            else if (variableGroupType == 6)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-md-4 col-sm-6 col-12"">
+                    <div class=""input-group"">
+                        <span class=""input-group-text bg-lightest"">
+                            {labelText}
+                        </span>
+                        <input name=""{inputName}"" type=""time"" class=""form-control"" />
+                    </div>
+                </div>";
+            }
 
             result.Add(modelFilterFieldInput);
         }
@@ -947,6 +960,18 @@ public class ViewGenerator
                     <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
+            // ### Time ###
+            else if (variableGroupType == 6)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""{modelName}{inputName}"" type=""time"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
 
             result.Add(modelFilterFieldInput);
         }
@@ -1059,7 +1084,18 @@ public class ViewGenerator
                     <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
                 </div>";
             }
-
+            // ### Time ###
+            else if (variableGroupType == 6)
+            {
+                modelFilterFieldInput.InputCode = $@"
+                <div class=""col-sm-6"">
+                    <label asp-for=""{modelName}{inputName}"" class=""form-label"">
+                        {labelText}
+                    </label>
+                    <input asp-for=""{modelName}{inputName}"" type=""time"" class=""form-control"" />
+                    <span asp-validation-for=""{modelName}{inputName}"" class=""form_validation_feedback""></span>
+                </div>";
+            }
             result.Add(modelFilterFieldInput);
         }
 

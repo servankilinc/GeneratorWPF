@@ -139,7 +139,7 @@ public partial class RoslynEntityGenerator
 
     private MemberDeclarationSyntax GeneratorProperty(Field field)
     {
-        string fieldTypeName = field.MapFieldTypeName();
+        string fieldTypeName = field.GetMapedTypeName();
         string mappedFieldTypeName = fieldTypeName;
 
         if (field.IsList)

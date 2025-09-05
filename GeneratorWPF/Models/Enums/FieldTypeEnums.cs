@@ -13,4 +13,6 @@ public enum FieldTypeEnums
     DateTime = 9,
     DateOnly = 10,
     Guid = 11,
+    TimeSpan = 12,
+    TimeOnly = 13
 }

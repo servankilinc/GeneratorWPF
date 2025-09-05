@@ -50,16 +50,7 @@ public partial class RoslynBusinessServiceGenerator
         bool isThereOneUnique = entity.Fields.Count(f => f.IsUnique) == 1;
         if (isThereOneUnique)
         {
-            Field? textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant() == "name");
-            if (textField == default)
-            {
-                textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant().Contains("name"));
-            }
-            if (textField == default)
-            {
-                textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String);
-            }
-
+            Field? textField = entity.GetSelectListTextField();
             if (textField != default)
             {
                 methodList.Add(GeneratorGetSelectListMethodOfAbstract(entity.Name));
@@ -217,15 +208,7 @@ public partial class RoslynBusinessServiceGenerator
         bool isThereOneUnique = entity.Fields.Count(f => f.IsUnique) == 1;
         if (isThereOneUnique)
         {
-            Field? textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant() == "name");
-            if (textField == default)
-            {
-                textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String && f.Name.Trim().ToLowerInvariant().Contains("name"));
-            }
-            if (textField == default)
-            {
-                textField = entity.Fields.FirstOrDefault(f => f.FieldTypeId == (byte)FieldTypeEnums.String);
-            }
+            Field? textField = entity.GetSelectListTextField();
 
             if (textField != default)
             {

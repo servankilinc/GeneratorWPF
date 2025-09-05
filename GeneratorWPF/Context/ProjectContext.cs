@@ -206,7 +206,9 @@ namespace GeneratorWPF.Context
                    new FieldType { Id = 8, Name = "Byte", SourceTypeId = 1 },
                    new FieldType { Id = 9, Name = "DateTime", SourceTypeId = 1 },
                    new FieldType { Id = 10, Name = "DateOnly", SourceTypeId = 1 },
-                   new FieldType { Id = 11, Name = "Guid", SourceTypeId = 1 }
+                   new FieldType { Id = 11, Name = "Guid", SourceTypeId = 1 },
+                   new FieldType { Id = 12, Name = "TimeSpan", SourceTypeId = 1 },
+                   new FieldType { Id = 13, Name = "TimeOnly", SourceTypeId = 1 }
                 );
             });
             #endregion

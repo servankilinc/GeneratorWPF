@@ -293,6 +293,7 @@ public class NLayerGeneratorService
             log(nLayerWebUIService.AddPackage(solutionPath, "FluentValidation.AspNetCore"));
             log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation"));
             log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.VisualStudio.Web.CodeGeneration.Design"));
+            log(nLayerWebUIService.AddPackage(solutionPath, "Microsoft.EntityFrameworkCore.Design"));
 
             // 3. Utils
             log(nLayerWebUIService.GenerateUtils(solutionPath));

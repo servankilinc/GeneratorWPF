@@ -2231,35 +2231,40 @@ public static class EntityEntryExtension
             // **** Seed Data ****
             if (_appSetting.IsThereRole && entity.Id == _appSetting.RoleEntityId)
             {
+                var userId = new Guid();
+                var managerId = new Guid();
+                var adminId = new Guid();
+                var ownerId = new Guid();
+
                 sb.AppendLine(@$"           
             {eSc}.HasData(
                 new
                 {{
-                    Id = new Guid(""b370875e-34cd-4b79-891c-93ae38f99d11""),
+                    Id = {userId},
                     Name = ""User"",
                     NormalizedName = ""USER"",
-                    ConcurrencyStamp = ""b370875e-34cd-4b79-891c-93ae38f99d11"")
+                    ConcurrencyStamp = ""{userId.ToString()}""
                 }},
                 new
                 {{
-                    Id = new Guid(""cd6040ef-dacc-4678-9a85-154f12581cff""),
+                    Id = {managerId},
                     Name = ""Manager"",
                     NormalizedName = ""MANAGER"",
-                    ConcurrencyStamp =""cd6040ef-dacc-4678-9a85-154f12581cff""
+                    ConcurrencyStamp = ""{managerId.ToString()}""
                 }},
                 new
                 {{
-                    Id = new Guid(""7138ec51-4f9e-4afd-b61b-5a9a4584f5da""),
+                    Id = {adminId},
                     Name = ""Admin"",
                     NormalizedName = ""ADMIN"",
-                    ConcurrencyStamp = ""7138ec51-4f9e-4afd-b61b-5a9a4584f5da""
+                    ConcurrencyStamp = ""{adminId.ToString()}""
                 }},
                 new
                 {{
-                    Id = new Guid(""1f20c152-530e-4064-a39c-bbbed341fe84""),
+                    Id = {ownerId},
                     Name = ""Owner"",
                     NormalizedName = ""OWNER"",
-                    ConcurrencyStamp = ""1f20c152-530e-4064-a39c-bbbed341fe84""
+                    ConcurrencyStamp = ""{ownerId.ToString()}""
                 }}
             );");
             }
